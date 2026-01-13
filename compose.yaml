@@ -1,0 +1,31 @@
+name: fitnessstudio-management-system
+services:
+ # frontend:
+ #   build:
+ #     context: frontend
+ #   networks:
+ #     - client-side
+ 
+ #   volumes:
+ #     - ./frontend/src:/code/src:ro
+
+  backend:
+    build:
+      context: backend
+    ports:
+      - 3000:3000
+    networks:
+      - fsms-client
+      - fsms-server
+    depends_on:
+      - fsms-db
+
+  fsms-db:
+    build:
+      context: db
+    networks:
+      - fsms-server
+
+networks:
+  fsms-client: {}
+  fsms-server: {}

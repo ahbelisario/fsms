@@ -1,0 +1,15 @@
+{
+    "name": "fitnessstudio-management-system",
+    "version": "0.1.0",
+    "author": "Arturo Hernandez <arthur@hdez.mx>",
+    "main": "index.js",
+    "dependencies": {
+        "body-parser": "*",
+        "express": "*",
+        "mysql2": "*",
+        "bcrypt": "*",
+        "jsonwebtoken":"*",
+        "cors":"*"
+    }
+}
+      
