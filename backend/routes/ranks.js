@@ -8,13 +8,13 @@ router.get('/', async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT * FROM diciplines', (err, rows) => {
+        fsms_pool.query('SELECT * FROM ranks', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM diciplines', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM ranks', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
@@ -32,13 +32,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/with_diciplines_names', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+
+  fsms_pool.query('SELECT r.id, r.name, d.name as dicipline FROM fsms.ranks as r, fsms.diciplines as d WHERE r.dicipline=d.id', (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+    res.json({ status: 'success', data: result });
+  });
+});
+
 // GET - obtener por id
 router.get('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT * FROM diciplines WHERE id = ?',
+    'SELECT * FROM ranks WHERE id = ?',
     [id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -53,21 +65,21 @@ router.get('/:id', (req, res) => {
 // POST - crear
 router.post('/', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { name, description } = req.body;
+  const { name, dicipline } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
   fsms_pool.query(
-    'INSERT INTO diciplines (name, description) VALUES (?, ?)',
-    [name, description ?? null],
+    'INSERT INTO ranks (name, dicipline) VALUES (?, ?)',
+    [name, dicipline ?? null],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Insert failed' });
 
       res.status(201).json({
         status: 'success',
-        data: { id: result.insertId, name, description: description ?? null }
+        data: { id: result.insertId, name, dicipline: dicipline ?? null }
       });
     }
   );
@@ -77,15 +89,15 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, dicipline } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
   fsms_pool.query(
-    'UPDATE diciplines SET name = ?, description = ? WHERE id = ?',
-    [name, description ?? null, id],
+    'UPDATE ranks SET name = ?, dicipline = ? WHERE id = ?',
+    [name, dicipline ?? null, id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
       if (result.affectedRows === 0) {
@@ -97,13 +109,12 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE - eliminar
-
 router.delete('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
   fsms_pool.query(
-    'DELETE FROM diciplines WHERE id = ?',
+    'DELETE FROM ranks WHERE id = ?',
     [id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });

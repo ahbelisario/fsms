@@ -41,5 +41,11 @@ export const api = {
   createDiciplines: (payload) => request("/api/diciplines", { method: "POST", body: payload }),
   updateDiciplines: (id, payload) => request(`/api/diciplines/${id}`, { method: "PUT", body: payload }),
   deleteDiciplines: (id) => request(`/api/diciplines/${id}`, { method: "DELETE" }),
+
+  listRanks: () => request("/api/ranks"),
+  listRankswDicipline: () => request("/api/ranks/with_diciplines_names"),
+  createRanks: (payload) => request("/api/ranks", { method: "POST", body: payload }),
+  updateRanks: (id, payload) => request(`/api/ranks/${id}`, { method: "PUT", body: payload }),
+  deleteRanks: (id) => request(`/api/ranks/${id}`, { method: "DELETE" }),
   
 };

@@ -3,26 +3,27 @@ import { Text, View } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { Stack, usePathname, useRouter, type Href } from "expo-router";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { deleteAuthToken, getAuthToken } from "@/src/storage/authStorage";
+import { getAuthToken, isSessionExpired, clearAuthSession } from "@/src/storage/authStorage";
 
 function CustomDrawerContent(props: any) {
   const router = useRouter();
   const USERS: Href = "/users";
   const DICIPLINES: Href = "/diciplines";
+  const DASHBOARD: Href = "/dashboard";
+  const RANKS: Href = "/ranks";
   const LOGIN: Href = "/";
 
   async function handleLogout() {
-    await deleteAuthToken();
+    await clearAuthSession();
     router.replace(LOGIN);
   }
 
   return (
     <DrawerContentScrollView {...props}>
-      <DrawerItem label="Usuarios" onPress={() => router.push(USERS)} />
+      <DrawerItem label="Dashboard" onPress={() => router.push(DASHBOARD)} />
       <DrawerItem label="Diciplinas" onPress={() => router.push(DICIPLINES)} />
-      {/* Agrega más pantallas después:
-      <DrawerItem label="Reportes" onPress={() => router.push("/reports" as const)} />
-      */}
+      <DrawerItem label="Grados" onPress={() => router.push(RANKS)} />
+      <DrawerItem label="Usuarios" onPress={() => router.push(USERS)} />
       <DrawerItem label="Logout" onPress={handleLogout} />
     </DrawerContentScrollView>
   );
@@ -31,19 +32,28 @@ function CustomDrawerContent(props: any) {
 export default function RootLayout() {
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
-  const [hasToken, setHasToken] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const t = await getAuthToken();
-        if (!mounted) return;
-        setHasToken(!!t);
+        const token = await getAuthToken();
+        const expired = await isSessionExpired();
+
+        if (!token || expired) {
+          await clearAuthSession();
+          if (!mounted) return;
+          setHasSession(false);
+        } else {
+          if (!mounted) return;
+          setHasSession(true);
+        }
       } catch {
+        await clearAuthSession();
         if (!mounted) return;
-        setHasToken(false);
+        setHasSession(false);
       } finally {
         if (!mounted) return;
         setLoading(false);
@@ -53,7 +63,7 @@ export default function RootLayout() {
     return () => {
       mounted = false;
     };
-  }, [pathname]); // <-- clave: re-check cuando cambias de ruta (ej. después del login)
+  }, [pathname]);
 
   if (loading) {
     return (
@@ -63,8 +73,7 @@ export default function RootLayout() {
     );
   }
 
-  // SIN token: solo login (index)
-  if (!hasToken) {
+  if (!hasSession) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -72,15 +81,12 @@ export default function RootLayout() {
     );
   }
 
-  // CON token: Drawer (menú)
   return (
-    <Drawer
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{ headerShown: true }}
-    >
+    <Drawer drawerContent={(props) => <CustomDrawerContent {...props} />} screenOptions={{ headerShown: true }}>
+      <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
       <Drawer.Screen name="users" options={{ title: "Usuarios" }} />
       <Drawer.Screen name="diciplines" options={{ title: "Diciplinas" }} />
-      {/* <Drawer.Screen name="reports" options={{ title: "Reportes" }} /> */}
+      <Drawer.Screen name="ranks" options={{ title: "Grados" }} />
     </Drawer>
   );
 }

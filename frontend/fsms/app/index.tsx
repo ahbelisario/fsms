@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Stack, usePathname, useRouter, Redirect, type Href } from "expo-router";
 import { Text, View } from "react-native";
 import LoginScreen from "@/src/screens/LoginScreen";
-import { getAuthToken, setAuthToken } from "@/src/storage/authStorage";
+import { getAuthToken, setAuthSession } from "@/src/storage/authStorage";
 
 export default function Index() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
-  const USERS: Href = "/users";
+  const DASHBOARD: Href = "/dashboard";
 
   useEffect(() => {
     (async () => {
@@ -23,9 +23,9 @@ export default function Index() {
   }, []);
 
   async function onLoginSuccess({ token }: { token: string }) {
-    await setAuthToken(token);
+    await setAuthSession(token);
     setToken(token);
-    router.replace("/users" as const);
+    router.replace("/dashboard" as const);
   }
 
   if (loading) {
@@ -38,7 +38,7 @@ export default function Index() {
 
   // Si ya hay token, manda a /users
   if (token) {
-    return <Redirect href={USERS} />;
+    return <Redirect href={DASHBOARD} />;
   }
 
   return <LoginScreen onLoginSuccess={onLoginSuccess} />;

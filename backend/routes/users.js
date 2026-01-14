@@ -16,19 +16,34 @@ function requireAdmin(req, res, next) {
  * GET /api/users
  * Lista usuarios (admin)
  */
-router.get('/', requireAdmin,(req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
 
-  fsms_pool.query(
-    'SELECT id, username, name, lastname, email, role, active, created_at FROM users ORDER BY id DESC',
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ status: 'error', message: 'DB error' });
-      }
-      res.json({ status: 'success', data: rows });
-    }
-  );
+  try {
+    const [records, count] = await Promise.all([
+      new Promise((resolve, reject) => {
+        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, created_at FROM users ORDER BY id DESC', (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      }),
+      new Promise((resolve, reject) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM users', (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows[0].total_rows);
+        });
+      })
+    ]);
+
+    res.json({
+      status: 'success',
+      total_rows: count,
+      data: records
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'DB error' });
+  }
 });
 
 /**

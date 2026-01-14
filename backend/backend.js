@@ -40,6 +40,11 @@ app.use('/api/users', requireAuth, usersRoutes);
 const diciplinesRoutes = require('./routes/diciplines');
 app.use('/api/diciplines', requireAuth, diciplinesRoutes);
 
+//Ranks
+
+const ranksRoutes = require('./routes/ranks');
+app.use('/api/ranks', requireAuth, ranksRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);
