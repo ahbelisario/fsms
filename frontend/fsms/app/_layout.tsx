@@ -8,7 +8,7 @@ import { getAuthToken, isSessionExpired, clearAuthSession } from "@/src/storage/
 function CustomDrawerContent(props: any) {
   const router = useRouter();
   const USERS: Href = "/users";
-  const DICIPLINES: Href = "/diciplines";
+  const DISCIPLINES: Href = "/disciplines";
   const DASHBOARD: Href = "/dashboard";
   const RANKS: Href = "/ranks";
   const LOGIN: Href = "/";
@@ -21,7 +21,7 @@ function CustomDrawerContent(props: any) {
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItem label="Dashboard" onPress={() => router.push(DASHBOARD)} />
-      <DrawerItem label="Diciplinas" onPress={() => router.push(DICIPLINES)} />
+      <DrawerItem label="Disciplinas" onPress={() => router.push(DISCIPLINES)} />
       <DrawerItem label="Grados" onPress={() => router.push(RANKS)} />
       <DrawerItem label="Usuarios" onPress={() => router.push(USERS)} />
       <DrawerItem label="Logout" onPress={handleLogout} />
@@ -85,7 +85,7 @@ export default function RootLayout() {
     <Drawer drawerContent={(props) => <CustomDrawerContent {...props} />} screenOptions={{ headerShown: true }}>
       <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
       <Drawer.Screen name="users" options={{ title: "Usuarios" }} />
-      <Drawer.Screen name="diciplines" options={{ title: "Diciplinas" }} />
+      <Drawer.Screen name="disciplines" options={{ title: "Disciplinas" }} />
       <Drawer.Screen name="ranks" options={{ title: "Grados" }} />
     </Drawer>
   );

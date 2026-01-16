@@ -35,10 +35,15 @@ app.use('/api/auth', authRoutes);
 const { router: usersRoutes } = require('./routes/users');
 app.use('/api/users', requireAuth, usersRoutes);
 
+//UserProfiles
+
+const { router: userProfilesRoutes } = require('./routes/userprofiles');
+app.use('/api/userprofiles', requireAuth, userProfilesRoutes);
+
 // Diciplines
 
-const diciplinesRoutes = require('./routes/diciplines');
-app.use('/api/diciplines', requireAuth, diciplinesRoutes);
+const disciplinesRoutes = require('./routes/disciplines');
+app.use('/api/disciplines', requireAuth, disciplinesRoutes);
 
 //Ranks
 

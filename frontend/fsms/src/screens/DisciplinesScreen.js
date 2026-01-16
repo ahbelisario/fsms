@@ -2,9 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View, Switch} from "react-native";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
+import ConfirmDialog from '@/src/ui/ConfirmDialog';
 
-export default function DiciplinesScreen({ onAuthExpired }) {
-  const [Diciplines, setDiciplines] = useState([]);
+
+export default function DisciplinesScreen({ onAuthExpired }) {
+  const [Disciplines, setDisciplines] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -18,6 +20,9 @@ export default function DiciplinesScreen({ onAuthExpired }) {
   const [description, setDescription] = useState("");
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
 
   function clearMsgs() {
     setError("");
@@ -44,14 +49,30 @@ export default function DiciplinesScreen({ onAuthExpired }) {
     setModalVisible(true);
   }
 
-  async function loadDiciplines() {
+  function askDelete(id) {
+    setToDeleteId(id);
+    setConfirmVisible(true);
+  }
+
+  function cancelDelete() {
+    setConfirmVisible(false);
+    setToDeleteId(null);
+  }
+
+  async function confirmDelete() {
+    setConfirmVisible(false);
+    await remove(toDeleteId);
+    setToDeleteId(null);
+  }
+
+  async function loadDisciplines() {
     clearMsgs();
     setLoading(true);
     try {
-      const data = await api.listDiciplines();
+      const data = await api.listDisciplines();
       // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
-      setDiciplines(list);
+      setDisciplines(list);
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -65,7 +86,7 @@ export default function DiciplinesScreen({ onAuthExpired }) {
   }
 
   useEffect(() => {
-    loadDiciplines();
+    loadDisciplines();
   }, []);
 
   function validate() {
@@ -88,19 +109,19 @@ export default function DiciplinesScreen({ onAuthExpired }) {
 
       if (isEditing) {   
 
-        await api.updateDiciplines(editingId, payload);
-        setSuccess("Diciplina actualizada.");
+        await api.updateDisciplines(editingId, payload);
+        setSuccess("Disciplina actualizada.");
 
       } else {
 
-        await api.createDiciplines(payload);
-        setSuccess("Diciplina creada.");
+        await api.createDisciplines(payload);
+        setSuccess("Disciplina creada.");
 
       }
 
       setModalVisible(false);
       resetForm();
-      await loadDiciplines();
+      await loadDisciplines();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -117,9 +138,9 @@ export default function DiciplinesScreen({ onAuthExpired }) {
     clearMsgs();
     setLoading(true);
     try {
-      await api.deleteDiciplines(id);
-      setSuccess("Diciplina eliminada.");
-      await loadDiciplines();
+      await api.deleteDisciplines(id);
+      setSuccess("Disciplina eliminada.");
+      await loadDisciplines();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -135,16 +156,16 @@ export default function DiciplinesScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>Diciplinas</Text>
+        <Text style={ScreenStyles.title}>Disciplinas</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>Agregar Diciplina</Text>
+          <Text style={ScreenStyles.btnPrimaryText}>Agregar Disciplina</Text>
         </Pressable>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
-      <Pressable style={ScreenStyles.btnSecondary} onPress={loadDiciplines} disabled={loading}>
+      <Pressable style={ScreenStyles.btnSecondary} onPress={loadDisciplines} disabled={loading}>
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? "Cargando..." : "Refrescar"}</Text>
       </Pressable>
 
@@ -152,7 +173,9 @@ export default function DiciplinesScreen({ onAuthExpired }) {
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
         <FlatList
-          data={Diciplines}
+          data={Disciplines}
+          refreshing={loading}
+          onRefresh={loadDisciplines}
           keyExtractor={(u) => String(u.id)}
           renderItem={({ item }) => (
             <View style={ScreenStyles.row}>
@@ -165,7 +188,7 @@ export default function DiciplinesScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.smallBtnText}>Editar</Text>
               </Pressable>
 
-               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => remove(item.id)}>
+               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
                 <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
               </Pressable>
             </View>
@@ -197,6 +220,17 @@ export default function DiciplinesScreen({ onAuthExpired }) {
           </View>
         </View>
       </Modal>
+
+      <ConfirmDialog
+        visible={confirmVisible}
+        title="Eliminar Disciplina"
+        message="¿Seguro que deseas borrar esta disciplina?"
+        confirmText="Borrar"
+        cancelText="Cancelar"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </View>
   );
 }

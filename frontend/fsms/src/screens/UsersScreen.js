@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View, Switch} from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View, Switch} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
+import ConfirmDialog from '@/src/ui/ConfirmDialog';
 
 export default function UsersScreen({ onAuthExpired }) {
   const [users, setUsers] = useState([]);
@@ -25,6 +26,27 @@ export default function UsersScreen({ onAuthExpired }) {
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
   const ROLE_LABELS = { admin: "Administrador", user: "Usuario" };
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
+
+
+  function askDelete(id) {
+    setToDeleteId(id);
+    setConfirmVisible(true);
+  }
+
+  async function confirmDelete() {
+    setConfirmVisible(false);
+    await remove(toDeleteId);
+    setToDeleteId(null);
+  }
+
+  function cancelDelete() {
+    setConfirmVisible(false);
+    setToDeleteId(null);
+  }
+
 
   function clearMsgs() {
     setError("");
@@ -189,11 +211,13 @@ export default function UsersScreen({ onAuthExpired }) {
       ) : (
         <FlatList
           data={users}
+          refreshing={loading}
+          onRefresh={loadUsers}
           keyExtractor={(u) => String(u.id)}
           renderItem={({ item }) => (
             <View style={ScreenStyles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}</Text>
+                <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}{item.username !== "admin" && ` ${item.lastname ?? "(sin apellido)"}`}</Text>
                 <Text style={ScreenStyles.rowMeta}>{`Usuario: ${item.username ?? ""}`}{item.role ? ` • Rol: ${ROLE_LABELS[item.role] ?? item.role}` : ""}</Text>
               </View>
 
@@ -201,7 +225,7 @@ export default function UsersScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.smallBtnText}>Editar</Text>
               </Pressable>
             {item.username != "admin" && (
-              <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => remove(item.id)}>
+              <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
                 <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
               </Pressable>)}
             </View>
@@ -225,7 +249,7 @@ export default function UsersScreen({ onAuthExpired }) {
             <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
 
             <Text style={ScreenStyles.label}>Correo Electrónico</Text>
-            <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} />
+            <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
 
             <View style={{ marginBottom: 12 }}>
                 <Text style={ScreenStyles.label}>Rol</Text>
@@ -242,7 +266,7 @@ export default function UsersScreen({ onAuthExpired }) {
 
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 , marginTop: 12 }}>
                 <Text>Activo</Text>
-                <Switch value={active} onValueChange={setActive}/>
+                <Switch disabled={username === "admin" ? true : false} value={active} onValueChange={setActive}/>
             </View>
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
@@ -257,6 +281,18 @@ export default function UsersScreen({ onAuthExpired }) {
           </View>
         </View>
       </Modal>
+
+      <ConfirmDialog
+        visible={confirmVisible}
+        title="Eliminar usuario"
+        message="¿Seguro que deseas borrar este usuario?"
+        confirmText="Borrar"
+        cancelText="Cancelar"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+
     </View>
   );
 }

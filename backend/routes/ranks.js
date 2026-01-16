@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT * FROM ranks', (err, rows) => {
+        fsms_pool.query('SELECT * FROM ranks ORDER by name', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -32,10 +32,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/with_diciplines_names', (req, res) => {
+router.get('/with_disciplines_names', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
 
-  fsms_pool.query('SELECT r.id, r.name, d.name as dicipline FROM fsms.ranks as r, fsms.diciplines as d WHERE r.dicipline=d.id', (err, result) => {
+  fsms_pool.query('SELECT r.id, r.name, d.name as discipline FROM fsms.ranks as r, fsms.disciplines as d WHERE r.discipline=d.id', (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -65,21 +65,21 @@ router.get('/:id', (req, res) => {
 // POST - crear
 router.post('/', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { name, dicipline } = req.body;
+  const { name, discipline } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
   fsms_pool.query(
-    'INSERT INTO ranks (name, dicipline) VALUES (?, ?)',
-    [name, dicipline ?? null],
+    'INSERT INTO ranks (name, discipline) VALUES (?, ?)',
+    [name, discipline ?? null],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Insert failed' });
 
       res.status(201).json({
         status: 'success',
-        data: { id: result.insertId, name, dicipline: dicipline ?? null }
+        data: { id: result.insertId, name, discipline: discipline ?? null }
       });
     }
   );
@@ -89,15 +89,15 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
-  const { name, dicipline } = req.body;
+  const { name, discipline } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
   fsms_pool.query(
-    'UPDATE ranks SET name = ?, dicipline = ? WHERE id = ?',
-    [name, dicipline ?? null, id],
+    'UPDATE ranks SET name = ?, discipline = ? WHERE id = ?',
+    [name, discipline ?? null, id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
       if (result.affectedRows === 0) {

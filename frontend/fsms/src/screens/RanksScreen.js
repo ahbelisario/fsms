@@ -3,6 +3,8 @@ import { ActivityIndicator, FlatList, SectionList, Modal, Pressable, StyleSheet,
 import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
+import ConfirmDialog from '@/src/ui/ConfirmDialog';
+
 
 export default function RanksScreen({ onAuthExpired }) {
 
@@ -18,22 +20,25 @@ export default function RanksScreen({ onAuthExpired }) {
   const [editingId, setEditingId] = useState(null);
 
   const [name, setName] = useState("");
-  const [dicipline, setDicipline] = useState("");
-  const [diciplineId, setDiciplineId] = useState(null);
+  const [discipline, setDiscipline] = useState("");
+  const [disciplineId, setDisciplineId] = useState(null);
 
-  const [diciplines, setDiciplines] = useState([]);
+  const [disciplines, setDisciplines] = useState([]);
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
   const sections = useMemo(() => groupByDiscipline(Ranks), [Ranks]);
 
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
+
   function toggleSection(title) {
     setExpanded((prev) => ({ ...prev, [title]: !prev[title] }));
   }
 
-  function findDisciplineIdByName(diciplines, name) {
+  function findDisciplineIdByName(disciplines, name) {
     if (!name) return null;
-    const found = diciplines.find(
+    const found = disciplines.find(
       (d) => String(d.name).toLowerCase() === String(name).toLowerCase()
     );
     return found ? found.id : null;
@@ -43,7 +48,7 @@ export default function RanksScreen({ onAuthExpired }) {
     const map = new Map();
 
     for (const r of ranks) {
-      const key = (r.dicipline ?? "Sin disciplina").toString().trim() || "Sin disciplina";
+      const key = (r.discipline ?? "Sin disciplina").toString().trim() || "Sin disciplina";
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(r);
     }
@@ -61,7 +66,7 @@ export default function RanksScreen({ onAuthExpired }) {
   function resetForm() {
     setEditingId(null);
     setName("");
-    setDicipline("");
+    setDiscipline("");
   }
 
   function openCreate() {
@@ -74,25 +79,41 @@ export default function RanksScreen({ onAuthExpired }) {
     clearMsgs();
     setEditingId(u.id);
     setName(u.name ?? "");
-    setDicipline(u.dicipline ?? "");
-    const disciplineId = findDisciplineIdByName(diciplines, u.dicipline);
-    setDiciplineId(disciplineId);
+    setDiscipline(u.discipline ?? "");
+    const disciplineId = findDisciplineIdByName(disciplines, u.discipline);
+    setDisciplineId(disciplineId);
     setModalVisible(true);
+  }
+
+  function askDelete(id) {
+    setToDeleteId(id);
+    setConfirmVisible(true);
+  }
+
+  function cancelDelete() {
+    setConfirmVisible(false);
+    setToDeleteId(null);
+  }
+
+  async function confirmDelete() {
+    setConfirmVisible(false);
+    await remove(toDeleteId);
+    setToDeleteId(null);
   }
 
   async function loadRanks() {
     clearMsgs();
     setLoading(true);
     try {
-      const data = await api.listRankswDicipline();
+      const data = await api.listRankswDiscipline();
       // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setRanks(list);
 
-      const dataDiciplines = await api.listDiciplines();
+      const dataDisciplines = await api.listDisciplines();
       // Soporta: [..] o {response:[..]} o {data:[..]}
-      const listDiciplines = Array.isArray(dataDiciplines) ? dataDiciplines : dataDiciplines?.response || dataDiciplines?.data || [];
-      setDiciplines(listDiciplines);
+      const listDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.data || [];
+      setDisciplines(listDisciplines);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -112,7 +133,7 @@ export default function RanksScreen({ onAuthExpired }) {
 
   function validate() {
     if (!name.trim()) return "Nombre requerido.";
-    if (diciplineId == null) return "Diciplina requerida.";
+    if (disciplineId == null) return "Disciplina requerida.";
     return "";
   }
 
@@ -126,7 +147,7 @@ export default function RanksScreen({ onAuthExpired }) {
     try {
       const payload = {
         name: name.trim(),
-        dicipline: diciplineId,
+        discipline: disciplineId,
       };
 
       if (isEditing) {   
@@ -221,7 +242,7 @@ export default function RanksScreen({ onAuthExpired }) {
                       <Text style={ScreenStyles.smallBtnText}>Editar</Text>
                     </Pressable>
 
-                    <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => remove(item.id)}>
+                    <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
                       <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
                     </Pressable>
                   </View>
@@ -246,10 +267,10 @@ export default function RanksScreen({ onAuthExpired }) {
             <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
 
             <View style={{ marginBottom: 12 }}>
-                <Text style={ScreenStyles.label}>Diciplina</Text>
+                <Text style={ScreenStyles.label}>Disciplina</Text>
                 <View style={ScreenStyles.pickerWrapper}>
-                    <Picker selectedValue={diciplineId} onValueChange={(value) => setDiciplineId(value)}>
-                      {diciplines.map((r) => (
+                    <Picker selectedValue={disciplineId} onValueChange={(value) => setDisciplineId(value)}>
+                      {disciplines.map((r) => (
                         <Picker.Item key={r.id} label={r.name} value={r.id} />
                         ))}
                     </Picker>
@@ -268,6 +289,18 @@ export default function RanksScreen({ onAuthExpired }) {
           </View>
         </View>
       </Modal>
+
+      <ConfirmDialog
+        visible={confirmVisible}
+        title="Eliminar grado"
+        message="¿Seguro que deseas borrar este grado?"
+        confirmText="Borrar"
+        cancelText="Cancelar"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+
     </View>
   );
 }

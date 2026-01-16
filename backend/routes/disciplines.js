@@ -8,13 +8,13 @@ router.get('/', async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT * FROM diciplines', (err, rows) => {
+        fsms_pool.query('SELECT * FROM disciplines', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM diciplines', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM disciplines', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
@@ -38,7 +38,7 @@ router.get('/:id', (req, res) => {
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT * FROM diciplines WHERE id = ?',
+    'SELECT * FROM disciplines WHERE id = ?',
     [id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -60,7 +60,7 @@ router.post('/', (req, res) => {
   }
 
   fsms_pool.query(
-    'INSERT INTO diciplines (name, description) VALUES (?, ?)',
+    'INSERT INTO disciplines (name, description) VALUES (?, ?)',
     [name, description ?? null],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Insert failed' });
@@ -84,7 +84,7 @@ router.put('/:id', (req, res) => {
   }
 
   fsms_pool.query(
-    'UPDATE diciplines SET name = ?, description = ? WHERE id = ?',
+    'UPDATE disciplines SET name = ?, description = ? WHERE id = ?',
     [name, description ?? null, id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
@@ -103,7 +103,7 @@ router.delete('/:id', (req, res) => {
   const { id } = req.params;
 
   fsms_pool.query(
-    'DELETE FROM diciplines WHERE id = ?',
+    'DELETE FROM disciplines WHERE id = ?',
     [id],
     (err, result) => {
       if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });

@@ -6,6 +6,7 @@ async function request(path, { method = "GET", body } = {}) {
   const token = await getAuthToken();
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
+  //const res = await fetch(`${path}`, {  
     method,
     headers: {
       "Content-Type": "application/json",
@@ -37,13 +38,13 @@ export const api = {
   updateUser: (id, payload) => request(`/api/users/${id}`, { method: "PUT", body: payload }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
   
-  listDiciplines: () => request("/api/diciplines"),
-  createDiciplines: (payload) => request("/api/diciplines", { method: "POST", body: payload }),
-  updateDiciplines: (id, payload) => request(`/api/diciplines/${id}`, { method: "PUT", body: payload }),
-  deleteDiciplines: (id) => request(`/api/diciplines/${id}`, { method: "DELETE" }),
+  listDisciplines: () => request("/api/disciplines"),
+  createDisciplines: (payload) => request("/api/disciplines", { method: "POST", body: payload }),
+  updateDisciplines: (id, payload) => request(`/api/disciplines/${id}`, { method: "PUT", body: payload }),
+  deleteDisciplines: (id) => request(`/api/disciplines/${id}`, { method: "DELETE" }),
 
   listRanks: () => request("/api/ranks"),
-  listRankswDicipline: () => request("/api/ranks/with_diciplines_names"),
+  listRankswDiscipline: () => request("/api/ranks/with_disciplines_names"),
   createRanks: (payload) => request("/api/ranks", { method: "POST", body: payload }),
   updateRanks: (id, payload) => request(`/api/ranks/${id}`, { method: "PUT", body: payload }),
   deleteRanks: (id) => request(`/api/ranks/${id}`, { method: "DELETE" }),
