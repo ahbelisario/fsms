@@ -37,6 +37,7 @@ export const ScreenStyles = StyleSheet.create({
   center: { paddingVertical: 24, alignItems: "center" },
 
   row: { fontSize: 12, borderWidth: 1, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
+  rowNoWidth: { fontSize: 12, borderWidth: 0, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
   rowTitle: { fontWeight: "700", fontSize: 14 },
   rowMeta: { color: "#64748b", marginTop: 2, fontSize: 12,},
 
@@ -51,7 +52,7 @@ export const ScreenStyles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 12 },
 
   label: { fontSize: 13, marginTop: 8, marginBottom: 6, color: "#0f172a" },
-  input: { borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  input: { backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
 
   pickerWrapper: { fontSize: 13, borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 10, overflow: "hidden", backgroundColor: "white", paddingHorizontal: 12, paddingVertical: 10},  
 

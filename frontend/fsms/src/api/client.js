@@ -1,4 +1,4 @@
-import { getAuthToken, deleteAuthToken } from "../storage/authStorage";
+import { getAuthToken, clearAuthSession } from "../storage/authStorage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
@@ -18,7 +18,7 @@ async function request(path, { method = "GET", body } = {}) {
   const data = await res.json().catch(() => null);
 
   if (res.status === 401 || res.status === 403) {
-    await deleteAuthToken();
+    await clearAuthSession();
     const err = new Error((data && (data.message || data.error)) || "Sesión expirada.");
     err.code = "AUTH_EXPIRED";
     throw err;
@@ -33,10 +33,19 @@ async function request(path, { method = "GET", body } = {}) {
 
 export const api = {
 
+  me: () => request("/api/auth/me"),
+
   listUsers: () => request("/api/users"),
   createUser: (payload) => request("/api/users", { method: "POST", body: payload }),
   updateUser: (id, payload) => request(`/api/users/${id}`, { method: "PUT", body: payload }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
+  updatePassword: (id, payload) => request(`/api/users/${id}/password`, { method: "PATCH", body: payload }),
+  checkPassword: (id, payload) => request(`/api/users/${id}/checkpassword`, { method: "POST", body: payload }),
+
+  listUserProfiles: (id) => request(`/api/userprofiles/${id}`),
+  createUserProfiles: (payload) => request("/api/userprofiles", { method: "POST", body: payload }),
+  updateUserProfiles: (id, payload) => request(`/api/userprofiles/${id}`, { method: "PUT", body: payload }),
+  deleteUserProfiles: (id) => request(`/api/userprofiles/${id}`, { method: "DELETE" }),
   
   listDisciplines: () => request("/api/disciplines"),
   createDisciplines: (payload) => request("/api/disciplines", { method: "POST", body: payload }),

@@ -17,18 +17,13 @@ export default function ConfirmDialog({
     <Modal transparent animationType="fade" visible={visible}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, { marginBottom: 30 }]}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
-
           <View style={styles.actions}>
             <Pressable onPress={onCancel} style={styles.btn}>
               <Text style={styles.cancelText}>{cancelText}</Text>
             </Pressable>
-
-            <Pressable
-              onPress={onConfirm}
-              style={[styles.btn, danger && styles.dangerBtn]}
-            >
+            <Pressable onPress={onConfirm} style={[styles.btn, danger && styles.dangerBtn]}>
               <Text style={[styles.confirmText, danger && styles.dangerText]}>
                 {confirmText}
               </Text>

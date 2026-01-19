@@ -49,8 +49,6 @@ export default function LoginScreen({ onLoginSuccess }) {
         return;
       }
 
-      // Ajusta a lo que tu API regrese:
-      // Ej: { token: "...", user: {...} }
       const token = data?.data.token.token;
 
       if (!token) {
@@ -60,8 +58,7 @@ export default function LoginScreen({ onLoginSuccess }) {
 
       Alert.alert("Token","Token"+token);
 
-      // Delegamos el guardado del token al app (o lo haces aquí con SecureStore)
-      onLoginSuccess?.({ token, user: data?.data.user.username });
+      onLoginSuccess?.({ token, role: data?.data.user.role });
 
     } catch (e) {
       Alert.alert("Error", "No se pudo conectar con la API. Revisa URL, red y CORS.");

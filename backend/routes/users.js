@@ -12,6 +12,10 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function base64Decode(value) {
+  return Buffer.from(value, 'base64').toString('utf8');
+}
+
 /**
  * GET /api/users
  * Lista usuarios (admin)
@@ -91,9 +95,11 @@ router.post('/', requireAdmin, async (req, res) => {
         return res.status(500).json({ status: 'error', message: 'Insert failed' });
       }
 
+      const id = result.insertId;
+
       res.status(201).json({
         status: 'success',
-        data: { username, name, lastname, email, role: role ?? 'user', active: 1 }
+        data: { id, username, name, lastname, email, role: role ?? 'user', active: 1 }
       });
     });
   } catch (e) {
@@ -146,9 +152,64 @@ router.put('/:id', (req, res) => {
 });
 
 /**
+ * POST /api/users/:id/checkpassword
+ * Solo verificar password
+ * Body: { password }
+ */
+router.post('/:id/checkpassword', async (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const { id } = req.params;
+
+  const requesterId = Number(req.user.sub);
+  const targetId = Number(id);
+
+  // Solo admin o dueño
+  if (req.user.role !== 'admin' && requesterId !== targetId) {
+    return res.status(403).json({ status: 'error', message: 'Not allowed' });
+  }
+
+  const password = base64Decode(req.body.password);
+
+  const sql = `SELECT password, active FROM users WHERE id = ? LIMIT 1`;
+
+  fsms_pool.query(sql, [id], async (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+
+    if (!rows || rows.length === 0) {
+      return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+
+    if (user.active === 0) {
+      return res.status(403).json({ status: 'error', message: 'User is disabled' });
+    }
+
+    try {
+      
+      const ok = await bcrypt.compare(password, user.password);
+
+      if (!ok) { 
+          return res.json({ status: 'error', message: 'Password dont match' });
+        } else {
+          return res.json({ status: 'success', message: 'Password match' });
+        }
+
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ status: 'error', message: 'Auth failed' });
+    }
+  });  
+});
+
+
+/**
  * PATCH /api/users/:id/password
  * Cambiar password
- * Body: { newPassword }
+ * Body: { oldPassword, newPassword }
  */
 router.patch('/:id/password', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
@@ -162,27 +223,57 @@ router.patch('/:id/password', async (req, res) => {
     return res.status(403).json({ status: 'error', message: 'Not allowed' });
   }
 
-  const { newPassword } = req.body;
+  const oldPassword = base64Decode(req.body.password);
+  const newPassword = base64Decode(req.body.newPassword);
 
   if (!newPassword || String(newPassword).length < 8) {
     return res.status(400).json({ status: 'error', message: 'Password must be at least 8 chars' });
   }
 
-  try {
-    const hash = await bcrypt.hash(newPassword, 12);
+  const sql = `SELECT password, active FROM users WHERE id = ? LIMIT 1`;
 
-    fsms_pool.query(
-      'UPDATE users SET password = ? WHERE id = ?',
-      [hash, id],
-      (err, result) => {
-        if (err) return res.status(500).json({ status: 'error', message: 'Password update failed' });
-        if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
-        res.json({ status: 'success', message: 'Password updated' });
+  fsms_pool.query(sql, [id], async (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+
+    if (!rows || rows.length === 0) {
+      return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+
+    if (user.active === 0) {
+      return res.status(403).json({ status: 'error', message: 'User is disabled' });
+    }
+
+    try {
+      
+      const ok = await bcrypt.compare(oldPassword, user.password);
+      if (!ok) return res.status(403).json({ status: 'error', message: 'Invalid credentials' });
+
+      try {
+        const hash = await bcrypt.hash(newPassword, 12);
+
+        fsms_pool.query(
+          'UPDATE users SET password = ? WHERE id = ?',
+          [hash, id],
+          (err, result) => {
+            if (err) return res.status(500).json({ status: 'error', message: 'Password update failed' });
+            if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
+            res.json({ status: 'success', message: 'Password updated' });
+          }
+        );
+      } catch (e) {
+        res.status(500).json({ status: 'error', message: 'Hash failed' });
       }
-    );
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: 'Hash failed' });
-  }
+
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ status: 'error', message: 'Auth failed' });
+    }
+  });  
 });
 
 /**

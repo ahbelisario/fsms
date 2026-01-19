@@ -26,12 +26,16 @@ export async function getAuthToken() {
 }
 
 export async function isSessionExpired() {
+  const token = await getAuthToken();
+  if (!token) return true;
+
   const raw =
     Platform.OS === "web"
       ? localStorage.getItem(EXPIRES_KEY)
       : await SecureStore.getItemAsync(EXPIRES_KEY);
 
-  if (!raw) return true;
+  if (!raw) return false;
+
   return Date.now() > Number(raw);
 }
 
@@ -44,4 +48,20 @@ export async function clearAuthSession() {
 
   await SecureStore.deleteItemAsync(TOKEN_KEY);
   await SecureStore.deleteItemAsync(EXPIRES_KEY);
+}
+
+export async function ensureSessionExpiry() {
+  const token = await getAuthToken();
+  if (!token) return;
+
+  const raw =
+    Platform.OS === "web"
+      ? localStorage.getItem(EXPIRES_KEY)
+      : await SecureStore.getItemAsync(EXPIRES_KEY);
+
+  if (!raw) {
+    const expiresAt = Date.now() + SESSION_MINUTES * 60 * 1000;
+    if (Platform.OS === "web") localStorage.setItem(EXPIRES_KEY, String(expiresAt));
+    else await SecureStore.setItemAsync(EXPIRES_KEY, String(expiresAt));
+  }
 }

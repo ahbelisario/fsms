@@ -54,7 +54,7 @@ router.get('/:id', (req, res) => {
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT id, user_id, name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, created_at, updated_at FROM user_profiles WHERE id = ?',
+    'SELECT user_id, name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, created_at, updated_at FROM user_profiles WHERE user_id = ?',
     [id],
     (err, rows) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -102,28 +102,20 @@ router.put('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  const requesterId = Number(req.user.sub);
-  const targetId = Number(id);
+  //const requesterId = Number(req.user.sub);
+  //const targetId = Number(id);
 
   // Solo admin o dueño
-  if (req.user.role !== 'admin' && requesterId !== targetId) {
-    return res.status(403).json({ status: 'error', message: 'Not allowed' });
-  }
+  //if (req.user.role !== 'admin' && requesterId !== targetId) {
+  //  return res.status(403).json({ status: 'error', message: 'Not allowed' });
+  // }
 
-  const { user_id, name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes } = req.body;
-
-  // Solo admin puede cambiar role/active
-  if (req.user.role !== 'admin' && (role !== undefined || active !== undefined)) {
-    return res.status(403).json({
-      status: 'error',
-      message: 'Only admin can change role/active'
-    });
-  }
+  const { name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes } = req.body;
   
   // Actualiza solo campos permitidos para no-admin
   // (Si admin, puedes incluir role/active en otro SQL)
-  const sql = 'UPDATE user_profiles SET user_id = ?, name = ?, lastname = ?, gender = ?, date_of_birth = ?, nationality = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, country = ?, postal_code = ?, discipline_id = ?, rank_id = ?, start_date = ?, instructor_name = ?, blood_type = ?, medical_notes = ? WHERE id = ?';
-  const params = [user_id, name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes];
+  const sql = 'UPDATE user_profiles SET name = ?, lastname = ?, gender = ?, date_of_birth = ?, nationality = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, country = ?, postal_code = ?, discipline_id = ?, rank_id = ?, start_date = ?, blood_type = ?, medical_notes = ? WHERE user_id = ?';
+  const params = [name, lastname, gender, date_of_birth, nationality, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, id];
 
   fsms_pool.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Stack, usePathname, useRouter, Redirect, type Href } from "expo-router";
+import { Redirect, useRouter, type Href } from "expo-router";
 import { Text, View } from "react-native";
 import LoginScreen from "@/src/screens/LoginScreen";
-import { getAuthToken, setAuthSession } from "@/src/storage/authStorage";
+import { getAuthToken, setAuthSession, isSessionExpired, clearAuthSession } from "@/src/storage/authStorage";
 
 export default function Index() {
   const router = useRouter();
@@ -10,11 +10,24 @@ export default function Index() {
   const [token, setToken] = useState<string | null>(null);
 
   const DASHBOARD: Href = "/dashboard";
+  const HOME: Href = "/home";
 
   useEffect(() => {
     (async () => {
       try {
         const t = await getAuthToken();
+        if (!t) {
+          setToken(null);
+          return;
+        }
+
+        const expired = await isSessionExpired();
+        if (expired) {
+          await clearAuthSession();
+          setToken(null);
+          return;
+        }
+
         setToken(t);
       } finally {
         setLoading(false);
@@ -22,10 +35,16 @@ export default function Index() {
     })();
   }, []);
 
-  async function onLoginSuccess({ token }: { token: string }) {
+  async function onLoginSuccess({ token, role }: { token: string; role: string;}) {
     await setAuthSession(token);
     setToken(token);
-    router.replace("/dashboard" as const);
+
+    console.log(role);
+    if (role === "admin") {
+      router.replace(DASHBOARD);
+    } else {
+      router.replace(HOME);
+    }
   }
 
   if (loading) {
@@ -36,7 +55,6 @@ export default function Index() {
     );
   }
 
-  // Si ya hay token, manda a /users
   if (token) {
     return <Redirect href={DASHBOARD} />;
   }
