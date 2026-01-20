@@ -4,8 +4,11 @@ import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
+import { useRouter } from "expo-router";
 
 export default function UsersScreen({ onAuthExpired }) {
+  
+  const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -248,6 +251,9 @@ export default function UsersScreen({ onAuthExpired }) {
               <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
                 <Text style={ScreenStyles.smallBtnText}>Editar</Text>
               </Pressable>
+              <Pressable style={ScreenStyles.smallBtn} onPress={() => router.push(`/userprofiles/${item.id}`)}>
+                <Text style={ScreenStyles.smallBtnText}>Perfil</Text>
+              </Pressable>
               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
                 <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
               </Pressable>
@@ -310,7 +316,7 @@ export default function UsersScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
               </Pressable>
 
-              <Pressable style={[ScreenStyles.btnPrimary, { flex: 1, opacity: disableSave ? 0.7 : 1 }]} onPress={save} disabled={saving}>
+              <Pressable style={[ScreenStyles.btnPrimary, { flex: 1, opacity: disableSave ? 0.7 : 1 }]} onPress={save} disabled={disableSave}>
                 <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
               </Pressable>
             </View>

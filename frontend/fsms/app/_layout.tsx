@@ -84,6 +84,19 @@ export default function RootLayout() {
           setUser(me);
           setHasSession(true);
 
+          const role = String(me?.role ?? "").trim().toLowerCase();
+
+          // Si vienes de login o refresh y quedaste en pantalla equivocada, corrige
+          if (role === "admin") {
+            if (pathname === "/home" || pathname === "/") {
+              router.replace("/dashboard");
+            }
+          } else {
+            if (pathname === "/dashboard" || pathname === "/") {
+              router.replace("/home");
+            }
+          }
+
         }
 
       } catch (e) {
@@ -149,7 +162,8 @@ export default function RootLayout() {
           <Drawer.Screen name="home" options={{ title: "Home" }} />
           <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
           <Drawer.Screen name="users" options={{ title: "Usuarios" }} />
-          <Drawer.Screen name="userprofiles" options={{ title: "Mi Perfil" }} />
+          <Drawer.Screen name="userprofiles/[userId]" options={{ title: "Perfil" }} />
+          <Drawer.Screen name="userprofiles/index" options={{ title: "Perfil" }} />
           <Drawer.Screen name="disciplines" options={{ title: "Disciplinas" }} />
           <Drawer.Screen name="ranks" options={{ title: "Grados" }} />
         </Drawer>

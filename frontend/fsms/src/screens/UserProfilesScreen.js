@@ -1,20 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View, Switch, ScrollView, RefreshControl } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { ActivityIndicator, Pressable, Text, TextInput, View, ScrollView, RefreshControl } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 
-export default function UserProfilesScreen({ onAuthExpired }) {
+export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const [refreshing, setRefreshing] = useState(false);
-
-
   const [ranks, setRanks] = useState([]);
   const [disciplines, setDisciplines] = useState([]);
   
   const [user, setUser] = useState({});
   const [userprofiles, setUserProfiles] = useState([]);
+  const [profile, setProfile] = useState(null);
+
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -44,7 +45,6 @@ export default function UserProfilesScreen({ onAuthExpired }) {
   const [blood_type, setBloodType] = useState("");
   const [medical_notes, setMedicalNotes] = useState("");
 
-
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
   const [confirm, setConfirm] = useState({
@@ -58,6 +58,13 @@ export default function UserProfilesScreen({ onAuthExpired }) {
 
   const [toDeleteId, setToDeleteId] = useState(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadUserProfiles(); //
+    }, [targetUserId])
+  );
+
+
   async function onRefresh() {
     setRefreshing(true);
     try {
@@ -66,7 +73,6 @@ export default function UserProfilesScreen({ onAuthExpired }) {
       setRefreshing(false);
     }
   }
-
 
   function askSave() {
     setConfirm({
@@ -84,7 +90,7 @@ export default function UserProfilesScreen({ onAuthExpired }) {
   }
 
   function cancelConfirm() {
-    setConfirm((c) => ({ ...c, visible: false, action: loadUserProfiles() }));
+    setConfirm((c) => ({ ...c, visible: false, action: null }));
   }
 
   async function doConfirm() {
@@ -105,7 +111,6 @@ export default function UserProfilesScreen({ onAuthExpired }) {
       },
     });
   }
-
 
   function clearMsgs() {
     setError("");
@@ -171,28 +176,35 @@ export default function UserProfilesScreen({ onAuthExpired }) {
 
   async function loadUserProfiles() {
 
+    setProfile(profile ?? null);
+
     const me = await api.me();
     setUser(me.data);
+
+    const idToUse = targetUserId ?? me.data.id;
 
     clearMsgs();
     setLoading(true);
     try {
 
       const dataDisciplines = await api.listDisciplines();
-      // Soporta: [..] o {response:[..]} o {data:[..]}
       const listDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.data || [];
       setDisciplines(listDisciplines);
       
       const dataRanks = await api.listRanks();
-      // Soporta: [..] o {response:[..]} o {data:[..]}
       const listRanks = Array.isArray(dataRanks) ? dataRanks : dataRanks?.response || dataRanks?.data || [];
       setRanks(listRanks);
       
-      const data = await api.listUserProfiles(me.data.id);
+      const data = await api.listUserProfiles(idToUse);
 
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setUserProfiles(list);
-      openEdit(list);
+      
+      const profile = Array.isArray(list) ? list[0] : list;
+      setProfile(profile ?? null);
+
+      if (profile) openEdit(profile);
+        else resetForm();
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -200,7 +212,7 @@ export default function UserProfilesScreen({ onAuthExpired }) {
         return;
       }
      setError(e.message || "No se pudo cargar el perfil.");
-     
+
     } finally {
      setLoading(false);
     }
@@ -208,7 +220,7 @@ export default function UserProfilesScreen({ onAuthExpired }) {
 
   useEffect(() => {
     loadUserProfiles();
-  }, []);
+  }, [targetUserId]);
 
   function validate() {
     if (!name.trim()) return "Nombre requerido.";
@@ -217,6 +229,9 @@ export default function UserProfilesScreen({ onAuthExpired }) {
   }
 
   async function save() {
+
+    const me = await api.me();
+    const idToUse = targetUserId ?? me.data.id;
 
     clearMsgs();
     const v = validate();
@@ -249,12 +264,12 @@ export default function UserProfilesScreen({ onAuthExpired }) {
 
       if (isEditing) {
 
-        await api.updateUserProfiles(user_id, payload);
+        await api.updateUserProfiles(idToUse, payload);
         setSuccess("Perfil actualizado.");
       }
 
       resetForm();
-      await loadUserProfiles(id);
+      await loadUserProfiles();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -267,11 +282,18 @@ export default function UserProfilesScreen({ onAuthExpired }) {
     }
   }
 
+  const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
+
   return (
     
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{(userprofiles?.name) + " " +(userprofiles?.lastname)}</Text>
+        <Text style={ScreenStyles.title}>
+        {isMyProfile
+          ? "Mi perfil"
+          : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
+        }
+      </Text>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
@@ -280,7 +302,7 @@ export default function UserProfilesScreen({ onAuthExpired }) {
       <ScrollView
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: 120 }} // para que no se corte abajo
+        contentContainerStyle={{ paddingBottom: 120 }} 
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -290,79 +312,64 @@ export default function UserProfilesScreen({ onAuthExpired }) {
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
          <View style={{ gap: 12 }}>
-
-            {/* Nombre */}
-            <View>
-              <Text style={ScreenStyles.label}>Nombre</Text>
-              <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
-            </View>
-
-            {/* Apellido */}
-            <View>
-              <Text style={ScreenStyles.label}>Apellido</Text>
-              <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
-            </View>
-
-            {/* Género */}
-            <View>
-              <Text style={ScreenStyles.label}>Género</Text>
-              <View style={ScreenStyles.pickerWrapper}>
-                <Picker selectedValue={gender} onValueChange={setGender}>
-                  <Picker.Item label="Selecciona género" value="" />
-                  <Picker.Item label="Masculino" value="male" />
-                  <Picker.Item label="Femenino" value="female" />
-                  <Picker.Item label="Otro" value="other" />
-                </Picker>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              {/* Nombre */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Nombre</Text>
+                <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
+              </View>
+              {/* Apellido */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Apellido</Text>
+                <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
               </View>
             </View>
 
-            {/* Fecha de nacimiento */}
-            <View>
-              <Text style={ScreenStyles.label}>Fecha de nacimiento</Text>
-              <TextInput
-                style={ScreenStyles.input}
-                value={date_of_birth}
-                onChangeText={setDateofBirth}
-                placeholder="YYYY-MM-DD"
-              />
+            <View style={{ flexDirection: "row", gap: 10 }}>
+            {/* Género */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Género</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={gender} onValueChange={setGender}>
+                    <Picker.Item label="Selecciona género" value="" />
+                    <Picker.Item label="Masculino" value="male" />
+                    <Picker.Item label="Femenino" value="female" />
+                    <Picker.Item label="Otro" value="other" />
+                  </Picker>
+                </View>
+              </View>
+
+              {/* Fecha de nacimiento */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Fecha de nacimiento</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={date_of_birth}
+                  onChangeText={setDateofBirth}
+                  placeholder="YYYY-MM-DD"
+                />
+              </View>
+
+              {/* Nacionalidad */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Nacionalidad</Text>
+                <TextInput style={ScreenStyles.input} value={nationality} onChangeText={setNationality} />
+              </View>
             </View>
 
-            {/* Nacionalidad */}
-            <View>
-              <Text style={ScreenStyles.label}>Nacionalidad</Text>
-              <TextInput style={ScreenStyles.input} value={nationality} onChangeText={setNationality} />
-            </View>
-
-            {/* Teléfono */}
-            <View>
-              <Text style={ScreenStyles.label}>Teléfono</Text>
-              <TextInput
-                style={ScreenStyles.input}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-              />
-            </View>
+              {/* Teléfono */}
+              <View>
+                <Text style={ScreenStyles.label}>Teléfono</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
 
             {/* Contacto de emergencia */}
-            <View>
-              <Text style={ScreenStyles.label}>Contacto de emergencia</Text>
-              <TextInput
-                style={ScreenStyles.input}
-                value={emergency_contact_name}
-                onChangeText={setEmergencyContantName}
-              />
-            </View>
-
-            <View>
-              <Text style={ScreenStyles.label}>Teléfono de emergencia</Text>
-              <TextInput
-                style={ScreenStyles.input}
-                value={emergency_contact_phone}
-                onChangeText={setEmergencyContantPhone}
-                keyboardType="phone-pad"
-              />
-            </View>
+            
 
             {/* Dirección */}
             <View>
@@ -406,44 +413,46 @@ export default function UserProfilesScreen({ onAuthExpired }) {
               </View>
             </View>
 
+            <View style={{ flexDirection: "row", gap: 10 }}>
             {/* Disciplina */}
-            <View>
-              <Text style={ScreenStyles.label}>Disciplina</Text>
-              <View style={ScreenStyles.pickerWrapper}>
-                <Picker
-                  selectedValue={discipline_id}
-                  onValueChange={(v) => setDisciplineId(v)}
-                >
-                  <Picker.Item label="Selecciona disciplina" value={null} />
-                  {disciplines.map((d) => (
-                    <Picker.Item key={d.id} label={d.name} value={d.id} />
-                  ))}
-                </Picker>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Disciplina</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker
+                    selectedValue={discipline_id}
+                    onValueChange={(v) => setDisciplineId(v)}
+                  >
+                    <Picker.Item label="Selecciona disciplina" value={null} />
+                    {disciplines.map((d) => (
+                      <Picker.Item key={d.id} label={d.name} value={d.id} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
-            </View>
 
-            {/* Grado */}
-            <View>
-              <Text style={ScreenStyles.label}>Grado</Text>
-              <View style={ScreenStyles.pickerWrapper}>
-                <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
-                  <Picker.Item label="Selecciona grado" value={null} />
-                  {ranks.map((r) => (
-                    <Picker.Item key={r.id} label={r.name} value={r.id} />
-                  ))}
-                </Picker>
+              {/* Grado */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Grado</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
+                    <Picker.Item label="Selecciona grado" value={null} />
+                    {ranks.map((r) => (
+                      <Picker.Item key={r.id} label={r.name} value={r.id} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
-            </View>
 
-            {/* Fecha de inicio */}
-            <View>
-              <Text style={ScreenStyles.label}>Fecha de inicio</Text>
-              <TextInput
-                style={ScreenStyles.input}
-                value={start_date}
-                onChangeText={setStartDate}
-                placeholder="YYYY-MM-DD"
-              />
+              {/* Fecha de inicio */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Fecha de inicio</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={start_date}
+                  onChangeText={setStartDate}
+                  placeholder="YYYY-MM-DD"
+                />
+              </View>
             </View>
 
             {/* Tipo de sangre */}
@@ -474,6 +483,39 @@ export default function UserProfilesScreen({ onAuthExpired }) {
                 multiline
                 numberOfLines={4}
               />
+            </View>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+               <View style={{ flex: 1 }}>
+                  <Text style={ScreenStyles.label}>Contacto de emergencia</Text>
+                  <TextInput
+                    style={ScreenStyles.input}
+                    value={emergency_contact_name}
+                    onChangeText={setEmergencyContantName}
+                  />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Teléfono de emergencia</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={emergency_contact_phone}
+                  onChangeText={setEmergencyContantPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+              <View style={{ flex: 1 }}>
+                <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={saving}>
+                  <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+                </Pressable>
+              </View>
+              <View style={{ flex: 1 }}>         
+                <Pressable style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]} onPress={askSave} disabled={saving}>
+                  <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                </Pressable>
+              </View>         
             </View>
 
           </View>

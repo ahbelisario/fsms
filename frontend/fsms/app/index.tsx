@@ -8,6 +8,7 @@ export default function Index() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   const DASHBOARD: Href = "/dashboard";
   const HOME: Href = "/home";
@@ -29,6 +30,7 @@ export default function Index() {
         }
 
         setToken(t);
+
       } finally {
         setLoading(false);
       }
@@ -39,12 +41,8 @@ export default function Index() {
     await setAuthSession(token);
     setToken(token);
 
-    console.log(role);
-    if (role === "admin") {
-      router.replace(DASHBOARD);
-    } else {
-      router.replace(HOME);
-    }
+    const r = (role ?? "").toString().trim().toLowerCase();
+    setRole(r);
   }
 
   if (loading) {
@@ -55,8 +53,8 @@ export default function Index() {
     );
   }
 
-  if (token) {
-    return <Redirect href={DASHBOARD} />;
+  if (token && role) {
+    return <Redirect href={role === "admin" ? DASHBOARD : HOME} />;
   }
 
   return <LoginScreen onLoginSuccess={onLoginSuccess} />;

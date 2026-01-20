@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, SectionList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, SectionList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
