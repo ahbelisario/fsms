@@ -21,7 +21,7 @@ services:
       - NODE_ENV=development
       # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.
       # Si ya tienes variable, puedes usar:
-      # - EXPO_PUBLIC_API_URL=/api
+      - BACKEND_API_URL=" "
     networks:
       - fsms-client
       - fsms-server
