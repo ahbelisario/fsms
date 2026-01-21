@@ -4,7 +4,7 @@ import { encode as b64encode } from "base-64";
 import { notify, confirmDialog } from "../ui/notify";
 import { appStyles } from '../styles/appStyles';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_NGINX ? (null) : "http://localhost:3000";
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState("");

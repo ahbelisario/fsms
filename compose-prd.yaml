@@ -21,7 +21,7 @@ services:
       - NODE_ENV=development
       # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.
       # Si ya tienes variable, puedes usar:
-      - EXPO_PUBLIC_API_BASE_URL=http://gateway
+      - EXPO_PUBLIC_NGINX=yes
     networks:
       - fsms-client
       - fsms-server
