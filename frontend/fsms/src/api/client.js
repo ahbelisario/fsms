@@ -1,6 +1,6 @@
 import { getAuthToken, clearAuthSession } from "../storage/authStorage";
 
-const API_BASE_URL = process.env.BACKEND_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 async function request(path, { method = "GET", body } = {}) {
   const token = await getAuthToken();

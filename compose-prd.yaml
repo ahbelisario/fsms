@@ -21,11 +21,11 @@ services:
       - NODE_ENV=development
       # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.
       # Si ya tienes variable, puedes usar:
-      - BACKEND_API_URL=" "
+      - EXPO_PUBLIC_API_BASE_URL=http://gateway
     networks:
       - fsms-client
       - fsms-server
-    volumes:
+    # volumes:
     #  - ./frontend/fsms:/app
     #  - frontend_node_modules:/app/node_modules
     expose:
@@ -39,8 +39,8 @@ services:
       context: backend
     expose:
       - "3000"
-    ports:
-      - "3000:3000"
+    #ports:
+    #  - "3000:3000"
     networks:
       - fsms-server
     depends_on:
@@ -56,5 +56,8 @@ volumes:
   frontend_node_modules: {}
 
 networks:
-  fsms-client: {}
-  fsms-server: {}
+  fsms-client:
+    driver: bridge
+  fsms-server:
+    driver: bridge
+    internal: true
