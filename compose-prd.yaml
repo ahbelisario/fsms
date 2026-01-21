@@ -1,0 +1,60 @@
+name: fitnessstudio-management-system
+
+services:
+  gateway:
+    build:
+      context: nginx
+    ports:
+      - "8800:80"
+    networks:
+      - fsms-client
+      - fsms-server
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    build:
+      context: frontend/fsms
+      dockerfile: Dockerfile.prd
+    environment:
+      - NODE_ENV=development
+      # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.
+      # Si ya tienes variable, puedes usar:
+      # - EXPO_PUBLIC_API_URL=/api
+    networks:
+      - fsms-client
+      - fsms-server
+    volumes:
+    #  - ./frontend/fsms:/app
+    #  - frontend_node_modules:/app/node_modules
+    expose:
+      - "19006"
+      - "19000"
+      - "19001"
+      - "19002"
+
+  backend:
+    build:
+      context: backend
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    networks:
+      - fsms-server
+    depends_on:
+      - fsms-db
+
+  fsms-db:
+    build:
+      context: db
+    networks:
+      - fsms-server
+
+volumes:
+  frontend_node_modules: {}
+
+networks:
+  fsms-client: {}
+  fsms-server: {}

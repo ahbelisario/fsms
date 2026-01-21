@@ -105,7 +105,7 @@ CREATE TABLE `user_profiles` (
   `lastname` varchar(100) DEFAULT NULL,
   `gender` varchar(20) DEFAULT NULL,
   `date_of_birth` date DEFAULT NULL,
-  `nationality` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `emergency_contact_name` varchar(150) DEFAULT NULL,
   `emergency_contact_phone` varchar(30) DEFAULT NULL,
@@ -130,7 +130,7 @@ CREATE TABLE `user_profiles` (
   CONSTRAINT `fk_discipline` FOREIGN KEY (`discipline_id`) REFERENCES `disciplines` (`id`),
   CONSTRAINT `fk_rank` FOREIGN KEY (`rank_id`) REFERENCES `ranks` (`id`),
   CONSTRAINT `fk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,6 +139,7 @@ CREATE TABLE `user_profiles` (
 
 LOCK TABLES `user_profiles` WRITE;
 /*!40000 ALTER TABLE `user_profiles` DISABLE KEYS */;
+INSERT INTO `user_profiles` VALUES (1,1,'Arturo',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2018-11-08',NULL,NULL,'2026-01-16 01:33:46','2026-01-16 01:33:46');
 /*!40000 ALTER TABLE `user_profiles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -207,4 +208,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-15 19:24:22
+-- Dump completed on 2026-01-20 11:48:50

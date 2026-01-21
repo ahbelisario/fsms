@@ -16,7 +16,7 @@ services:
  # frontend:
  #   build:
  #     context: frontend/fsms
- #     dockerfile: Dockerfile
+ #     dockerfile: Dockerfile.dev
  #   environment:
  #     - NODE_ENV=development
  #     # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.

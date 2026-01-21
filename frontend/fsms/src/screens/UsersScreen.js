@@ -173,7 +173,8 @@ export default function UsersScreen({ onAuthExpired }) {
       const payload_up = {
           user_id: user_data.data.id,
           name: name.trim(),
-          lastname: lastname.trim()
+          lastname: lastname.trim(),
+          email: email.trim()
         };
 
         await api.createUserProfiles(payload_up);
@@ -251,7 +252,7 @@ export default function UsersScreen({ onAuthExpired }) {
               <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
                 <Text style={ScreenStyles.smallBtnText}>Editar</Text>
               </Pressable>
-              <Pressable style={ScreenStyles.smallBtn} onPress={() => router.push(`/userprofiles/${item.id}`)}>
+              <Pressable style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]} onPress={() => router.push(`/userprofiles/${item.id}`)}>
                 <Text style={ScreenStyles.smallBtnText}>Perfil</Text>
               </Pressable>
               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>

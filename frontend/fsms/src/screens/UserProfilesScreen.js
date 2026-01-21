@@ -1,12 +1,17 @@
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View, ScrollView, RefreshControl } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
+import DatePickerField from "@/src/ui/DatePickerField";
+
 
 export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
+
+  const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
   const [ranks, setRanks] = useState([]);
@@ -24,12 +29,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
-  const [user_id, setUserId] = useState(null);
   const [name, setName] = useState("");
   const [lastname, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [date_of_birth, setDateofBirth] = useState(null);
-  const [nationality, setNationality] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [emergency_contact_name, setEmergencyContantName] = useState("");
   const [emergency_contact_phone, setEmergencyContantPhone] = useState("");
@@ -56,7 +60,15 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     action: null,
   });
 
-  const [toDeleteId, setToDeleteId] = useState(null);
+  function toYMD(value) {
+    if (!value) return "";
+    // si ya viene YYYY-MM-DD
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return ""; // inválido
+    return d.toISOString().slice(0, 10);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -118,12 +130,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }
 
   function resetForm() {
-    setUserId(null);
     setName("");
     setLastName("");
     setGender("");
     setDateofBirth(null);
-    setNationality("");
+    setEmail("");
     setPhone("");
     setEmergencyContantName("");
     setEmergencyContantPhone("");
@@ -141,22 +152,15 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setEditingId(null);
   }
 
-  function openCreate() {
-    clearMsgs();
-    resetForm();
-    setModalVisible(true);
-  }
-
   function openEdit(u) {
     clearMsgs();
     setEditingId(u.id);
 
-    setUserId(u.user_id ?? null);
     setName(u.name ?? "");
     setLastName(u.lastname ?? "");
     setGender(u.gender ?? "");
-    setDateofBirth(u.date_of_birth ?? null);
-    setNationality(u.nationality ?? "");
+    setDateofBirth(toYMD(u.date_of_birth ?? null));
+    setEmail(u.email ?? "");
     setPhone(u.phone ?? "");
     setEmergencyContantName(u.emergency_contact_name ?? "");
     setEmergencyContantPhone(u.emergency_contact_phone ?? "");
@@ -168,10 +172,9 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setPostalCode(u.postal_code ?? "");
     setDisciplineId(u.discipline_id ?? null);
     setRankId(u.rank_id ?? null);
-    setStartDate(u.start_date ?? null);
+    setStartDate(toYMD(u.start_date ?? null));
     setBloodType(u.blood_type ?? "");
     setMedicalNotes(u.medical_notes ?? "");
-
   }
 
   async function loadUserProfiles() {
@@ -245,7 +248,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         lastname: lastname.trim(),
         gender: gender.trim(),
         date_of_birth: date_of_birth,
-        nationality: nationality.trim(),
+        email: email.trim(),
         phone: phone.trim(),
         emergency_contact_name: emergency_contact_name.trim(),
         emergency_contact_phone: emergency_contact_phone.trim(),
@@ -341,24 +344,16 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
               {/* Fecha de nacimiento */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Fecha de nacimiento</Text>
-                <TextInput
-                  style={ScreenStyles.input}
+                <DatePickerField
+                  label="Fecha de nacimiento"
                   value={date_of_birth}
-                  onChangeText={setDateofBirth}
-                  placeholder="YYYY-MM-DD"
+                  onChange={setDateofBirth}
                 />
               </View>
-
-              {/* Nacionalidad */}
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Nacionalidad</Text>
-                <TextInput style={ScreenStyles.input} value={nationality} onChangeText={setNationality} />
-              </View>
             </View>
-
+            <View style={{ flexDirection: "row", gap: 10 }}>
               {/* Teléfono */}
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>Teléfono</Text>
                 <TextInput
                   style={ScreenStyles.input}
@@ -367,9 +362,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                   keyboardType="phone-pad"
                 />
               </View>
-
-            {/* Contacto de emergencia */}
-            
+              {/* Correo Electronico */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>Correo Electrónico</Text>
+                <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} />
+              </View>
+            </View>
 
             {/* Dirección */}
             <View>
@@ -445,12 +443,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
               {/* Fecha de inicio */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Fecha de inicio</Text>
-                <TextInput
-                  style={ScreenStyles.input}
+                <DatePickerField
+                  label="Fecha de inicio"
                   value={start_date}
-                  onChangeText={setStartDate}
-                  placeholder="YYYY-MM-DD"
+                  onChange={setStartDate}
                 />
               </View>
             </View>
@@ -484,6 +480,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 numberOfLines={4}
               />
             </View>
+
+             {/* Contacto de emergencia */}
             <View style={{ flexDirection: "row", gap: 10 }}>
                <View style={{ flex: 1 }}>
                   <Text style={ScreenStyles.label}>Contacto de emergencia</Text>
@@ -505,9 +503,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
             </View>
 
+            {/* <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={!isEditing}> */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <View style={{ flex: 1 }}>
-                <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={saving}>
+                <Pressable style={ScreenStyles.btnSecondary} onPress={user?.role === "admin" ? () => router.push(`/dashboard`) : () => router.push(`/home`)} disabled={!isEditing}>
                   <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
                 </Pressable>
               </View>

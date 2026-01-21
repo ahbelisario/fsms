@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Dependencias base (útiles para compatibilidad con algunas libs)
+RUN apk add --no-cache libc6-compat bash
+
+# Copiamos manifests primero para aprovechar cache
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+
+# Instala dependencias (elige según tu gestor)
+# npm:
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+# Copiamos el resto del proyecto
+COPY . .
+
+# Puertos típicos Expo Web (19006) y Metro (19000/19001/19002)
+EXPOSE 19006 19000 19001 19002
+
+# Para que sea accesible desde fuera del contenedor
+CMD ["sh", "-c", "npx expo start --port 19006"]

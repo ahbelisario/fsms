@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Alert, ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { encode as b64encode } from "base-64";
-import { notify } from "../ui/notify";
+import { notify, confirmDialog } from "../ui/notify";
 import { appStyles } from '../styles/appStyles';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
