@@ -5,6 +5,8 @@ const translations = {
   es: {
     common: {
       save: "Guardar",
+      edit: "Editar",
+      delete: "Borrar",
       saving: "Guardando",
       cancel: "Cancelar",
       logout: "Cerrar sesión",
@@ -16,6 +18,17 @@ const translations = {
       confirm: "Confirmar",
       confirmchanges: "Confirmar cambios",
       wishchanges: "¿Deseas guardar los cambios?",
+      refresh: "Refresar",
+      password_required: "Contraseña (Requerido)",
+      password_confirm: "Confirmar contraseña"
+    },
+    messages: {
+      password_dont_match: "Las contraseñas no coinciden",
+      sure_delete_user: "¿Seguro que deseas borrar este usuario?"
+    },
+    dialogs:{
+      delete_user: "Eliminar usuario",
+      user_settings: "Preferencias del Usuario"
     },
     login: {
       title: "Iniciar sesión",
@@ -29,9 +42,13 @@ const translations = {
       title: "Usuarios",
       add: "Agregar Usuario",
       empty: "No hay usuarios.",
+      role: "Rol",
       role_admin: "Administrador",
       role_user: "Usuario",
       changePass: "Cambiar contraseña",
+      active: "Activo",
+      createuser: "Crear usuario",
+      edituser: "Editar usuario"
     },
     usersettings: {
       title: "Preferencias del Usuario",
@@ -75,6 +92,8 @@ const translations = {
   en: {
     common: {
       save: "Save",
+      edit: "Edit",
+      delete: "Delete",
       saving: "Saving",
       cancel: "Cancel",
       logout: "Log out",
@@ -86,6 +105,17 @@ const translations = {
       common: "Confirm",
       confirmchanges: "Confirm changes",
       wishchanges: "Do you wish to save the changes?",
+      refresh: "Refresh",
+      password_required: "Password (Required)",
+      password_confirm: "Confirm password"
+    },
+    messages: {
+      password_dont_match: "Passwords don't match",
+      sure_delete_user: " Are you to delere this user?"
+    },
+    dialogs:{
+      delete_user: "Delete user",
+      user_settings: "User Settings"
     },
     login: {
       title: "Sign in",
@@ -99,9 +129,13 @@ const translations = {
       title: "Users",
       add: "Add User",
       empty: "No users.",
+      role: "Role",
       role_admin: "Admin",
       role_user: "User",
       changePass: "Change password",
+      active: "Active",
+      createuser: "Create user",
+      edituser: "Edit user"
     },
     usersettings: {
       title: "User Settings",

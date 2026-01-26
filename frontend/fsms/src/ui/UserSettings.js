@@ -36,9 +36,10 @@ export default function UserSettingsModal({
 
   async function loadUserSettings() {
   
-    const user_Settings = await api.listUserSettings(userId);
-    setLanguage(user_Settings?.language);
-    
+    const userSets = await api.listUserSettings(userId);
+    const userLang = userSets?.data.language;
+    setLanguage(userLang);
+  
   }
 
   async function handleSubmit() {
@@ -54,6 +55,7 @@ export default function UserSettingsModal({
         await api.updateUserSettingLanguage(userId, payload);
         
         await setLang(language);
+        setLanguage(language);
         onLanguageChanged?.(language);
 
         onClose?.();
@@ -75,7 +77,7 @@ export default function UserSettingsModal({
     <Modal key={lang} visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={ScreenStyles.modalBackdrop}>
         <View style={ScreenStyles.modalCard}>
-          <Text style={ScreenStyles.modalTitle}>Preferencias del Usuario</Text>
+          <Text style={ScreenStyles.modalTitle}>{t("dialogs.user_settings")}</Text>
 
           {error ? (
             <View style={ScreenStyles.alertError}>
@@ -99,7 +101,7 @@ export default function UserSettingsModal({
               onPress={onClose}
               disabled={saving}
             >
-              <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+              <Text style={ScreenStyles.btnSecondaryText}>{t("common.cancel")}</Text>
             </Pressable>
 
             <Pressable
@@ -110,10 +112,10 @@ export default function UserSettingsModal({
               {saving ? (
                 <View style={{ flexDirection: "row", gap: 10, justifyContent: "center" }}>
                   <ActivityIndicator />
-                  <Text style={ScreenStyles.btnPrimaryText}>Guardando...</Text>
+                  <Text style={ScreenStyles.btnPrimaryText}>{t("common.saving")}</Text>
                 </View>
               ) : (
-                <Text style={ScreenStyles.btnPrimaryText}>Cambiar</Text>
+                <Text style={ScreenStyles.btnPrimaryText}>{t("common.save")}</Text>
               )}
             </Pressable>
           </View>

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Redirect, type Href } from "expo-router";
 import { Text, View } from "react-native";
-import DisciplinesScreen from "@/src/screens/DisciplinesScreen";
+import UsersScreen from "@/src/screens/UsersScreen";
 import { getAuthToken } from "@/src/storage/authStorage";
 
-export default function DisciplinesRoute() {
+export default function UsersRoute() {
   const [loading, setLoading] = useState(true);
   const [hasToken, setHasToken] = useState(false);
 
-  const LOGIN: Href = "/";
+  const LOGIN: Href = "/(auth)";
 
   useEffect(() => {
     (async () => {
@@ -33,5 +33,5 @@ export default function DisciplinesRoute() {
     return <Redirect href={LOGIN} />;
   }
 
-  return <DisciplinesScreen />;
+  return <UsersScreen />;
 }

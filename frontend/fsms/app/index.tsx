@@ -1,61 +1,20 @@
-import React, { useEffect, useState } from "react";
-import { Redirect, useRouter, type Href } from "expo-router";
-import { Text, View } from "react-native";
-import LoginScreen from "@/src/screens/LoginScreen";
-import { getAuthToken, setAuthSession, isSessionExpired, clearAuthSession } from "@/src/storage/authStorage";
+import React, { useEffect } from "react";
+import { useRouter } from "expo-router";
+import { getAuthToken, isSessionExpired } from "@/src/storage/authStorage";
 
 export default function Index() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-
-  const DASHBOARD: Href = "/dashboard";
-  const HOME: Href = "/home";
 
   useEffect(() => {
     (async () => {
-      try {
-        const t = await getAuthToken();
-        if (!t) {
-          setToken(null);
-          return;
-        }
-
-        const expired = await isSessionExpired();
-        if (expired) {
-          await clearAuthSession();
-          setToken(null);
-          return;
-        }
-
-        setToken(t);
-
-      } finally {
-        setLoading(false);
+      const token = await getAuthToken();
+      if (token && !isSessionExpired(token)) {
+        router.replace("/(app)/home");
+      } else {
+        router.replace("/(auth)");
       }
     })();
-  }, []);
+  }, [router]);
 
-  async function onLoginSuccess({ token, role }: { token: string; role: string;}) {
-    await setAuthSession(token);
-    setToken(token);
-
-    const r = (role ?? "").toString().trim().toLowerCase();
-    setRole(r);
-  }
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Cargando...</Text>
-      </View>
-    );
-  }
-
-  if (token && role) {
-    return <Redirect href={role === "admin" ? DASHBOARD : HOME} />;
-  }
-
-  return <LoginScreen onLoginSuccess={onLoginSuccess} />;
+  return null;
 }

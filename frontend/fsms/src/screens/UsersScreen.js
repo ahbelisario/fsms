@@ -6,6 +6,7 @@ import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { useRouter } from "expo-router";
 import { t } from "@/src/i18n";
+import { loadLang } from "@/src/i18n/lang";
 
 export default function UsersScreen({ onAuthExpired }) {
   
@@ -179,7 +180,18 @@ export default function UsersScreen({ onAuthExpired }) {
         };
 
         await api.createUserProfiles(payload_up);
-        setSuccess("Usuario creado.");
+        setSuccess("Perfil creado.");
+
+      const language = await loadLang();
+
+      const payload_us = {
+          user_id: user_data.data.id,
+          language: language
+        };
+
+      await api.createUserSettings(payload_us);
+        setSuccess("Preferencias del usuario creadas.");
+
       }
 
       setModalVisible(false);
@@ -225,7 +237,7 @@ export default function UsersScreen({ onAuthExpired }) {
       <View style={ScreenStyles.header}>
         <Text style={ScreenStyles.title}>{t("users.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>Agregar Usuario</Text>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("users.add")}</Text>
         </Pressable>
       </View>
 
@@ -233,7 +245,7 @@ export default function UsersScreen({ onAuthExpired }) {
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       <Pressable style={ScreenStyles.btnSecondary} onPress={loadUsers} disabled={loading}>
-        <Text style={ScreenStyles.btnSecondaryText}>{loading ? "Cargando..." : "Refrescar"}</Text>
+        <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
       {loading ? (
@@ -251,75 +263,75 @@ export default function UsersScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.rowMeta}>{`Usuario: ${item.username ?? ""}`}{item.role ? ` • Rol: ${ROLE_LABELS[item.role] ?? item.role}` : ""}</Text>
               </View>
               <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                <Text style={ScreenStyles.smallBtnText}>Editar</Text>
+                <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
               </Pressable>
-              <Pressable style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]} onPress={() => router.push(`/userprofiles/${item.id}`)}>
-                <Text style={ScreenStyles.smallBtnText}>Perfil</Text>
+              <Pressable style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]} onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}>
+                <Text style={ScreenStyles.smallBtnText}>{t("userprofiles.title")}</Text>
               </Pressable>
               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
+                <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
               </Pressable>
             </View>
           )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>No hay usuarios.</Text></View>}
+          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("users.empty")}</Text></View>}
         />
       )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
-            <Text style={ScreenStyles.modalTitle}>{isEditing ? "Editar" : "Crear"} usuario</Text>
+            <Text style={ScreenStyles.modalTitle}>{isEditing ? t("users.edituser") : t("users.createuser")} </Text>
 
-            <Text style={ScreenStyles.label}>Username</Text>
+            <Text style={ScreenStyles.label}>{t("login.username")}</Text>
             <TextInput style={ScreenStyles.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
 
-            <Text style={ScreenStyles.label}>Nombre</Text>
+            <Text style={ScreenStyles.label}>{t("userprofiles.name")}</Text>
             <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
 
-            <Text style={ScreenStyles.label}>Apellido</Text>
+            <Text style={ScreenStyles.label}>{t("userprofiles.lastname")}</Text>
             <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
 
-            <Text style={ScreenStyles.label}>Correo Electrónico</Text>
+            <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
             <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
 
             <View style={{ marginBottom: 12 }}>
-                <Text style={ScreenStyles.label}>Rol</Text>
+                <Text style={ScreenStyles.label}>{t("users.role")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                     <Picker selectedValue={role} onValueChange={setRole}>
-                        <Picker.Item label="Usuario" value="user" />
-                        <Picker.Item label="Administrador" value="admin" />
+                        <Picker.Item label={t("users.role_user")} value="user" />
+                        <Picker.Item label={t("users.role_admin")} value="admin" />
                     </Picker>
                 </View>
             </View>
             {!isEditing && (
             <>
-              <Text style={ScreenStyles.label}>Password (requerido)</Text>
+              <Text style={ScreenStyles.label}>{t("common.password_required")}</Text>
               <TextInput style={ScreenStyles.input} value={password} onChangeText={setPassword} secureTextEntry />
 
-              <Text style={ScreenStyles.label}>Confirmar Password</Text>
+              <Text style={ScreenStyles.label}>{t("common.password_confirm")}</Text>
               <TextInput style={ScreenStyles.input} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
 
               {/* Mensaje inline opcional */}
               {password && confirmPassword && password !== confirmPassword ? (
                 <Text style={{ color: "#b91c1c", marginTop: 6 }}>
-                  Las contraseñas no coinciden.
+                  {t("messages.assword_dont_match")}
                 </Text>
               ) : null}
             </>
 )}
 
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 , marginTop: 12 }}>
-                <Text>Activo</Text>
+                <Text>{t("users.active")}</Text>
                 <Switch disabled={username === "admin" ? true : false} value={active} onValueChange={setActive}/>
             </View>
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable style={[ScreenStyles.btnSecondary, { flex: 1 }]} onPress={() => setModalVisible(false)} disabled={saving}>
-                <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+                <Text style={ScreenStyles.btnSecondaryText}>{t("common.cancel")}</Text>
               </Pressable>
 
               <Pressable style={[ScreenStyles.btnPrimary, { flex: 1, opacity: disableSave ? 0.7 : 1 }]} onPress={save} disabled={disableSave}>
-                <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                <Text style={ScreenStyles.btnPrimaryText}>{saving ? t("common.saving") : t("common.save")}</Text>
               </Pressable>
             </View>
           </View>
@@ -328,10 +340,10 @@ export default function UsersScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title="Eliminar usuario"
-        message="¿Seguro que deseas borrar este usuario?"
-        confirmText="Borrar"
-        cancelText="Cancelar"
+        title={t("dialogs.delete_user")}
+        message={t("messages.sure_delete_user")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         danger
         onConfirm={confirmDelete}
         onCancel={cancelDelete}

@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ status: 'error', message: 'Forbidden' });
+  }
+  next();
+}
+
 // GET - listar todas
 router.get('/', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
@@ -63,7 +70,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST - crear
-router.post('/', (req, res) => {
+router.post('/', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { name, discipline } = req.body;
 
