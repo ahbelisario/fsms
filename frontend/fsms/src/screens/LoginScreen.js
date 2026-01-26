@@ -3,6 +3,8 @@ import { Alert, ActivityIndicator, Pressable, Text, TextInput, View } from "reac
 import { encode as b64encode } from "base-64";
 import { notify, confirmDialog } from "../ui/notify";
 import { appStyles } from '../styles/appStyles';
+import { i18n, t } from "@/src/i18n";
+import { setLang } from "@/src/i18n/lang";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_NGINX ? "" : "http://localhost:3000";
 
@@ -12,6 +14,13 @@ export default function LoginScreen({ onLoginSuccess }) {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [, force] = useState(0);
+
+  async function changeLang(lang) {
+    await setLang(lang);
+    force((v) => v + 1);
+  }
 
   const canSubmit = useMemo(() => {
     return username.trim().length > 0 && password.length > 0 && !loading;
@@ -30,7 +39,6 @@ export default function LoginScreen({ onLoginSuccess }) {
         password: b64encode(password),
       };
 
-   //   const res = await fetch(`/api/auth/login`, {
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,9 +48,6 @@ export default function LoginScreen({ onLoginSuccess }) {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-       /* const msg =
-          (data && (data.message || data.status)) ||
-          (res.status === 401 ? "Credenciales inválidas." : `Error al iniciar sesión (HTTP ${res.status}).`); */
         const msg =
           (res.status === 401 ? "Credenciales inválidas." : `Error al iniciar sesión (HTTP ${res.status}).`);
         notify("Login", msg);
@@ -69,23 +74,32 @@ export default function LoginScreen({ onLoginSuccess }) {
 
   return (
     <View style={appStyles.page}>
+       <View style={{position: "absolute", top: 16, right: 16, flexDirection: "row", gap: 6,}}>
+        <Pressable onPress={() => changeLang("es")}>
+          <Text style={{ fontWeight: i18n.locale === "es" ? "800" : "400" }}>ES</Text>
+        </Pressable>
+        <Text>|</Text>
+        <Pressable onPress={() => changeLang("en")}>
+          <Text style={{ fontWeight: i18n.locale === "en" ? "800" : "400" }}>EN</Text>
+        </Pressable>
+      </View>
       <View style={appStyles.card}>
-        <Text style={appStyles.title}>Iniciar sesión</Text>
-        <Text style={appStyles.subtitle}>Accede con tu usuario y contraseña</Text>
+        <Text style={appStyles.title}>{t("login.title")}</Text>
+        <Text style={appStyles.subtitle}>{t("login.subtitle")}</Text>
 
-        <Text style={appStyles.label}>Usuario</Text>
+        <Text style={appStyles.label}>{t("login.username")}</Text>
         <TextInput
           style={appStyles.input}
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
           autoCorrect={false}
-          placeholder="Usuario"
+          placeholder={t("login.username")}
           textContentType="username"
           returnKeyType="next"
         />
 
-        <Text style={appStyles.label}>Contraseña</Text>
+        <Text style={appStyles.label}>{t("login.password")}</Text>
         <View style={appStyles.passwordRow}>
           <TextInput
             style={[appStyles.input, { flex: 1, marginBottom: 0 }]}
@@ -98,7 +112,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             onSubmitEditing={handleLogin}
           />
           <Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
-            <Text style={appStyles.toggleBtnText}>{showPassword ? "Ocultar" : "Mostrar"}</Text>
+            <Text style={appStyles.toggleBtnText}>{showPassword ? t("common.hide") : t("common.show")}</Text>
           </Pressable>
         </View>
 
@@ -107,7 +121,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           disabled={!canSubmit}
           onPress={handleLogin}
         >
-          {loading ? <ActivityIndicator /> : <Text style={appStyles.submitBtnText}>Entrar</Text>}
+          {loading ? <ActivityIndicator /> : <Text style={appStyles.submitBtnText}>{t("login.signIn")}</Text>}
         </Pressable>
       </View>
     </View>

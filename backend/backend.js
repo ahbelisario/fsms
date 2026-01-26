@@ -35,6 +35,9 @@ app.use('/api/auth', authRoutes);
 const { router: usersRoutes } = require('./routes/users');
 app.use('/api/users', requireAuth, usersRoutes);
 
+const userSettingsRoutes  = require('./routes/usersettings');
+app.use('/api/usersettings', requireAuth, userSettingsRoutes);
+
 //UserProfiles
 
 const { router: userProfilesRoutes } = require('./routes/userprofiles');

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View} from "react-native";
 import { ScoreCard } from "../screens/ScoreCard";
 import { api } from "../api/client";
+import { i18n, t } from "@/src/i18n";
 
 export default function Dashboard({ onAuthExpired }) {
   const [totalusers, setUsers] = useState([]);
@@ -62,16 +63,16 @@ export default function Dashboard({ onAuthExpired }) {
     <View style={s.container}>
       <View style={s.grid}>
         <View style={s.cell}>
-          <ScoreCard title="Usuarios" value={totalusers} subtitle="Total" />
+          <ScoreCard title={t("users.title")} value={totalusers} subtitle="Total" />
         </View>
         <View style={s.cell}>
-          <ScoreCard title="Diciplinas" value={totaldiciplines} subtitle="Total" delta="+12%" />
+          <ScoreCard title={t("disciplines.title")} value={totaldiciplines} subtitle="Total" delta="+12%" />
         </View>
       </View>
 
       <View style={s.grid}>
         <View style={s.cell}>
-          <ScoreCard title="Grados" value={totalranks} subtitle="Total" />
+          <ScoreCard title={t("ranks.title")} value={totalranks} subtitle="Total" />
         </View>
         <View style={s.cell}>
           <ScoreCard title=" " value=" " subtitle=" " delta=" " />

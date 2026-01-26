@@ -41,6 +41,8 @@ export const api = {
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
   updatePassword: (id, payload) => request(`/api/users/${id}/password`, { method: "PATCH", body: payload }),
   checkPassword: (id, payload) => request(`/api/users/${id}/checkpassword`, { method: "POST", body: payload }),
+  listUserSettings: (id) => request(`/api/usersettings/${id}`),
+  updateUserSettingLanguage: (id, payload) => request(`/api/usersettings/${id}/language`, { method: "PUT", body: payload }),
 
   listUserProfiles: (id) => request(`/api/userprofiles/${id}`),
   createUserProfiles: (payload) => request("/api/userprofiles", { method: "POST", body: payload }),

@@ -8,10 +8,14 @@ import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ProfileMenu from "@/src/ui/ProfileMenu";
 import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
+import UserSettingsModal from "@/src/ui/UserSettings";
 import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
+import { t } from "@/src/i18n";
+import { loadLang, setLang } from "@/src/i18n/lang";
 
 
 function CustomDrawerContent(props: any) {
+
   const router = useRouter();
   const USERS: Href = "/users";
   const HOME: Href = "/home";
@@ -30,15 +34,18 @@ function CustomDrawerContent(props: any) {
 
   return (
     <DrawerContentScrollView {...props}>
-      {user?.role === "admin" ? ( <DrawerItem label="Dashboard" onPress={() => router.push(DASHBOARD)} /> ) : (<DrawerItem label="Home" onPress={() => router.push(HOME)} />)}
-      {user?.role === "admin" && ( <DrawerItem label="Disciplinas" onPress={() => router.push(DISCIPLINES)} />)}
-      {user?.role === "admin" && ( <DrawerItem label="Grados" onPress={() => router.push(RANKS)} />)}
-      {user?.role === "admin" && ( <DrawerItem label="Usuarios" onPress={() => router.push(USERS)} />)}
+      {user?.role === "admin" ? ( <DrawerItem label={t("dashboard.title")} onPress={() => router.push(DASHBOARD)} /> ) : (<DrawerItem label="Home" onPress={() => router.push(HOME)} />)}
+      {user?.role === "admin" && ( <DrawerItem label={t("disciplines.title")} onPress={() => router.push(DISCIPLINES)} />)}
+      {user?.role === "admin" && ( <DrawerItem label={t("ranks.title")} onPress={() => router.push(RANKS)} />)}
+      {user?.role === "admin" && ( <DrawerItem label={t("users.title")} onPress={() => router.push(USERS)} />)}
     </DrawerContentScrollView>
   );
 }
 
 export default function RootLayout() {
+  
+  const [lang, setLangState] = useState("es");
+  const [i18nReady, setI18nReady] = useState(false);
 
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
@@ -47,6 +54,7 @@ export default function RootLayout() {
   const [user, setUser] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [changePwdVisible, setChangePwdVisible] = useState(false);
+  const [userSettingsVisible, setUserSettingsVisible] = useState(false);
   const isAdmin = user?.username === "admin";
 
   function openProfileMenu() {
@@ -56,16 +64,17 @@ export default function RootLayout() {
   function closeProfileMenu() {
     setProfileMenuOpen(false);
   }
-
+  
   useEffect(() => {
     let mounted = true;
 
-
     (async () => {
-      try {
-        
-        const token = await getAuthToken();
 
+      const l = await loadLang();
+
+      try {
+
+        const token = await getAuthToken();
         if (token) await ensureSessionExpiry();  
 
         const expired = await isSessionExpired();
@@ -75,14 +84,21 @@ export default function RootLayout() {
           await clearAuthSession();
           if (!mounted) return;
           setHasSession(false);
+
         } else {
 
           if (!mounted) return;
-
           const meResp = await api.me();
+          if (!mounted) return;
           const me = meResp?.data ?? meResp;
           setUser(me);
           setHasSession(true);
+
+          const settingsResp = await api.listUserSettings(me.id);
+          const settings = settingsResp?.data ?? settingsResp;
+          const language = String(settings?.language ?? "").toLowerCase();
+
+          setLangState(language);
 
           const role = String(me?.role ?? "").trim().toLowerCase();
 
@@ -96,9 +112,7 @@ export default function RootLayout() {
               router.replace("/home");
             }
           }
-
         }
-
       } catch (e) {
 
         if (e?.code === "AUTH_EXPIRED") {
@@ -115,6 +129,7 @@ export default function RootLayout() {
       } finally {
 
         if (!mounted) return;
+        setI18nReady(true);
         setLoading(false);
       }
 
@@ -125,10 +140,10 @@ export default function RootLayout() {
     };
   }, [pathname]);
 
-  if (loading) {
+  if (loading || !i18nReady) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Cargando...</Text>
+        <Text>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -147,7 +162,7 @@ export default function RootLayout() {
 
   return (
       <>
-        <Drawer drawerContent={(props) => <CustomDrawerContent {...props} user={user} />} screenOptions={{
+        <Drawer key={lang} drawerContent={(props) => <CustomDrawerContent {...props} user={user} />} screenOptions={{
             headerShown: true,
             headerRight: () => (
               <View style={ScreenStyles.rowNoWidth}>
@@ -160,15 +175,16 @@ export default function RootLayout() {
           }}>
 
           <Drawer.Screen name="home" options={{ title: "Home" }} />
-          <Drawer.Screen name="dashboard" options={{ title: "Dashboard" }} />
-          <Drawer.Screen name="users" options={{ title: "Usuarios" }} />
-          <Drawer.Screen name="userprofiles/[userId]" options={{ title: "Perfil" }} />
-          <Drawer.Screen name="userprofiles/index" options={{ title: "Perfil" }} />
-          <Drawer.Screen name="disciplines" options={{ title: "Disciplinas" }} />
-          <Drawer.Screen name="ranks" options={{ title: "Grados" }} />
+          <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title") }} />
+          <Drawer.Screen name="users" options={{ title: t("users.title") }} />
+          <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title") }} />
+          <Drawer.Screen name="userprofiles/[userId]" options={{ title: t("userprofiles.title") }} />
+          <Drawer.Screen name="disciplines" options={{ title: t("disciplines.title") }} />
+          <Drawer.Screen name="ranks" options={{ title: t("ranks.title") }} />
         </Drawer>
 
         <ProfileMenu
+                key={lang}
                 visible={profileMenuOpen}
                 onClose={closeProfileMenu}
                 isAdmin={isAdmin}
@@ -180,6 +196,10 @@ export default function RootLayout() {
                   closeProfileMenu();
                   setChangePwdVisible(true);
                 }}
+                onUserSettings={() => {
+                  closeProfileMenu();
+                  setUserSettingsVisible(true);
+                }}
                 onLogout={async () => {
                   closeProfileMenu();
                   await clearAuthSession();
@@ -188,6 +208,7 @@ export default function RootLayout() {
               />
 
         <ChangePasswordModal
+          key={lang}
           visible={changePwdVisible}
           userId={user?.id ?? null}
           onClose={() => setChangePwdVisible(false)}
@@ -198,6 +219,22 @@ export default function RootLayout() {
             await clearAuthSession();
             router.replace("/");
           }}
+        />
+
+        <UserSettingsModal
+          key={lang}
+          visible={userSettingsVisible}
+          userId={user?.id ?? null}
+          onClose={() => setUserSettingsVisible(false)}
+          onSuccess={() => {
+            // opcional: toast / setSuccess global
+          }}
+          onLanguageChanged={(newLang) => setLangState(newLang)}
+          onAuthExpired={async () => {
+            await clearAuthSession();
+            router.replace("/");
+          }}
+          
         />
       </>    
   );

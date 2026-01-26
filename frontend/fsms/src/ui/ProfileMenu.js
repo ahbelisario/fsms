@@ -1,27 +1,33 @@
 import React from "react";
 import { Modal, View, Text, Pressable } from "react-native";
+import { t } from "@/src/i18n";
 
-export default function ProfileMenu({ visible, onClose, onGoProfile, onChangePassword, onLogout, isAdmin }) {
+
+export default function ProfileMenu({ visible, lang, onClose, onGoProfile, onUserSettings, onChangePassword, onLogout, isAdmin }) {
+
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal key={lang} transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.menu} onPress={() => {}}>
           {!isAdmin && (
             <>
               <Pressable style={styles.item} onPress={onGoProfile}>
-                <Text style={styles.itemText}>Mi perfil</Text>
+                <Text style={styles.itemText}>{t("common.profile")}</Text>
               </Pressable>
               <View style={styles.divider} />
             </>
           )}
+          <Pressable style={styles.item} onPress={onUserSettings}>
+            <Text style={styles.itemText}>{t("usersettings.title")}</Text>
+          </Pressable>
           <Pressable style={styles.item} onPress={onChangePassword}>
-            <Text style={styles.itemText}>Cambiar contraseña</Text>
+            <Text style={styles.itemText}>{t("users.changePass")}</Text>
           </Pressable>
           <View style={styles.divider} />
           <Pressable style={styles.item} onPress={onLogout}>
-            <Text style={[styles.itemText, styles.danger]}>Logout</Text>
+            <Text style={[styles.itemText, styles.danger]}>{t("common.logout")}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

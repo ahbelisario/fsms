@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { useRouter } from "expo-router";
+import { t } from "@/src/i18n";
 
 export default function UsersScreen({ onAuthExpired }) {
   
@@ -222,7 +223,7 @@ export default function UsersScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>Usuarios</Text>
+        <Text style={ScreenStyles.title}>{t("users.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
           <Text style={ScreenStyles.btnPrimaryText}>Agregar Usuario</Text>
         </Pressable>

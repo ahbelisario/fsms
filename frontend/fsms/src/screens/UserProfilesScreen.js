@@ -7,7 +7,7 @@ import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import DatePickerField from "@/src/ui/DatePickerField";
-
+import { t } from "@/src/i18n";
 
 export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
@@ -51,11 +51,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
+  const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
+  
   const [confirm, setConfirm] = useState({
     visible: false,
     title: "",
     message: "",
-    confirmText: "Confirmar",
+    confirmText: t("common.confirm"),
     danger: false,
     action: null,
   });
@@ -89,11 +91,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   function askSave() {
     setConfirm({
       visible: true,
-      title: isEditing ? "Confirmar cambios" : "Confirmar creación",
+      title: isEditing ? t("common.confirmchanges") : "Confirmar creación",
       message: isEditing
-        ? "¿Deseas guardar los cambios?"
+        ? t("common.wishchanges")
         : "¿Deseas crear este registro?",
-      confirmText: "Guardar",
+      confirmText: t("common.save"),
       danger: false,
       action: async () => {
         await save(); // tu función real
@@ -109,19 +111,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     const action = confirm.action;
     cancelConfirm(); // cierra primero (UX mejor)
     if (action) await action();
-  }
-
-  function askDelete(id) {
-    setConfirm({
-      visible: true,
-      title: "Eliminar",
-      message: "¿Seguro que deseas borrar este registro?",
-      confirmText: "Borrar",
-      danger: true,
-      action: async () => {
-        await remove(id); // tu función real
-      },
-    });
   }
 
   function clearMsgs() {
@@ -269,6 +258,9 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
         await api.updateUserProfiles(idToUse, payload);
         setSuccess("Perfil actualizado.");
+
+        if (!isMyProfile) { router.push(`/users`); } else { router.push(`/home`); }
+
       }
 
       resetForm();
@@ -285,7 +277,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     }
   }
 
-  const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
 
   return (
     
@@ -293,7 +284,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       <View style={ScreenStyles.header}>
         <Text style={ScreenStyles.title}>
         {isMyProfile
-          ? "Mi perfil"
+          ? t("userprofiles.myprofile")
           : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
         }
       </Text>
@@ -318,12 +309,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
               {/* Nombre */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Nombre</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.name")}</Text>
                 <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
               </View>
               {/* Apellido */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Apellido</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.lastname")}</Text>
                 <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
               </View>
             </View>
@@ -331,7 +322,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
             {/* Género */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Género</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.gender")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={gender} onValueChange={setGender}>
                     <Picker.Item label="Selecciona género" value="" />
@@ -345,7 +336,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               {/* Fecha de nacimiento */}
               <View style={{ flex: 1 }}>
                 <DatePickerField
-                  label="Fecha de nacimiento"
+                  label={t("userprofiles.date_of_birth")}
                   value={date_of_birth}
                   onChange={setDateofBirth}
                 />
@@ -354,7 +345,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
               {/* Teléfono */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Teléfono</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.phone")}</Text>
                 <TextInput
                   style={ScreenStyles.input}
                   value={phone}
@@ -364,31 +355,31 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
               {/* Correo Electronico */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Correo Electrónico</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
                 <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} />
               </View>
             </View>
 
             {/* Dirección */}
             <View>
-              <Text style={ScreenStyles.label}>Dirección</Text>
+              <Text style={ScreenStyles.label}>{t("userprofiles.address_line1")}</Text>
               <TextInput style={ScreenStyles.input} value={address_line1} onChangeText={setAddressLine1} />
             </View>
 
             <View>
-              <Text style={ScreenStyles.label}>Dirección (opcional)</Text>
+              <Text style={ScreenStyles.label}>{t("userprofiles.address_line2")}</Text>
               <TextInput style={ScreenStyles.input} value={address_line2} onChangeText={setAddressLine2} />
             </View>
 
             {/* Ciudad / Estado */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Ciudad</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.city")}</Text>
                 <TextInput style={ScreenStyles.input} value={city} onChangeText={setCity} />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Estado</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.state")}</Text>
                 <TextInput style={ScreenStyles.input} value={state} onChangeText={setState} />
               </View>
             </View>
@@ -396,12 +387,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             {/* País / Código postal */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>País</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.country")}</Text>
                 <TextInput style={ScreenStyles.input} value={country} onChangeText={setCountry} />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Código Postal</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.postal_code")}</Text>
                 <TextInput
                   style={ScreenStyles.input}
                   value={postal_code}
@@ -414,13 +405,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
             {/* Disciplina */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Disciplina</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.discipline")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker
                     selectedValue={discipline_id}
                     onValueChange={(v) => setDisciplineId(v)}
                   >
-                    <Picker.Item label="Selecciona disciplina" value={null} />
+                    <Picker.Item label={t("userprofiles.discipline")} value={null} />
                     {disciplines.map((d) => (
                       <Picker.Item key={d.id} label={d.name} value={d.id} />
                     ))}
@@ -430,10 +421,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
               {/* Grado */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Grado</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.rank")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
-                    <Picker.Item label="Selecciona grado" value={null} />
+                    <Picker.Item label={t("userprofiles.rank")} value={null} />
                     {ranks.map((r) => (
                       <Picker.Item key={r.id} label={r.name} value={r.id} />
                     ))}
@@ -444,7 +435,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               {/* Fecha de inicio */}
               <View style={{ flex: 1 }}>
                 <DatePickerField
-                  label="Fecha de inicio"
+                  label={t("userprofiles.start_date")}
                   value={start_date}
                   onChange={setStartDate}
                 />
@@ -453,7 +444,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
             {/* Tipo de sangre */}
             <View>
-              <Text style={ScreenStyles.label}>Tipo de sangre</Text>
+              <Text style={ScreenStyles.label}>{t("userprofiles.blood_type")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
                 <Picker selectedValue={blood_type} onValueChange={setBloodType}>
                   <Picker.Item label="Selecciona tipo" value="" />
@@ -471,7 +462,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
             {/* Notas médicas */}
             <View>
-              <Text style={ScreenStyles.label}>Notas médicas</Text>
+              <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
               <TextInput
                 style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
                 value={medical_notes}
@@ -484,7 +475,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
              {/* Contacto de emergencia */}
             <View style={{ flexDirection: "row", gap: 10 }}>
                <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.label}>Contacto de emergencia</Text>
+                  <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_name")}</Text>
                   <TextInput
                     style={ScreenStyles.input}
                     value={emergency_contact_name}
@@ -493,7 +484,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>Teléfono de emergencia</Text>
+                <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_phone")}</Text>
                 <TextInput
                   style={ScreenStyles.input}
                   value={emergency_contact_phone}
@@ -506,13 +497,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             {/* <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={!isEditing}> */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <View style={{ flex: 1 }}>
-                <Pressable style={ScreenStyles.btnSecondary} onPress={user?.role === "admin" ? () => router.push(`/dashboard`) : () => router.push(`/home`)} disabled={!isEditing}>
-                  <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+                <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/users`) : () => router.push(`/home`)} disabled={!isEditing}>
+                  <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
                 </Pressable>
               </View>
               <View style={{ flex: 1 }}>         
                 <Pressable style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]} onPress={askSave} disabled={saving}>
-                  <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                  <Text style={ScreenStyles.btnPrimaryText}>{saving ? t("common.saving") : t("common.save")}</Text>
                 </Pressable>
               </View>         
             </View>
@@ -526,7 +517,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         title={confirm.title}
         message={confirm.message}
         confirmText={confirm.confirmText}
-        cancelText="Cancelar"
+        cancelText={t("common.cancel")}
         danger={confirm.danger}
         onConfirm={doConfirm}
         onCancel={cancelConfirm}
