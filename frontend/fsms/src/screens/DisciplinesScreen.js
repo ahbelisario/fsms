@@ -74,6 +74,7 @@ export default function DisciplinesScreen({ onAuthExpired }) {
       // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setDisciplines(list);
+
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();

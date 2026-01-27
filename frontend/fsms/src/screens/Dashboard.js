@@ -6,7 +6,7 @@ import { i18n, t } from "@/src/i18n";
 
 export default function Dashboard({ onAuthExpired }) {
   const [totalusers, setUsers] = useState([]);
-  const [totaldiciplines, setDiciplines] = useState([]);
+  const [totaldisciplines, setDisciplines] = useState([]);
   const [totalranks, setRanks] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -39,9 +39,9 @@ export default function Dashboard({ onAuthExpired }) {
       const totalRanks = Array.isArray(dataRanks) ? dataRanks : dataRanks?.response || dataRanks?.total_rows || [];
       setRanks(totalRanks);
 
-      const dataDiciplines = await api.listDiciplines();
-      const totalDiciplines = Array.isArray(dataDiciplines) ? dataDiciplines : dataDiciplines?.response || dataDiciplines?.total_rows || [];
-      setDiciplines(totalDiciplines);
+      const dataDisciplines = await api.listDisciplines();
+      const totalDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.total_rows || [];
+      setDisciplines(totalDisciplines);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -66,7 +66,7 @@ export default function Dashboard({ onAuthExpired }) {
           <ScoreCard title={t("users.title")} value={totalusers} subtitle="Total" />
         </View>
         <View style={s.cell}>
-          <ScoreCard title={t("disciplines.title")} value={totaldiciplines} subtitle="Total" delta="+12%" />
+          <ScoreCard title={t("disciplines.title")} value={totaldisciplines} subtitle="Total" delta="+12%" />
         </View>
       </View>
 
