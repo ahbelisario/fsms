@@ -6,9 +6,7 @@ import { appStyles } from '../styles/appStyles';
 import { i18n, t } from "@/src/i18n";
 import { setLang } from "@/src/i18n/lang";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_NGINX ? "" : "http://localhost:3000";
-
-  console.log("Using" + API_BASE_URL);
+const API_BASE_URL = "http://localhost:3000";
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
@@ -41,7 +39,8 @@ export default function LoginScreen({ onLoginSuccess }) {
         password: b64encode(password),
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`/api/auth/login`, {
+      //const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
