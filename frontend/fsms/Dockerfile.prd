@@ -1,22 +1,17 @@
-FROM node:20-alpine
-
+# ---------- Build stage ----------
+FROM node:20-alpine AS build
 WORKDIR /app
+RUN apk add --no-cache libc6-compat
 
-# Dependencias base (útiles para compatibilidad con algunas libs)
-RUN apk add --no-cache libc6-compat bash
-
-# Copiamos manifests primero para aprovechar cache
-COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
-
-# Instala dependencias (elige según tu gestor)
-# npm:
+COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-# Copiamos el resto del proyecto
 COPY . .
+RUN npx expo export --platform web
 
-# Puertos típicos Expo Web (19006) y Metro (19000/19001/19002)
-EXPOSE 19006 19000 19001 19002
-
-# Para que sea accesible desde fuera del contenedor
-CMD ["sh", "-c", "npx expo export --platform web --port 19006"]
+# ---------- Runtime stage ----------
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+# SPA fallback
+RUN printf 'server { listen 80; server_name _; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+EXPOSE 80

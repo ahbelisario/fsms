@@ -18,21 +18,13 @@ services:
       context: frontend/fsms
       dockerfile: Dockerfile.prd
     environment:
-      - NODE_ENV=development
-      # Recomendación: en tu código usa fetch("/api/...") y no necesitas esta variable.
-      # Si ya tienes variable, puedes usar:
+      - NODE_ENV=production
       - EXPO_PUBLIC_NGINX=yes
     networks:
       - fsms-client
       - fsms-server
-    # volumes:
-    #  - ./frontend/fsms:/app
-    #  - frontend_node_modules:/app/node_modules
     expose:
-      - "19006"
-      - "19000"
-      - "19001"
-      - "19002"
+      - "80"
 
   backend:
     build:
