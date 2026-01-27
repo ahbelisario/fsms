@@ -43,7 +43,7 @@ export const api = {
   checkPassword: (id, payload) => request(`/api/users/${id}/checkpassword`, { method: "POST", body: payload }),
   
   listUserSettings: (id) => request(`/api/usersettings/${id}`),
-  createUserSettings: (payload) => request("/api/users", { method: "POST", body: payload }),
+  createUserSettings: (payload) => request("/api/usersettings", { method: "POST", body: payload }),
   updateUserSettingLanguage: (id, payload) => request(`/api/usersettings/${id}/language`, { method: "PUT", body: payload }),
 
   listUserProfiles: (id) => request(`/api/userprofiles/${id}`),
