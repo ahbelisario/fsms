@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 19006 19000 19001 19002
 
 # Para que sea accesible desde fuera del contenedor
-CMD ["sh", "-c", "npx expo start --port 19006"]
+CMD ["sh", "-c", "npx expo export --platform web --port 19006"]
