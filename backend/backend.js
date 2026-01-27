@@ -53,6 +53,11 @@ app.use('/api/disciplines', requireAuth, disciplinesRoutes);
 const ranksRoutes = require('./routes/ranks');
 app.use('/api/ranks', requireAuth, ranksRoutes);
 
+//Packages
+
+const { router: packagesRoutes } = require('./routes/packages');
+app.use('/api/packages', requireAuth, packagesRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, Pressable } from "react-native";
+import { Text, View, Pressable, Platform, useWindowDimensions } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { useRouter, type Href } from "expo-router";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
@@ -11,7 +11,6 @@ import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
 import UserSettingsModal from "@/src/ui/UserSettings";
 import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
 import { t } from "@/src/i18n";
-import { setLang, loadLang } from "@/src/i18n/lang";
 import { useLanguage } from "@/src/i18n/LanguageProvider";
 
 
@@ -60,6 +59,13 @@ export default function AppLayout() {
   const [i18nReady, setI18nReady] = useState(false);
 
   const isAdmin = user?.username === "admin";
+
+  const { width } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+  const isDesktop = width >= 1024;
+  const drawerWidth = 200;
+  const isPermanent = isWeb && isDesktop;
+
 
   function openProfileMenu() {
     setProfileMenuOpen(true);
@@ -149,17 +155,37 @@ export default function AppLayout() {
   
   return (
       <>
-        <Drawer drawerContent={(props) => <CustomDrawerContent {...props} user={user} />} screenOptions={{
-            headerShown: true,
-            headerRight: () => (
-              <View style={ScreenStyles.rowNoWidth}>
-              <Text style={{ fontWeight: "800" }}>{user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"} </Text>
-              <Pressable onPress={openProfileMenu} style={{ marginRight: 14 }}>
-                  <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
-                </Pressable>
-              </View>
-            ),
-          }}>
+        <Drawer
+            drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
+            screenOptions={{
+              // ✅ Drawer fijo solo en Web Desktop
+              drawerType: isPermanent ? "permanent" : "front",
+              drawerStyle: isPermanent ? { width: drawerWidth } : undefined,
+              overlayColor: isPermanent ? "transparent" : undefined,
+              swipeEnabled: !isPermanent,
+
+              // ✅ En desktop normalmente ocultas header/hamburguesa
+              //headerShown: !isPermanent,
+
+              // ✅ Si quieres mantener header en web desktop, cambia a:
+              headerShown: true,
+              headerLeft: isPermanent ? () => null : undefined,
+              headerRight: () => ( // en permanent ya no tiene sentido el botón / headerRight
+                  <View style={ScreenStyles.rowNoWidth}>
+                    <Text style={{ fontWeight: "800" }}>
+                      {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
+                    </Text>
+                    <Pressable onPress={openProfileMenu} style={{ marginRight: 14 }}>
+                      <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
+                    </Pressable>
+                  </View>
+                ),
+
+              // ✅ Importante: deja espacio al contenido cuando el drawer es permanente
+              sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
+            }}
+          >
+
 
           <Drawer.Screen name="home" options={{ title: "Home" }} />
           <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title"), drawerLabel: () => <Text>{t("dashboard.title")}</Text>, }} />

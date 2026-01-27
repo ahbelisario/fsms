@@ -41,6 +41,34 @@ INSERT INTO `disciplines` VALUES (1,'Aikido','El Aikido Tendoryu, es un estilo q
 UNLOCK TABLES;
 
 --
+-- Table structure for table `packages`
+--
+
+DROP TABLE IF EXISTS `packages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `packages` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) NOT NULL,
+  `charge_every` int NOT NULL,
+  `charge_freq` varchar(45) NOT NULL,
+  `fee` decimal(8,2) NOT NULL,
+  `week_limit` varchar(45) DEFAULT NULL,
+  `period_limit` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `packages`
+--
+
+LOCK TABLES `packages` WRITE;
+/*!40000 ALTER TABLE `packages` DISABLE KEYS */;
+/*!40000 ALTER TABLE `packages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `ranks`
 --
 
@@ -177,7 +205,9 @@ CREATE TABLE `user_settings` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `language` varchar(2) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_user_idx` (`user_id`),
+  CONSTRAINT `fk_userset` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -233,4 +263,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-24 12:22:45
+-- Dump completed on 2026-01-27  5:48:42

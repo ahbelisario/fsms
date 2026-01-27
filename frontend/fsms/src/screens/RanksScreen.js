@@ -4,6 +4,7 @@ import { Picker } from "@react-native-picker/picker";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
+import { t } from "@/src/i18n";
 
 
 export default function RanksScreen({ onAuthExpired }) {
@@ -201,17 +202,18 @@ export default function RanksScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>Grados</Text>
-        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>Agregar Grado</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
+          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+            <Text style={ScreenStyles.btnPrimaryText}>{t("ranks.add_rank")}</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       <Pressable style={ScreenStyles.btnSecondary} onPress={loadRanks} disabled={loading}>
-        <Text style={ScreenStyles.btnSecondaryText}>{loading ? "Cargando..." : "Refrescar"}</Text>
+        <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.saving") : t("common.refresh")}</Text>
       </Pressable>
 
       {loading ? (
@@ -239,18 +241,18 @@ export default function RanksScreen({ onAuthExpired }) {
                     </View>
 
                     <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                      <Text style={ScreenStyles.smallBtnText}>Editar</Text>
+                      <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
                     </Pressable>
 
                     <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                      <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
+                      <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
                     </Pressable>
                   </View>
                 );
               }}
               ListEmptyComponent={
                 <View style={ScreenStyles.center}>
-                  <Text style={{ color: "#64748b" }}>No hay Grados.</Text>
+                  <Text style={{ color: "#64748b" }}>{t("ranks.empty")}</Text>
                 </View>
               }
               stickySectionHeadersEnabled
@@ -261,13 +263,13 @@ export default function RanksScreen({ onAuthExpired }) {
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
-            <Text style={ScreenStyles.modalTitle}>{isEditing ? "Editar" : "Crear"} grado</Text>
+            <Text style={ScreenStyles.modalTitle}>{isEditing ? t("ranks.edit_rank") : t("ranks.add_rank")}</Text>
 
-            <Text style={ScreenStyles.label}>Nombre</Text>
+            <Text style={ScreenStyles.label}>{t("common.name")}</Text>
             <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
 
             <View style={{ marginBottom: 12 }}>
-                <Text style={ScreenStyles.label}>Disciplina</Text>
+                <Text style={ScreenStyles.label}>{t("disciplines.title_single")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                     <Picker selectedValue={disciplineId} onValueChange={(value) => setDisciplineId(value)}>
                       {disciplines.map((r) => (
@@ -279,11 +281,11 @@ export default function RanksScreen({ onAuthExpired }) {
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable style={[ScreenStyles.btnSecondary, { flex: 1 }]} onPress={() => setModalVisible(false)} disabled={saving}>
-                <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+                <Text style={ScreenStyles.btnSecondaryText}>{t("common.cancel")}</Text>
               </Pressable>
 
               <Pressable style={[ScreenStyles.btnPrimary, { flex: 1, opacity: saving ? 0.7 : 1 }]} onPress={save} disabled={saving}>
-                <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                <Text style={ScreenStyles.btnPrimaryText}>{saving ? t("common.saving") : t("common.save")}</Text>
               </Pressable>
             </View>
           </View>
@@ -292,10 +294,10 @@ export default function RanksScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title="Eliminar grado"
-        message="¿Seguro que deseas borrar este grado?"
-        confirmText="Borrar"
-        cancelText="Cancelar"
+        title={t("ranks.delete_rank")}
+        message={t("messages.sure_delete_rank")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         danger
         onConfirm={confirmDelete}
         onCancel={cancelDelete}

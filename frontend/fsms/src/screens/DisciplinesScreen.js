@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } 
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
+import { t } from "@/src/i18n";
 
 
 export default function DisciplinesScreen({ onAuthExpired }) {
@@ -156,17 +157,18 @@ export default function DisciplinesScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>Disciplinas</Text>
-        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>Agregar Disciplina</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
+          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+            <Text style={ScreenStyles.btnPrimaryText}>{t("disciplines.add_discipline")}</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       <Pressable style={ScreenStyles.btnSecondary} onPress={loadDisciplines} disabled={loading}>
-        <Text style={ScreenStyles.btnSecondaryText}>{loading ? "Cargando..." : "Refrescar"}</Text>
+        <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
       {loading ? (
@@ -185,36 +187,36 @@ export default function DisciplinesScreen({ onAuthExpired }) {
               </View>
 
               <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                <Text style={ScreenStyles.smallBtnText}>Editar</Text>
+                <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
               </Pressable>
 
                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                <Text style={ScreenStyles.smallBtnText}>Borrar</Text>
+                <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
               </Pressable>
             </View>
           )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>No hay Diciplinas.</Text></View>}
+          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("disciplines.empty")}</Text></View>}
         />
       )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
-            <Text style={ScreenStyles.modalTitle}>{isEditing ? "Editar" : "Crear"} usuario</Text>
+            <Text style={ScreenStyles.modalTitle}>{isEditing? t("disciplines.edit_discipline") : t("disciplines.add_discipline")}</Text>
 
-            <Text style={ScreenStyles.label}>Nombre</Text>
+            <Text style={ScreenStyles.label}>{t("common.name")}</Text>
             <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
 
-            <Text style={ScreenStyles.label}>Descripción</Text>
+            <Text style={ScreenStyles.label}>{t("common.description")}</Text>
             <TextInput multiline style={ScreenStyles.textArea} value={description} onChangeText={setDescription} />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable style={[ScreenStyles.btnSecondary, { flex: 1 }]} onPress={() => setModalVisible(false)} disabled={saving}>
-                <Text style={ScreenStyles.btnSecondaryText}>Cancelar</Text>
+                <Text style={ScreenStyles.btnSecondaryText}>{t("common.cancel")}</Text>
               </Pressable>
 
               <Pressable style={[ScreenStyles.btnPrimary, { flex: 1, opacity: saving ? 0.7 : 1 }]} onPress={save} disabled={saving}>
-                <Text style={ScreenStyles.btnPrimaryText}>{saving ? "Guardando..." : "Guardar"}</Text>
+                <Text style={ScreenStyles.btnPrimaryText}>{saving ? t("common.saving") : t("common.save")}</Text>
               </Pressable>
             </View>
           </View>
@@ -223,10 +225,10 @@ export default function DisciplinesScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title="Eliminar Disciplina"
-        message="¿Seguro que deseas borrar esta disciplina?"
-        confirmText="Borrar"
-        cancelText="Cancelar"
+        title={t("disciplines.delete_discipline")}
+        message={t("messages.sure_delete_discipline")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         danger
         onConfirm={confirmDelete}
         onCancel={cancelDelete}

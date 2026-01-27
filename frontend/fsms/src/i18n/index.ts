@@ -4,6 +4,9 @@ import { I18n } from "i18n-js";
 const translations = {
   es: {
     common: {
+      add: "Agregar",
+      name: "Nombre",
+      description: "Descripción",
       save: "Guardar",
       edit: "Editar",
       delete: "Borrar",
@@ -24,11 +27,15 @@ const translations = {
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
-      sure_delete_user: "¿Seguro que deseas borrar este usuario?"
+      sure_delete_user: "¿Seguro que deseas borrar este usuario?",
+      sure_delete_discipline: "¿Seguro que deseas borrar esta disciplina?",
+      sure_delete_rank: "¿Seguro que deseas borrar este grado?",
     },
     dialogs:{
       delete_user: "Eliminar usuario",
-      user_settings: "Preferencias del Usuario"
+      user_settings: "Preferencias del Usuario",
+      delete_discipline: "Eliminar disciplina",
+      delete_rank: "Eliminar grado",
     },
     login: {
       title: "Iniciar sesión",
@@ -84,15 +91,27 @@ const translations = {
     },
     disciplines: {
       title: "Disciplinas",
+      title_single: "Disciplina",
+      add_discipline: "Agregar Disciplina",
+      edit_discipline: "Editar Disciplina",
+      delete_discipline: "Eliminar Disciplina",
+      empty: "No hay disciplinas.",
     },
     ranks: {
       title: "Grados",
+      add_rank: "Agregar Grado",
+      edit_rank: "Editar Grado",
+      delete_rank: "Eliminar Grado",
+      empty: "No hay grados.",
     },
   },
   en: {
     common: {
+      add: "Add",
       save: "Save",
       edit: "Edit",
+      name: "Name",
+      description: "Description",
       delete: "Delete",
       saving: "Saving",
       cancel: "Cancel",
@@ -111,11 +130,15 @@ const translations = {
     },
     messages: {
       password_dont_match: "Passwords don't match",
-      sure_delete_user: " Are you to delere this user?"
+      sure_delete_user: " Are you to delere this user?",
+      sure_delete_discipline: " Are you to delere this discipline?",
+      sure_delete_rank: " Are you to delere this grade?"
     },
     dialogs:{
       delete_user: "Delete user",
-      user_settings: "User Settings"
+      user_settings: "User Settings",
+      delete_discipline: "Delete discipline",
+      delete_rank: "Delete grade",
     },
     login: {
       title: "Sign in",
@@ -171,9 +194,16 @@ const translations = {
     },
     disciplines: {
       title: "Disciplines",
+      title_single: "Discipline",
+      add_discipline: "Add discipline",
+      edit_discipline: "Edit discipline",
+      delete_discipline: "Delete discipline"
     },
     ranks: {
       title: "Grades",
+      add_rank: "Add grade",
+      edit_rank: "Edit grade",
+      delete_rank: "Delete grade"
     },
   },
 }

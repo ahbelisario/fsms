@@ -43,7 +43,7 @@ export const api = {
   checkPassword: (id, payload) => request(`/api/users/${id}/checkpassword`, { method: "POST", body: payload }),
   
   listUserSettings: (id) => request(`/api/usersettings/${id}`),
-  createUserSettings: (payload) => request("/api/usersettings", { method: "POST", body: payload }),
+  createUserSettings: (payload) => request("/api/users", { method: "POST", body: payload }),
   updateUserSettingLanguage: (id, payload) => request(`/api/usersettings/${id}/language`, { method: "PUT", body: payload }),
 
   listUserProfiles: (id) => request(`/api/userprofiles/${id}`),
@@ -61,5 +61,10 @@ export const api = {
   createRanks: (payload) => request("/api/ranks", { method: "POST", body: payload }),
   updateRanks: (id, payload) => request(`/api/ranks/${id}`, { method: "PUT", body: payload }),
   deleteRanks: (id) => request(`/api/ranks/${id}`, { method: "DELETE" }),
+
+  listPackages: () => request("/api/packages"),
+  createPackages: (payload) => request("/api/packages", { method: "POST", body: payload }),
+  updatePackages: (id, payload) => request(`/api/packages/${id}`, { method: "PUT", body: payload }),
+  deletePackages: (id) => request(`/api/packages/${id}`, { method: "DELETE" }),
   
 };

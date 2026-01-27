@@ -235,10 +235,13 @@ export default function UsersScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{t("users.title")}</Text>
-        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>{t("users.add")}</Text>
-        </Pressable>
+        { //<Text style={ScreenStyles.title}>{t("users.title")}</Text>
+        } 
+       <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
+          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+            <Text style={ScreenStyles.btnPrimaryText}>{t("users.add")}</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
