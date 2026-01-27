@@ -8,6 +8,8 @@ import { setLang } from "@/src/i18n/lang";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_NGINX ? "" : "http://localhost:3000";
 
+  console.log("Using" + API_BASE_URL);
+
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

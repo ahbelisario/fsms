@@ -2,6 +2,8 @@ import { getAuthToken, clearAuthSession } from "../storage/authStorage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_NGINX ? "" : "http://localhost:3000";
 
+console.log("Using" + API_BASE_URL);
+
 async function request(path, { method = "GET", body } = {}) {
   const token = await getAuthToken();
 
