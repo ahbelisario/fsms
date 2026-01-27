@@ -3,7 +3,7 @@ import { Text, View, Pressable, Platform, useWindowDimensions } from "react-nati
 import { Drawer } from "expo-router/drawer";
 import { useRouter, type Href } from "expo-router";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ProfileMenu from "@/src/ui/ProfileMenu";
@@ -170,7 +170,7 @@ export default function AppLayout() {
               headerLeft: isPermanent ? () => null : undefined,
               headerRight: () => ( 
                   <View style={ScreenStyles.rowNoWidth}>
-                    <Text style={{ fontWeight: "800" }}>
+                    <Text style={{ fontWeight: "800" }} onPress={openProfileMenu}>
                       {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
                     </Text>
                     <Pressable onPress={openProfileMenu} style={{ marginRight: 14 }}>
