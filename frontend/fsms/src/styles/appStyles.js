@@ -20,8 +20,9 @@ export const appStyles = StyleSheet.create({
 });
 
 export const ScreenStyles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", paddingTop: 48, paddingHorizontal: 16 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+
+  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", paddingTop: 48, paddingHorizontal: 16, width: "100%" },
+  header: { width: "100%", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   title: { color: "#3c3c3cff", fontSize: 22, fontWeight: "700" },
 
   alertError: { backgroundColor: "#fee2e2", borderColor: "#fecaca", borderWidth: 1, padding: 10, borderRadius: 10, marginBottom: 10 },

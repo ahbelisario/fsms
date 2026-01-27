@@ -158,19 +158,17 @@ export default function AppLayout() {
         <Drawer
             drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
             screenOptions={{
-              // ✅ Drawer fijo solo en Web Desktop
               drawerType: isPermanent ? "permanent" : "front",
-              drawerStyle: isPermanent ? { width: drawerWidth } : undefined,
+              drawerStyle: { width: drawerWidth } ,
               overlayColor: isPermanent ? "transparent" : undefined,
               swipeEnabled: !isPermanent,
 
               // ✅ En desktop normalmente ocultas header/hamburguesa
               //headerShown: !isPermanent,
 
-              // ✅ Si quieres mantener header en web desktop, cambia a:
               headerShown: true,
               headerLeft: isPermanent ? () => null : undefined,
-              headerRight: () => ( // en permanent ya no tiene sentido el botón / headerRight
+              headerRight: () => ( 
                   <View style={ScreenStyles.rowNoWidth}>
                     <Text style={{ fontWeight: "800" }}>
                       {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
@@ -181,7 +179,6 @@ export default function AppLayout() {
                   </View>
                 ),
 
-              // ✅ Importante: deja espacio al contenido cuando el drawer es permanente
               sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
             }}
           >

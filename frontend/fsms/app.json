@@ -23,7 +23,12 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "viewport": {
+        "width": "device-width",
+        "initialScale": 1,
+        "viewportFit": "cover"
+      }
     },
     "plugins": [
       "expo-router",
