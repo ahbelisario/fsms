@@ -58,6 +58,16 @@ app.use('/api/ranks', requireAuth, ranksRoutes);
 const { router: packagesRoutes } = require('./routes/packages');
 app.use('/api/packages', requireAuth, packagesRoutes);
 
+//Memberships
+
+const { router: membershipsRoutes } = require('./routes/memberships');
+app.use('/api/memberships', requireAuth, membershipsRoutes);
+
+//Payments
+
+const { router: paymentsRoutes } = require('./routes/payments');
+app.use('/api/payments', requireAuth, paymentsRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

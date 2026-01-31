@@ -224,6 +224,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
     const me = await api.me();
     const idToUse = targetUserId ?? me.data.id;
+    
 
     clearMsgs();
     const v = validate();
@@ -259,7 +260,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         await api.updateUserProfiles(idToUse, payload);
         setSuccess("Perfil actualizado.");
 
-        if (!isMyProfile) { router.push(`/users`); } else { router.push(`/home`); }
+       // if (!isMyProfile) { router.push(`/(app)/users`); } else { router.push(`/(app)/home`); }
 
       }
 
@@ -325,10 +326,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 <Text style={ScreenStyles.label}>{t("userprofiles.gender")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={gender} onValueChange={setGender}>
-                    <Picker.Item label="Selecciona género" value="" />
-                    <Picker.Item label="Masculino" value="male" />
-                    <Picker.Item label="Femenino" value="female" />
-                    <Picker.Item label="Otro" value="other" />
+                    <Picker.Item label={t("userprofiles.gender")} value="" />
+                    <Picker.Item label={t("userprofiles.male")} value="male" />
+                    <Picker.Item label={t("userprofiles.female")} value="female" />
+                    <Picker.Item label={t("userprofiles.other")} value="other" />
                   </Picker>
                 </View>
               </View>
@@ -494,10 +495,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
             </View>
 
-            {/* <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={!isEditing}> */}
+            {/* <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={!isEditing}> 
+             <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/(app)/users`) : () => router.push(`/(app)/home`)} disabled={!isEditing}>
+            */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <View style={{ flex: 1 }}>
-                <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/users`) : () => router.push(`/home`)} disabled={!isEditing}>
+                <Pressable style={ScreenStyles.btnSecondary} onPress={router.back} disabled={!isEditing}>
                   <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
                 </Pressable>
               </View>

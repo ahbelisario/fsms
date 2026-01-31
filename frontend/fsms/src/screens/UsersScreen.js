@@ -317,7 +317,7 @@ export default function UsersScreen({ onAuthExpired }) {
               {/* Mensaje inline opcional */}
               {password && confirmPassword && password !== confirmPassword ? (
                 <Text style={{ color: "#b91c1c", marginTop: 6 }}>
-                  {t("messages.assword_dont_match")}
+                  {t("messages.password_dont_match")}
                 </Text>
               ) : null}
             </>

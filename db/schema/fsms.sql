@@ -41,6 +41,40 @@ INSERT INTO `disciplines` VALUES (1,'Aikido','El Aikido Tendoryu, es un estilo q
 UNLOCK TABLES;
 
 --
+-- Table structure for table `memberships`
+--
+
+DROP TABLE IF EXISTS `memberships`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `memberships` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `package_id` int DEFAULT NULL,
+  `start_date` datetime DEFAULT NULL,
+  `finish_date` datetime DEFAULT NULL,
+  `fee` decimal(10,2) DEFAULT NULL,
+  `discounted_fee` decimal(10,2) DEFAULT NULL,
+  `currency` varchar(3) DEFAULT NULL,
+  `notes` mediumtext,
+  PRIMARY KEY (`id`),
+  KEY `fk_userid_idx` (`user_id`),
+  KEY `fk_packagesid_idx` (`package_id`),
+  CONSTRAINT `fk_packagesid` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_userid` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `memberships`
+--
+
+LOCK TABLES `memberships` WRITE;
+/*!40000 ALTER TABLE `memberships` DISABLE KEYS */;
+/*!40000 ALTER TABLE `memberships` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `packages`
 --
 
@@ -55,6 +89,7 @@ CREATE TABLE `packages` (
   `fee` decimal(8,2) NOT NULL,
   `week_limit` varchar(45) DEFAULT NULL,
   `period_limit` varchar(45) DEFAULT NULL,
+  `currency` varchar(3) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -69,6 +104,41 @@ LOCK TABLES `packages` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `payments`
+--
+
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `membership_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `payment_date` datetime NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_method` varchar(25) DEFAULT NULL,
+  `reference` varchar(100) DEFAULT NULL,
+  `status` varchar(25) DEFAULT NULL,
+  `type` varchar(25) DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_userid_p_idx` (`user_id`),
+  KEY `fk_memb_p_idx` (`membership_id`),
+  CONSTRAINT `fk_memb_p` FOREIGN KEY (`membership_id`) REFERENCES `memberships` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_userid_p` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payments`
+--
+
+LOCK TABLES `payments` WRITE;
+/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `ranks`
 --
 
@@ -79,7 +149,9 @@ CREATE TABLE `ranks` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `discipline` int NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_disp_idx` (`discipline`),
+  CONSTRAINT `fk_disp` FOREIGN KEY (`discipline`) REFERENCES `disciplines` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -250,7 +322,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','$2a$12$C44Md5djPD7LgRbnVcVSXenUpdkj7a5CN5LmlMQdQF7i3Pg83aYwu','Adminstrator',NULL,'arthur@hdez.mx','admin',1,NULL,'2026-01-01 00:00:00');
+INSERT INTO `users` VALUES (1,'admin','$2a$12$C44Md5djPD7LgRbnVcVSXenUpdkj7a5CN5LmlMQdQF7i3Pg83aYwu','Administrator',NULL,'arthur@hdez.mx','admin',1,NULL,'2026-01-01 00:00:00');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -263,4 +335,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-27  5:48:42
+-- Dump completed on 2026-01-30 16:27:25

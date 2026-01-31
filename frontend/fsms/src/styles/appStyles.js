@@ -76,6 +76,13 @@ sectionHeaderArrow: {
   fontWeight: "800",
   fontSize: 14,
 },
+divider: {
+  height: 1,
+  backgroundColor: "#e5e7eb",
+  marginVertical: 8,
+  marginHorizontal: 12,
+},
+
 
 
 });

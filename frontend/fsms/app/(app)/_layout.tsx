@@ -20,8 +20,11 @@ function CustomDrawerContent(props: any) {
   const USERS: Href = "/(app)/users";
   const HOME: Href = "/(app)/home";
   const DISCIPLINES: Href = "/(app)/disciplines";
+  const PACKAGES: Href = "/(app)/packages";
+  const MEMBERSHIPS: Href = "/(app)/memberships";
   const DASHBOARD: Href = "/(app)/dashboard";
   const RANKS: Href = "/(app)/ranks";
+  const PAYMENTS: Href = "/(app)/payments";
   const LOGIN: Href = "/(auth)";
   const user = props.user;
 
@@ -35,9 +38,17 @@ function CustomDrawerContent(props: any) {
   return (
     <DrawerContentScrollView {...props}>
       {user?.role === "admin" ? ( <DrawerItem label={t("dashboard.title")} onPress={() => router.push(DASHBOARD)} /> ) : (<DrawerItem label="Home" onPress={() => router.push(HOME)} />)}
+      <View style={ScreenStyles.divider} />
+      {user?.role === "admin" && ( <DrawerItem label={t("users.members")} onPress={() => router.push(USERS)} />)}
+      {user?.role === "admin" && ( <DrawerItem label={t("packages.title")} onPress={() => router.push(PACKAGES)} />)}
+      {user?.role === "admin" && ( <DrawerItem label={t("memberships.title")} onPress={() => router.push(MEMBERSHIPS)} />)}
+      <View style={ScreenStyles.divider} />
+      {user?.role === "admin" && ( <DrawerItem label={t("payments.title")} onPress={() => router.push(PAYMENTS)} />)}
+      <View style={ScreenStyles.divider} />
       {user?.role === "admin" && ( <DrawerItem label={t("disciplines.title")} onPress={() => router.push(DISCIPLINES)} />)}
       {user?.role === "admin" && ( <DrawerItem label={t("ranks.title")} onPress={() => router.push(RANKS)} />)}
-      {user?.role === "admin" && ( <DrawerItem label={t("users.title")} onPress={() => router.push(USERS)} />)}
+      <View style={ScreenStyles.divider} />
+      
     </DrawerContentScrollView>
   );
 }
@@ -186,11 +197,14 @@ export default function AppLayout() {
 
           <Drawer.Screen name="home" options={{ title: "Home" }} />
           <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title"), drawerLabel: () => <Text>{t("dashboard.title")}</Text>, }} />
-          <Drawer.Screen name="users" options={{ title: t("users.title"), drawerLabel: () => <Text>{t("users.title")}</Text>, }} />
+          <Drawer.Screen name="users" options={{ title: t("users.members"), drawerLabel: () => <Text>{t("users.title")}</Text>, }} />
           <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title"), drawerLabel: () => <Text>{t("userprofiles.title")}</Text>, }} />
           <Drawer.Screen name="userprofiles/[userId]" options={{ title: t("userprofiles.title"), drawerLabel: () => <Text>{t("userprofiles.title")}</Text>, }} />
           <Drawer.Screen name="disciplines" options={{ title: t("disciplines.title"), drawerLabel: () => <Text>{t("disciplines.title")}</Text>, }} />
           <Drawer.Screen name="ranks" options={{ title: t("ranks.title"), drawerLabel: () => <Text>{t("ranks.title")}</Text>, }} />
+          <Drawer.Screen name="packages" options={{ title: t("packages.title"), drawerLabel: () => <Text>{t("packages.title")}</Text>, }} />
+          <Drawer.Screen name="memberships" options={{ title: t("memberships.title"), drawerLabel: () => <Text>{t("memberships.title")}</Text>, }} />
+          <Drawer.Screen name="payments" options={{ title: t("payments.title"), drawerLabel: () => <Text>{t("payments.title")}</Text>, }} />
         </Drawer>
 
         <ProfileMenu

@@ -23,13 +23,17 @@ const translations = {
       wishchanges: "¿Deseas guardar los cambios?",
       refresh: "Refresar",
       password_required: "Contraseña (Requerido)",
-      password_confirm: "Confirmar contraseña"
+      password_confirm: "Confirmar contraseña",
+      currency: "Moneda"
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
       sure_delete_user: "¿Seguro que deseas borrar este usuario?",
       sure_delete_discipline: "¿Seguro que deseas borrar esta disciplina?",
       sure_delete_rank: "¿Seguro que deseas borrar este grado?",
+      sure_delete_package: "¿Seguro que deseas borrar este plan?",
+      sure_delete_membership: "¿Seguro que deseas borrar esta membresia?",
+      sure_delete_payment: "¿Seguro que deseas borrar este pago?",
     },
     dialogs:{
       delete_user: "Eliminar usuario",
@@ -55,7 +59,9 @@ const translations = {
       changePass: "Cambiar contraseña",
       active: "Activo",
       createuser: "Crear usuario",
-      edituser: "Editar usuario"
+      edituser: "Editar usuario",
+      members: "Miembros",
+      member: "Miembro"
     },
     usersettings: {
       title: "Preferencias del Usuario",
@@ -87,7 +93,10 @@ const translations = {
       rank_id: "Grado",
       start_date: "Fecha de inicio",
       blood_type: "Tipo de Sangre",
-      medical_notes: "Notas Médicas"
+      medical_notes: "Notas Médicas",
+      male: "Masculino",
+      female: "Femenino",
+      other: "Otro"
     },
     disciplines: {
       title: "Disciplinas",
@@ -104,7 +113,65 @@ const translations = {
       delete_rank: "Eliminar Grado",
       empty: "No hay grados.",
     },
+    packages: {
+      title: "Planes",
+      title_single: "Plan",
+      add_package: "Agregar Plan",
+      edit_package: "Editar Plan",
+      delete_package: "Eliminar Plan",
+      empty: "No hay Planes.",
+      week: "Semana",
+      month: "Mes",
+      class: "Clase",
+      fee: "Tarifa",
+      period: "Periodo",
+      chargetype: "Tipo de Membresia",
+      freq: "Frequencia",
+      charge_every: "Cobrar cada",
+      week_limit: "Clases por semana o periodo",
+      period_limit: "Clases por periodo",
+      week_limit_exp: "Define cuantas clases por semana o por periodo un alumno puede asistir",
+      no_limit: "Sin Limite"
+    },
+    memberships:{
+      title: "Membresias",
+      title_single: "Membresia",
+      add_membership: "Agregar Membresia",
+      edit_membership: "Editar Membresia",
+      delete_membership: "Eliminar Membresia",
+      empty: "No hay membresias.",
+      user_id: "Usuario",
+      package_id: "Plan",
+      start_date: "Fecha de Inicio",
+      finish_date: "Fecha de Finalización",
+      fee: "Tarifa", 
+      discounted_fee: "Tarifa descontada",
+      notes: "Notas"
+    },
+    payments:{
+      title: "Pagos",
+      title_single: "Pago",
+      add_payment: "Agregar pago",
+      edit_payment: "Editar pago",
+      delete_payment: "Eliminar pago",
+      empty: "No hay pagos.",
+      user_id: "Usuario",
+      payment_date: "Fecha del pago",
+      amount: "Cantidad",
+      payment_method: "Metodo de pago",
+      reference: "Referencia",
+      status: "Estado",
+      type: "Tipo",
+      cash: "Efectivo",
+      card: "Tarjeta",
+      transfer: "Transferencia",
+      applied: "Aplicado",
+      pending: "Pendiente",
+      payment: "Pago",
+      adjustment: "Ajuste",
+      surcharge: "Recargo" 
   },
+},
   en: {
     common: {
       add: "Add",
@@ -126,13 +193,17 @@ const translations = {
       wishchanges: "Do you wish to save the changes?",
       refresh: "Refresh",
       password_required: "Password (Required)",
-      password_confirm: "Confirm password"
+      password_confirm: "Confirm password",
+      currency: "Currency"
     },
     messages: {
       password_dont_match: "Passwords don't match",
-      sure_delete_user: " Are you to delere this user?",
-      sure_delete_discipline: " Are you to delere this discipline?",
-      sure_delete_rank: " Are you to delere this grade?"
+      sure_delete_user: "Are you sure to delere this user?",
+      sure_delete_discipline: "Are you sure to delere this discipline?",
+      sure_delete_rank: "Are you sure to delere this grade?",
+      sure_delete_package: "Are you sure to delere this package?",
+      sure_delete_membership: "Are you sure to delere this membership?",
+      sure_delete_payment: "Are you sure to delere this payment?",
     },
     dialogs:{
       delete_user: "Delete user",
@@ -158,7 +229,9 @@ const translations = {
       changePass: "Change password",
       active: "Active",
       createuser: "Create user",
-      edituser: "Edit user"
+      edituser: "Edit user",
+      members: "Members",
+      member: "Member"
     },
     usersettings: {
       title: "User Settings",
@@ -191,6 +264,9 @@ const translations = {
       start_date: "Start Date",
       blood_type: "Blood Type",
       medical_notes: "Medical",
+      male: "Male",
+      female: "Female",
+      other: "Other"
     },
     disciplines: {
       title: "Disciplines",
@@ -205,7 +281,65 @@ const translations = {
       edit_rank: "Edit grade",
       delete_rank: "Delete grade"
     },
-  },
+    packages: {
+      title: "Packages",
+      title_single: "Package",
+      add_package: "Add Package",
+      edit_package: "Edit Package",
+      delete_package: "Delete Package",
+      empty: "No packages.",
+      week: "Week",
+      month: "Month",
+      class: "Class",
+      fee: "Fee",
+      period: "Period",
+      chargetype: "Package type",
+      freq: "Frequency",
+      charge_every: "Charge every",
+      week_limit: "Classes per Week or Period",
+      period_limit: "Classes per Period",
+      week_limit_exp: "How many classes per week or period a student can attend",
+      no_limit: "No limit"
+    },
+    memberships:{
+      title: "Memberships",
+      title_single: "Membership",
+      add_membership: "Add Membership",
+      edit_membership: "Edit Membership",
+      delete_membership: "Delete Membership",
+      empty: "No memberships.",
+      user_id: "User",
+      package_id: "Package",
+      start_date: "Start date",
+      finish_date: "Finish date",
+      fee: "Fee", 
+      discounted_fee: "Discounted fee",
+      notes: "Notes"
+    },
+    payments:{
+      title: "Payments",
+      title_single: "Payment",
+      add_payment: "Add payment",
+      edit_payment: "Edit payment",
+      delete_payment: "Delete payment",
+      empty: "No payments.",
+      user_id: "Usuario",
+      payment_date: "Payment date",
+      amount: "Amount",
+      payment_method: "Payment method",
+      reference: "Reference",
+      status: "Status",
+      type: "Type",
+      cash: "Cash",
+      card: "Card",
+      transfer: "Transfer",
+      applied: "Applied",
+      pending: "Pending",
+      payment: "Payment",
+      adjustment: "Adjustment",
+      surcharge: "Surcharge" 
+    },
+  }
 }
 
 export const i18n = new I18n(translations);

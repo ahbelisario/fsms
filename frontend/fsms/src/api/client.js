@@ -3,10 +3,11 @@ import { getAuthToken, clearAuthSession } from "../storage/authStorage";
 const API_BASE_URL = "http://localhost:3000";
 
 async function request(path, { method = "GET", body } = {}) {
+
   const token = await getAuthToken();
 
-  //const res = await fetch(`${API_BASE_URL}${path}`, {
-  const res = await fetch(`${path}`, {  
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+  //const res = await fetch(`${path}`, {  
     method,
     headers: {
       "Content-Type": "application/json",
@@ -66,5 +67,15 @@ export const api = {
   createPackages: (payload) => request("/api/packages", { method: "POST", body: payload }),
   updatePackages: (id, payload) => request(`/api/packages/${id}`, { method: "PUT", body: payload }),
   deletePackages: (id) => request(`/api/packages/${id}`, { method: "DELETE" }),
+
+  listMemberships: () => request("/api/memberships"),
+  createMemberships: (payload) => request("/api/memberships", { method: "POST", body: payload }),
+  updateMemberships: (id, payload) => request(`/api/memberships/${id}`, { method: "PUT", body: payload }),
+  deleteMemberships: (id) => request(`/api/memberships/${id}`, { method: "DELETE" }),
+
+  listPayments: () => request("/api/payments"),
+  createPayments: (payload) => request("/api/payments", { method: "POST", body: payload }),
+  updatePayments: (id, payload) => request(`/api/payments/${id}`, { method: "PUT", body: payload }),
+  deletePayments: (id) => request(`/api/payments/${id}`, { method: "DELETE" }),
   
 };

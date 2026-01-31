@@ -13,7 +13,7 @@ function requireAdmin(req, res, next) {
 }
 
 /**
- * GET /api/packages
+ * GET /api/payments id, membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by
  */
 router.get('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
@@ -21,13 +21,13 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, name, charge_every, charge_freq, fee, week_limit, period_limit, currency FROM packages ORDER BY id DESC', (err, rows) => {
+        fsms_pool.query('SELECT id, membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by FROM payments ORDER BY id DESC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM packages', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM payments', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
@@ -46,14 +46,14 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 /**
- * GET /api/packages/:id
+ * GET /api/payments/:id
  */
 router.get('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT id, name, charge_every, charge_freq, fee, week_limit, period_limit, currency FROM packages WHERE id = ?',
+    'SELECT id, membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by FROM payments WHERE id = ?',
     [id],
     (err, rows) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -64,19 +64,19 @@ router.get('/:id', (req, res) => {
 });
 
 /**
- * POST /api/packages
+ * POST /api/payments
  */
 router.post('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { name, charge_every, charge_freq, fee, week_limit, period_limit, currency } = req.body;
+  const { membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by } = req.body;
 
-  if (!name || !charge_every || !charge_freq || !fee ) {
+  if (!membership_id || !user_id || !payment_date || !amount || !payment_method) {
     return res.status(400).json({ status: 'error', message: 'Some fields are required' });
   }
 
   try {
-    const sql = 'INSERT INTO packages (name, charge_every, charge_freq, fee, week_limit, period_limit, currency) VALUES (?,?,?,?,?,?,?)';
-    fsms_pool.query(sql, [name, charge_every, charge_freq, fee, week_limit, period_limit, currency], (err, result) => {
+    const sql = 'INSERT INTO payments (membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by) VALUES (?,?,?,?,?,?,?,?,?,?)';
+    fsms_pool.query(sql, [membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by], (err, result) => {
       if (err) {
         // Si username es UNIQUE, aquí puedes mapear el error a 409
         console.error(err);
@@ -87,7 +87,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
       res.status(201).json({
         status: 'success',
-        data: { id, name, charge_every, charge_freq, fee, currency, week_limit, period_limit }
+        data: { id, membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by }
       });
     });
   } catch (e) {
@@ -97,7 +97,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 /**
- * PUT /api/packages/:id
+ * PUT /api/payments/:id
  */
 router.put('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
@@ -111,12 +111,12 @@ router.put('/:id', (req, res) => {
   //  return res.status(403).json({ status: 'error', message: 'Not allowed' });
   // }
 
-  const { name, charge_every, charge_freq, fee, week_limit, period_limit, currency } = req.body;
+  const { membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by } = req.body;
   
   // Actualiza solo campos permitidos para no-admin
   // (Si admin, puedes incluir role/active en otro SQL)
-  const sql = 'UPDATE packages SET name = ?, charge_every = ?, charge_freq = ?, fee = ?, week_limit = ?, period_limit = ?, currency = ? WHERE id = ?';
-  const params = [name, charge_every, charge_freq, fee, week_limit, period_limit, currency, id];
+  const sql = 'UPDATE payments SET membership_id = ?, user_id = ?, payment_date = ?, amount = ?, payment_method = ?, reference = ?, status = ?, type = ?, created_by = ? WHERE id = ?';
+  const params = [membership_id, user_id, payment_date, amount, payment_method, reference, status, type, created_by, id];
 
   fsms_pool.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
@@ -126,7 +126,7 @@ router.put('/:id', (req, res) => {
 });
 
 /**
- * DELETE /api/packages/:id
+ * DELETE /api/payments/:id
  * En muchos sistemas se recomienda "soft delete" (active=0) en vez de borrar.
  */
 router.delete('/:id', requireAdmin, (req, res) => {
@@ -134,7 +134,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
 
   // Soft delete recomendado:
-  fsms_pool.query('DELETE FROM packages WHERE id = ?', [id], (err, result) => {
+  fsms_pool.query('DELETE FROM payments WHERE id = ?', [id], (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
     if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
     res.json({ status: 'success', message: 'User disabled' });

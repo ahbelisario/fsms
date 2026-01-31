@@ -1,13 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View} from "react-native";
 import { ScoreCard } from "../screens/ScoreCard";
 import { api } from "../api/client";
-import { i18n, t } from "@/src/i18n";
+import { t } from "@/src/i18n";
 
 export default function Dashboard({ onAuthExpired }) {
   const [totalusers, setUsers] = useState([]);
   const [totaldisciplines, setDisciplines] = useState([]);
   const [totalranks, setRanks] = useState([]);
+  const [totalpackages, setPackages] = useState([]);
+  const [totalmemberships, setMemberships] = useState([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -32,16 +35,19 @@ export default function Dashboard({ onAuthExpired }) {
     try {
 
       const dataUsers = await api.listUsers();
-      const totalUsers = Array.isArray(dataUsers) ? dataUsers : dataUsers?.response || dataUsers?.total_rows || [];
-      setUsers(totalUsers);
+      setUsers(Number(dataUsers?.total_rows ?? 0));
 
       const dataRanks = await api.listRanks();
-      const totalRanks = Array.isArray(dataRanks) ? dataRanks : dataRanks?.response || dataRanks?.total_rows || [];
-      setRanks(totalRanks);
+      setRanks(Number(dataRanks?.total_rows ?? 0));
 
       const dataDisciplines = await api.listDisciplines();
-      const totalDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.total_rows || [];
-      setDisciplines(totalDisciplines);
+      setDisciplines(Number(dataDisciplines?.total_rows ?? 0));
+
+      const dataPackages = await api.listPackages();
+      setPackages(Number(dataPackages?.total_rows ?? 0));
+
+      const dataMemberships = await api.listMemberships();
+      setMemberships(Number(dataMemberships?.total_rows ?? 0));
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -55,6 +61,12 @@ export default function Dashboard({ onAuthExpired }) {
     }
   }
 
+  useFocusEffect(
+      useCallback(() => {
+        loadTotals();
+      }, [])
+    );
+
   useEffect(() => {
     loadTotals();
   }, []);
@@ -63,19 +75,26 @@ export default function Dashboard({ onAuthExpired }) {
     <View style={s.container}>
       <View style={s.grid}>
         <View style={s.cell}>
-          <ScoreCard title={t("users.title")} value={totalusers} subtitle="Total" />
+          <ScoreCard title={t("memberships.title")} value={totalmemberships ? totalmemberships : "0"} subtitle="Total" />
         </View>
         <View style={s.cell}>
-          <ScoreCard title={t("disciplines.title")} value={totaldisciplines} subtitle="Total" delta="+12%" />
+          <ScoreCard title=" " value=" " subtitle=" " />
         </View>
       </View>
-
       <View style={s.grid}>
         <View style={s.cell}>
-          <ScoreCard title={t("ranks.title")} value={totalranks} subtitle="Total" />
+          <ScoreCard title={t("users.title")} value={totalusers ? totalusers : "0"} subtitle="Total" />
         </View>
         <View style={s.cell}>
-          <ScoreCard title=" " value=" " subtitle=" " delta=" " />
+          <ScoreCard title={t("disciplines.title")} value={totaldisciplines ? totaldisciplines : "0"} subtitle="Total" />
+        </View>
+      </View>
+      <View style={s.grid}>
+        <View style={s.cell}>
+          <ScoreCard title={t("ranks.title")} value={totalranks ? totalranks : "0"} subtitle="Total" />
+        </View>
+        <View style={s.cell}>
+          <ScoreCard title={t("packages.title")} value={totalpackages ? totalpackages : "0"} subtitle="Total" />
         </View>
       </View>
     </View>

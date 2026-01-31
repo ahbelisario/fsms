@@ -26,13 +26,13 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, created_at FROM users WHERE active = 1 ORDER BY id DESC', (err, rows) => {
+        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, created_at FROM users WHERE (active = 1 and username != "admin") ORDER BY id DESC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM users WHERE active = 1', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM users WHERE (active = 1 and username != "admin")', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
