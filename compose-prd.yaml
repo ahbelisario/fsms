@@ -41,6 +41,8 @@ services:
   fsms-db:
     build:
       context: db
+    ports:
+      - "3307:3306"
     networks:
       - fsms-server
 
