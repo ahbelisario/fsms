@@ -77,5 +77,8 @@ export const api = {
   createPayments: (payload) => request("/api/payments", { method: "POST", body: payload }),
   updatePayments: (id, payload) => request(`/api/payments/${id}`, { method: "PUT", body: payload }),
   deletePayments: (id) => request(`/api/payments/${id}`, { method: "DELETE" }),
+
+  reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
+
   
 };

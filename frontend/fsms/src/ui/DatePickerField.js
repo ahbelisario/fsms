@@ -7,11 +7,17 @@ if (Platform.OS !== "web") {
   DateTimePicker = require("@react-native-community/datetimepicker").default;
 }
 
+
+
 function formatDate(date) {
   if (!date) return "";
-  const d = new Date(date);
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  const d = date instanceof Date ? date : new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
+
 
 export default function DatePickerField({
   label,
@@ -45,7 +51,20 @@ export default function DatePickerField({
   }
 
   /* ===================== MOBILE ===================== */
-  const dateValue = value ? new Date(value) : new Date();
+ const normalized =
+  typeof value === "string" ? value.slice(0, 10) : value;
+
+  const dateValue =
+    typeof normalized === "string" && /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+      ? new Date(
+          Number(normalized.slice(0, 4)),
+          Number(normalized.slice(5, 7)) - 1,
+          Number(normalized.slice(8, 10)),
+          12, 0, 0
+        )
+      : normalized
+        ? new Date(normalized)
+        : new Date();
 
   function onPick(_, selectedDate) {
     setShow(false);
@@ -67,7 +86,7 @@ export default function DatePickerField({
         onPress={() => setShow(true)}
       >
         <Text style={{ color: value ? "#0f172a" : "#64748b" }}>
-          {value || placeholder}
+          {(typeof value === "string" ? value.slice(0,10) : value) || placeholder}
         </Text>
       </Pressable>
 

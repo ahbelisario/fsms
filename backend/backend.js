@@ -68,6 +68,11 @@ app.use('/api/memberships', requireAuth, membershipsRoutes);
 const { router: paymentsRoutes } = require('./routes/payments');
 app.use('/api/payments', requireAuth, paymentsRoutes);
 
+//CustomQuery
+
+const { router: reportsRoutes } = require('./routes/reports');
+app.use('/api/reports', requireAuth, reportsRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

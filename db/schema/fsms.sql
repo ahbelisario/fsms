@@ -116,6 +116,7 @@ CREATE TABLE `payments` (
   `user_id` int NOT NULL,
   `payment_date` datetime NOT NULL,
   `amount` decimal(10,2) NOT NULL,
+  `currency` varchar(3) NOT NULL,
   `payment_method` varchar(25) DEFAULT NULL,
   `reference` varchar(100) DEFAULT NULL,
   `status` varchar(25) DEFAULT NULL,
@@ -124,6 +125,7 @@ CREATE TABLE `payments` (
   PRIMARY KEY (`id`),
   KEY `fk_userid_p_idx` (`user_id`),
   KEY `fk_memb_p_idx` (`membership_id`),
+  KEY `idx_payments_status_date` (`status`,`payment_date`),
   CONSTRAINT `fk_memb_p` FOREIGN KEY (`membership_id`) REFERENCES `memberships` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_userid_p` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
@@ -335,4 +337,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-30 16:27:25
+-- Dump completed on 2026-01-31 12:05:54

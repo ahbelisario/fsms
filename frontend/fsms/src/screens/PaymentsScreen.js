@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, SectionList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { api } from "../api/client";
 import { ScreenStyles } from '../styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
@@ -29,17 +29,31 @@ export default function PaymentsScreen({ onAuthExpired }) {
   const [user_id, setUserId] = useState(null); 
   const [payment_date, setPaymentDate] = useState(null); 
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("MXN");
   const [paymentmethod, setPaymentMethod] = useState("cash"); 
   const [reference, setReference] = useState(""); 
   const [status, setStatus] = useState("applied"); 
   const [type, setType] = useState("payment");
-  const [created_by, setCreatedBy] = useState(null);
-
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
+
+  const [expandedYears, setExpandedYears] = useState({});   // { "2025": true/false }
+  const [expandedMonths, setExpandedMonths] = useState({}); // { "2025-07": true/false }
+
+  function toggleYear(year) {
+    const y = String(year);
+    setExpandedYears(prev => ({ ...prev, [y]: !prev[y] }));
+  }
+
+  function toggleMonth(year, monthIndex) {
+    const m = String(monthIndex + 1).padStart(2, "0");
+    const key = `${year}-${m}`;
+    setExpandedMonths(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
 
   function clearMsgs() {
     setError("");
@@ -93,12 +107,26 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
   function toYMD(value) {
     if (!value) return "";
-    // si ya viene YYYY-MM-DD
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
 
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}[T\s]/.test(value)) {
+      return value.slice(0, 10);
+    }
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return ""; // inválido
-    return d.toISOString().slice(0, 10);
+    if (isNaN(d.getTime())) return "";
+
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function toDMY(v) {
+    if (!v) return "";
+    // v viene como "2025-07-01T00:00:00.000Z"
+    const ymd = String(v).slice(0, 10); // "2025-07-01"
+    const [y, m, d] = ymd.split("-");
+    return `${d}/${m}/${y}`; // "01/07/2025"
   }
 
   function resetForm() {
@@ -112,7 +140,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
     setReference(reference ? reference : ""); 
     setStatus(status ? status : ""); 
     setType(type ? type : "");
-    setCreatedBy("");
+
   }
 
   function openCreate() {
@@ -129,13 +157,12 @@ export default function PaymentsScreen({ onAuthExpired }) {
     setUserId(u.user_id ?? null);
     setMembershipId(u.membership_id ?? null);
 
-    setPaymentDate(toYMD(u.start_date ?? null));
+    setPaymentDate(toYMD(u.payment_date ?? null));
     setAmount(u.amount ?? "");
-    setPaymentMethod(u.paymentmethod ?? ""); 
+    setPaymentMethod(u.payment_method ?? ""); 
     setReference(u.reference ?? ""); 
     setStatus(u.status ?? ""); 
     setType(u.type ?? "");
-    setCreatedBy(u.created_by ?? "");
 
     setModalVisible(true);
   }
@@ -156,6 +183,65 @@ export default function PaymentsScreen({ onAuthExpired }) {
     setToDeleteId(null);
   }
 
+  const MONTHS_ES = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+  ];
+
+  function ymdFromApi(v) {
+    if (!v) return "";
+    return String(v).slice(0, 10); // "YYYY-MM-DD" (evita TZ)
+  }
+
+  function dmyFromApi(v) {
+    const ymd = ymdFromApi(v);
+    if (!ymd) return "";
+    const [y, m, d] = ymd.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function buildYearMonthSections(payments) {
+    // Orden: más reciente primero
+    const sorted = [...payments].sort((a, b) => {
+      const da = ymdFromApi(a.payment_date);
+      const db = ymdFromApi(b.payment_date);
+      // string compare funciona para YYYY-MM-DD
+      return db.localeCompare(da);
+    });
+
+    // year -> monthIndex(0-11) -> items[]
+    const map = new Map();
+
+    for (const p of sorted) {
+      const ymd = ymdFromApi(p.payment_date);
+      if (!ymd) continue;
+      const year = ymd.slice(0, 4);
+      const month = Number(ymd.slice(5, 7)) - 1;
+
+      if (!map.has(year)) map.set(year, new Map());
+      const monthsMap = map.get(year);
+
+      if (!monthsMap.has(month)) monthsMap.set(month, []);
+      monthsMap.get(month).push(p);
+    }
+
+    // Construye sections: [{ title: "2025", data: [{month: 6, items:[...]} ...] }]
+    const years = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
+
+    return years.map((year) => {
+      const monthsMap = map.get(year);
+      const months = Array.from(monthsMap.keys()).sort((a, b) => b - a); // desc
+
+      const data = months.map((month) => ({
+        month,
+        items: monthsMap.get(month),
+      }));
+
+      return { title: year, year, data };
+    });
+  }
+
+
   async function loadPayments() {
     clearMsgs();
     setLoading(true);
@@ -165,6 +251,13 @@ export default function PaymentsScreen({ onAuthExpired }) {
       const data = await api.listPayments();
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setPayments(list);
+
+      const sections = buildYearMonthSections(list);
+      const firstYear = sections[0]?.title;
+      if (firstYear) setExpandedYears({ [firstYear]: true });
+
+
+      console.log(list);
 
       const userData = await api.listUsers();
       const userList = Array.isArray(userData) ? userData : userData?.response || userData?.data || [];
@@ -201,10 +294,6 @@ export default function PaymentsScreen({ onAuthExpired }) {
     }, [])
   );
 
-  useEffect(() => {
-    loadPayments();
-  }, []);
-
   function validate() {
     if (!user_id) return "User required.";
     if (!membership_id) return "Membership required.";
@@ -229,14 +318,13 @@ export default function PaymentsScreen({ onAuthExpired }) {
         user_id: user_id,
         payment_date: payment_date,
         amount: Number(amount),
-        paymentmethod: paymentmethod, 
-        reference: reference,
-        status: status, 
-        type: type,
+        currency: currency.trim(),
+        payment_method: paymentmethod.trim(), 
+        reference: reference.trim(),
+        status: status.trim(), 
+        type: type.trim(),
         created_by: me.data.id
       };
-
-      console.log(payload);
 
       if (isEditing) {   
 
@@ -304,40 +392,86 @@ export default function PaymentsScreen({ onAuthExpired }) {
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
-        <FlatList
-          data={payments}
-          refreshing={loading}
-          onRefresh={loadPayments}
-          keyExtractor={(u) => String(u.id)}
-          renderItem={({ item }) => (
-            <View style={ScreenStyles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("payments.payment_date")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{formatDate(item.payment_date)}</Text>
+        <SectionList
+          sections={buildYearMonthSections(payments)}
+          keyExtractor={(row) => `month-${row.month}`} // cada row = {month, items}
+          stickySectionHeadersEnabled
+          renderSectionHeader={({ section }) => {
+          const isOpen = !!expandedYears[section.title];
+          return (
+            <Pressable onPress={() => toggleYear(section.title)} style={ScreenStyles.sectionHeaderRow}>
+              <Text style={ScreenStyles.sectionHeaderText}>{section.title}</Text>
+              <Text style={ScreenStyles.sectionHeaderArrow}>{isOpen ? "▲" : "▼"}</Text>
+            </Pressable>
+          );
+        }}
+
+          renderItem={({ item, section }) => {
+            // item = { month, items: [...] }
+            if (!expandedYears[section.title]) return null; // año colapsado
+
+            const monthLabel = MONTHS_ES[item.month];
+            const monthKey = `${section.title}-${String(item.month + 1).padStart(2, "0")}`;
+            const isMonthOpen = !!expandedMonths[monthKey];
+
+            return (
+              <View>
+                {/* Header del mes con mismo look que section header */}
+                <Pressable
+                  onPress={() => toggleMonth(section.title, item.month)}
+                  style={ScreenStyles.monthHeaderRow}
+                >
+                  <Text style={ScreenStyles.sectionHeaderText}>{monthLabel}</Text>
+                  <Text style={ScreenStyles.sectionHeaderArrow}>{item.items.length} {isMonthOpen ? "▲" : "▼"}</Text>
+                </Pressable>
+
+                {/* Items del mes (solo si mes abierto) */}
+                {isMonthOpen && item.items.map((pay) => (
+                  <View key={pay.id} style={ScreenStyles.row}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("payments.payment_date")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{dmyFromApi(pay.payment_date)}</Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("payments.user_id")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{findName(pay.user_id)}</Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("payments.amount")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{pay.amount + " " + pay.currency}</Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("payments.status")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{t("payments." + pay.status)}</Text>
+                    </View>
+
+                    <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(pay)}>
+                      <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]}
+                      onPress={() => askDelete(pay.id)}
+                    >
+                      <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
+                    </Pressable>
+                  </View>
+                ))}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("payments.user_id")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{findName(item.user_id)}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("payments.amount")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{item.amount + " " + item.currency}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("payments.status")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{item.status}</Text>
-              </View>
-              <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-              </Pressable>
-               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-              </Pressable>
+            );
+          }}
+
+          ListEmptyComponent={
+            <View style={ScreenStyles.center}>
+              <Text style={{ color: "#64748b" }}>{t("payments.empty")}</Text>
             </View>
-          )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("payments.empty")}</Text></View>}
+          }
         />
       )}
+
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
@@ -374,6 +508,14 @@ export default function PaymentsScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.label}>{t("payments.amount")}</Text>
                 <TextInput style={ScreenStyles.input} value={amount} onChangeText={setAmount} />
               </View>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("common.currency")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={currency} onValueChange={setCurrency}>
+                    <Picker.Item label="MXN" value="MXN" />
+                  </Picker>
+                </View>
+              </View>              
             </View>
             <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("payments.payment_method")}</Text>
@@ -391,7 +533,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
                 <DatePickerField
                   label={t("payments.payment_date")}
                   value={payment_date}
-                  onChange={setPaymentDate}
+                  onChange={(v) => setPaymentDate(toYMD(v))}
                 />
               </View>
             </View>

@@ -61,29 +61,38 @@ export const ScreenStyles = StyleSheet.create({
   sectionHeaderText: { color: "white", fontWeight: "700", fontSize: 14, },
 
   sectionHeaderRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  backgroundColor: "#111827",
-  paddingVertical: 10,
-  paddingHorizontal: 12,
-  borderRadius: 10,
-  marginTop: 10,
-  marginBottom: 8,
-},
-sectionHeaderArrow: {
-  color: "white",
-  fontWeight: "800",
-  fontSize: 14,
-},
-divider: {
-  height: 1,
-  backgroundColor: "#e5e7eb",
-  marginVertical: 8,
-  marginHorizontal: 12,
-},
-
-
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#3f4a61",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  sectionHeaderArrow: {
+    color: "white",
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginVertical: 8,
+    marginHorizontal: 12,
+  },
+  monthHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#69799d",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 8,
+  },
 
 });
 

@@ -42,8 +42,11 @@
     "react-native-reanimated": "*",
     "react-native-safe-area-context": "*",
     "react-native-screens": "*",
+    "react-native-svg": "15.12.1",
     "react-native-web": "*",
-    "react-native-worklets": "*"
+    "react-native-worklets": "*",
+    "victory": "^37.3.6",
+    "victory-native": "^41.20.2"
   },
   "devDependencies": {
     "@types/react": "*",
