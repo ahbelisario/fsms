@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { useDrawerControl } from "@/src/context/DrawerControlContext";
 import { Platform, useWindowDimensions, View } from "react-native";
@@ -8,6 +8,7 @@ import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import { t } from "@/src/i18n";
+
 
 function CustomDrawerContent(props: any) {
   const router = useRouter();
@@ -42,6 +43,8 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function MainLayout() {
+
+  const drawerNavRef = useRef<any>(null);
   const navigation = useNavigation();
   const { setToggleMainDrawer } = useDrawerControl();
 
@@ -49,7 +52,9 @@ export default function MainLayout() {
     const fn = () => navigation.dispatch(DrawerActions.toggleDrawer());
 
     // registra el handler
-    setToggleMainDrawer(() => fn);
+    setToggleMainDrawer(() => () => {
+    drawerNavRef.current?.dispatch(DrawerActions.toggleDrawer());
+  });
 
     // cleanup
     return () => setToggleMainDrawer(undefined);
@@ -66,7 +71,11 @@ export default function MainLayout() {
   return (
     <Drawer
       id="mainDrawer"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => {
+        drawerNavRef.current = props.navigation; // ✅ ESTE ES EL NAV REAL DEL DRAWER
+        return <CustomDrawerContent {...props} />;
+      }}
+
       screenOptions={{
         headerShown: false, // header global está en app/_layout
         drawerType: isPermanent ? "permanent" : "front",
