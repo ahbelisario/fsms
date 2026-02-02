@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { View, Text, Pressable } from "react-native";
 import { Stack, useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
 import { api } from "@/src/api/client";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import ProfileMenu from "@/src/ui/ProfileMenu";
@@ -12,6 +12,8 @@ import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession }
 import { useLanguage } from "@/src/i18n/LanguageProvider";
 
 export default function AppLayout() {
+
+  const navigation = useNavigation();
   const { lang, setLanguage, t, ready } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
@@ -107,17 +109,27 @@ export default function AppLayout() {
             </View>
           ),
 
-          // ✅ Back SOLO cuando estás en settings
-          headerLeft: isInSettings
-            ? () => (
+          headerLeft: () => {
+            if (isInSettings) {
+              return (
                 <Pressable
                   onPress={() => router.replace("/(app)/(main)/dashboard")}
                   style={{ paddingHorizontal: 12 }}
                 >
                   <Ionicons name="arrow-back" size={22} color="#0b1220" />
                 </Pressable>
-              )
-            : undefined,
+              );
+            }
+
+            return (
+              <Pressable
+                onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+                style={{ paddingHorizontal: 12 }}
+              >
+                <Ionicons name="menu" size={24} color="#0b1220" />
+              </Pressable>
+            );
+          },
         }}
       >
         {/* “Shells” */}
