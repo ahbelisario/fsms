@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { View, Text, Pressable } from "react-native";
-import { Stack, useRouter, usePathname } from "expo-router";
+import { Stack, useRouter, usePathname, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from "@/src/styles/appStyles";
@@ -16,7 +16,8 @@ export default function AppLayout() {
   const navigation = useNavigation();
   const { lang, setLanguage, t, ready } = useLanguage();
   const router = useRouter();
-  const pathname = usePathname();
+
+
 
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -106,7 +107,10 @@ export default function AppLayout() {
 
   if (!hasSession) return null;
 
-  const isInSettings = pathname.startsWith("/(app)/(settings)");
+  const segments = useSegments();
+
+  // segments típicamente: ["(app)", "(settings)", "packages"] o ["(app)", "(main)", "dashboard"]
+  const isInSettings = segments.includes("(settings)");
 
   return (
     <>
