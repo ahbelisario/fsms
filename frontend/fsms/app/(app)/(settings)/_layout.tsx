@@ -3,15 +3,9 @@ import { Text, View, Pressable, Platform, useWindowDimensions } from "react-nati
 import { Drawer } from "expo-router/drawer";
 import { useRouter, type Href } from "expo-router";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { Ionicons } from "@expo/vector-icons";
-import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
-import ProfileMenu from "@/src/ui/ProfileMenu";
-import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
-import UserSettingsModal from "@/src/ui/UserSettings";
-import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
 import { t } from "@/src/i18n";
-import { useLanguage } from "@/src/i18n/LanguageProvider";
+
 
 function CustomDrawerContent(props: any) {
 

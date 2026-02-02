@@ -17,8 +17,6 @@ export default function AppLayout() {
   const { lang, setLanguage, t, ready } = useLanguage();
   const router = useRouter();
 
-
-
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -28,6 +26,9 @@ export default function AppLayout() {
   const [userSettingsVisible, setUserSettingsVisible] = useState(false);
 
   const isAdmin = user?.username === "admin";
+
+  const segments = useSegments();
+  const isInSettings = segments.includes("(settings)");
 
   function findActiveDrawerKey(state: any): string | null {
     if (!state) return null;
@@ -107,10 +108,7 @@ export default function AppLayout() {
 
   if (!hasSession) return null;
 
-  const segments = useSegments();
-
-  // segments típicamente: ["(app)", "(settings)", "packages"] o ["(app)", "(main)", "dashboard"]
-  const isInSettings = segments.includes("(settings)");
+  
 
   return (
     <>
