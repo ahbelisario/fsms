@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, SectionList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { api } from "../api/client";
-import { ScreenStyles } from '../styles/appStyles';
+import { api } from "@/src/api/client";
+import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 

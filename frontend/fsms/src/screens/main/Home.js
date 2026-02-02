@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View} from "react-native";
-import { ScoreCard } from "./ScoreCard";
-import { api } from "../api/client";
+import { ScoreCard } from "@/src/screens/helpers/ScoreCard";
+import { api } from "@/src/api/client";
 
 export default function Home({ onAuthExpired }) {
  

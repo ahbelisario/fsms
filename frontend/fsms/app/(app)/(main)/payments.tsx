@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Redirect, type Href } from "expo-router";
 import { Text, View } from "react-native";
-import PackagesScreen from "@/src/screens/PackagesScreen";
+import PaymentsScreen from "@/src/screens/main/PaymentsScreen";
 import { getAuthToken } from "@/src/storage/authStorage";
 
-export default function PackagesRoute() {
+export default function PaymentsRoute() {
   const [loading, setLoading] = useState(true);
   const [hasToken, setHasToken] = useState(false);
 
@@ -33,5 +33,5 @@ export default function PackagesRoute() {
     return <Redirect href={LOGIN} />;
   }
 
-  return <PackagesScreen />;
+  return <PaymentsScreen />;
 }

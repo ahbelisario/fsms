@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
-import { api } from "../api/client";
-import { ScreenStyles } from '../styles/appStyles';
+import { api } from "@/src/api/client";
+import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 import { Picker } from "@react-native-picker/picker";
@@ -263,11 +263,10 @@ export default function MembershipsScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
-          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-            <Text style={ScreenStyles.btnPrimaryText}>{t("memberships.add_membership")}</Text>
-          </Pressable>
-        </View>
+        <Text style={ScreenStyles.title}>{t("memberships.title")}</Text>
+        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("memberships.add_membership")}</Text>
+        </Pressable>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}

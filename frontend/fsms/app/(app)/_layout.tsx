@@ -1,106 +1,40 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, Pressable, Platform, useWindowDimensions } from "react-native";
-import { Drawer } from "expo-router/drawer";
-import { useRouter, type Href } from "expo-router";
-import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import { Stack, useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+
 import { api } from "@/src/api/client";
-import { ScreenStyles } from '@/src/styles/appStyles';
+import { ScreenStyles } from "@/src/styles/appStyles";
 import ProfileMenu from "@/src/ui/ProfileMenu";
 import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
 import UserSettingsModal from "@/src/ui/UserSettings";
 import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
-import { t } from "@/src/i18n";
 import { useLanguage } from "@/src/i18n/LanguageProvider";
 
-
-function CustomDrawerContent(props: any) {
-
-  const router = useRouter();
-  const USERS: Href = "/(app)/users";
-  const HOME: Href = "/(app)/home";
-  const DISCIPLINES: Href = "/(app)/disciplines";
-  const PACKAGES: Href = "/(app)/packages";
-  const MEMBERSHIPS: Href = "/(app)/memberships";
-  const DASHBOARD: Href = "/(app)/dashboard";
-  const RANKS: Href = "/(app)/ranks";
-  const PAYMENTS: Href = "/(app)/payments";
-  const LOGIN: Href = "/(auth)";
-  const user = props.user;
-
-  //<DrawerItem label="Logout" onPress={handleLogout} />
-
-  async function handleLogout() {
-    await clearAuthSession();
-    router.replace(LOGIN);
-  }
-
-  return (
-    <DrawerContentScrollView {...props}>
-      {user?.role === "admin" ? ( <DrawerItem label={t("dashboard.title")} onPress={() => router.push(DASHBOARD)} /> ) : (<DrawerItem label="Home" onPress={() => router.push(HOME)} />)}
-      <View style={ScreenStyles.divider} />
-      {user?.role === "admin" && ( <DrawerItem label={t("users.members")} onPress={() => router.push(USERS)} />)}
-      {user?.role === "admin" && ( <DrawerItem label={t("packages.title")} onPress={() => router.push(PACKAGES)} />)}
-      {user?.role === "admin" && ( <DrawerItem label={t("memberships.title")} onPress={() => router.push(MEMBERSHIPS)} />)}
-      <View style={ScreenStyles.divider} />
-      {user?.role === "admin" && ( <DrawerItem label={t("payments.title")} onPress={() => router.push(PAYMENTS)} />)}
-      <View style={ScreenStyles.divider} />
-      {user?.role === "admin" && ( <DrawerItem label={t("disciplines.title")} onPress={() => router.push(DISCIPLINES)} />)}
-      {user?.role === "admin" && ( <DrawerItem label={t("ranks.title")} onPress={() => router.push(RANKS)} />)}
-      <View style={ScreenStyles.divider} />
-      
-    </DrawerContentScrollView>
-  );
-}
-
 export default function AppLayout() {
-
   const { lang, setLanguage, t, ready } = useLanguage();
-  
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
-  const [user, setUser] = useState(null);
-
-  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [changePwdVisible, setChangePwdVisible] = useState(false);
   const [userSettingsVisible, setUserSettingsVisible] = useState(false);
 
-  const [i18nReady, setI18nReady] = useState(false);
-
   const isAdmin = user?.username === "admin";
 
-  const { width } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
-  const isDesktop = width >= 1024;
-  const drawerWidth = 200;
-  const isPermanent = isWeb && isDesktop;
-
-
-  function openProfileMenu() {
-    setProfileMenuOpen(true);
-  }
-
-  function closeProfileMenu() {
-    setProfileMenuOpen(false);
-  }
-  
   useEffect(() => {
     let mounted = true;
 
-    if (!loading && !hasSession) {
-      router.replace("/(auth)");
-    }
-
     (async () => {
       try {
-
         const token = await getAuthToken();
-        if (token) await ensureSessionExpiry();  
+        if (token) await ensureSessionExpiry();
 
         const expired = await isSessionExpired();
-
         if (!token || expired) {
           await clearAuthSession();
           if (!mounted) return;
@@ -115,42 +49,33 @@ export default function AppLayout() {
         const settingsResp = await api.listUserSettings(me.id);
         const settings = settingsResp?.data ?? settingsResp;
         const language = String(settings?.language ?? "").toLowerCase() || "es";
-        
+
         if (!mounted) return;
         setUser(me);
         setHasSession(true);
         setLanguage(language);
-
-          const role = String(me?.role ?? "").trim().toLowerCase();
-
-      } catch (e) {
-
-        if (e?.code === "AUTH_EXPIRED") {
-          await clearAuthSession();
-          if (!mounted) return;
-          setHasSession(false);
-          setUser(null);
-          return;
-        }
-
+      } catch (e: any) {
         await clearAuthSession();
         if (!mounted) return;
         setHasSession(false);
         setUser(null);
-
       } finally {
-
         if (!mounted) return;
-        setI18nReady(true);
         setLoading(false);
       }
-
     })();
 
     return () => {
       mounted = false;
     };
-  }, [loading, hasSession, router]);
+  }, []);
+
+  // Redirección al login si no hay sesión
+  useEffect(() => {
+    if (!loading && !hasSession) {
+      router.replace("/(auth)");
+    }
+  }, [loading, hasSession]);
 
   if (loading || !ready) {
     return (
@@ -160,109 +85,93 @@ export default function AppLayout() {
     );
   }
 
-  if (!hasSession) {
-    return null;
-  }
-  
+  if (!hasSession) return null;
+
+  const isInSettings = pathname.startsWith("/(app)/(settings)");
+
   return (
-      <>
-        <Drawer
-            drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
-            screenOptions={{
-              drawerType: isPermanent ? "permanent" : "front",
-              drawerStyle: { width: drawerWidth } ,
-              overlayColor: isPermanent ? "transparent" : undefined,
-              swipeEnabled: !isPermanent,
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: true,
 
-              // ✅ En desktop normalmente ocultas header/hamburguesa
-              //headerShown: !isPermanent,
+          // ✅ Header global (se ve en main y settings)
+          headerRight: () => (
+            <View style={ScreenStyles.rowNoWidth}>
+              <Text style={{ fontWeight: "800" }} onPress={() => setProfileMenuOpen(true)}>
+                {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
+              </Text>
+              <Pressable onPress={() => setProfileMenuOpen(true)} style={{ marginRight: 14 }}>
+                <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
+              </Pressable>
+            </View>
+          ),
 
-              headerShown: true,
-              headerLeft: isPermanent ? () => null : undefined,
-              headerRight: () => ( 
-                  <View style={ScreenStyles.rowNoWidth}>
-                    <Text style={{ fontWeight: "800" }} onPress={openProfileMenu}>
-                      {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
-                    </Text>
-                    <Pressable onPress={openProfileMenu} style={{ marginRight: 14 }}>
-                      <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
-                    </Pressable>
-                  </View>
-                ),
+          // ✅ Back SOLO cuando estás en settings
+          headerLeft: isInSettings
+            ? () => (
+                <Pressable
+                  onPress={() => router.replace("/(app)/(main)/dashboard")}
+                  style={{ paddingHorizontal: 12 }}
+                >
+                  <Ionicons name="arrow-back" size={22} color="#0b1220" />
+                </Pressable>
+              )
+            : undefined,
+        }}
+      >
+        {/* “Shells” */}
+        <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
+        <Stack.Screen name="(settings)" options={{ title: "Configuración" }} />
+      </Stack>
 
-              sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
-            }}
-          >
+      {/* Modales siguen globales */}
+      <ProfileMenu
+        key={lang}
+        visible={profileMenuOpen}
+        onClose={() => setProfileMenuOpen(false)}
+        isAdmin={isAdmin}
+        onGoProfile={() => {
+          setProfileMenuOpen(false);
+          router.push("/(app)/(main)/userprofiles");
+        }}
+        onChangePassword={() => {
+          setProfileMenuOpen(false);
+          setChangePwdVisible(true);
+        }}
+        onUserSettings={() => {
+          setProfileMenuOpen(false);
+          setUserSettingsVisible(true);
+        }}
+        onLogout={async () => {
+          setProfileMenuOpen(false);
+          await clearAuthSession();
+          router.replace("/(auth)");
+        }}
+      />
 
+      <ChangePasswordModal
+        key={lang}
+        visible={changePwdVisible}
+        userId={user?.id ?? null}
+        onClose={() => setChangePwdVisible(false)}
+        onAuthExpired={async () => {
+          await clearAuthSession();
+          router.replace("/(auth)");
+        }}
+      />
 
-          <Drawer.Screen name="home" options={{ title: "Home" }} />
-          <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title"), drawerLabel: () => <Text>{t("dashboard.title")}</Text>, }} />
-          <Drawer.Screen name="users" options={{ title: t("users.members"), drawerLabel: () => <Text>{t("users.title")}</Text>, }} />
-          <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title"), drawerLabel: () => <Text>{t("userprofiles.title")}</Text>, }} />
-          <Drawer.Screen name="userprofiles/[userId]" options={{ title: t("userprofiles.title"), drawerLabel: () => <Text>{t("userprofiles.title")}</Text>, }} />
-          <Drawer.Screen name="disciplines" options={{ title: t("disciplines.title"), drawerLabel: () => <Text>{t("disciplines.title")}</Text>, }} />
-          <Drawer.Screen name="ranks" options={{ title: t("ranks.title"), drawerLabel: () => <Text>{t("ranks.title")}</Text>, }} />
-          <Drawer.Screen name="packages" options={{ title: t("packages.title"), drawerLabel: () => <Text>{t("packages.title")}</Text>, }} />
-          <Drawer.Screen name="memberships" options={{ title: t("memberships.title"), drawerLabel: () => <Text>{t("memberships.title")}</Text>, }} />
-          <Drawer.Screen name="payments" options={{ title: t("payments.title"), drawerLabel: () => <Text>{t("payments.title")}</Text>, }} />
-        </Drawer>
-
-        <ProfileMenu
-                key={lang}
-                visible={profileMenuOpen}
-                onClose={closeProfileMenu}
-                isAdmin={isAdmin}
-                onGoProfile={() => {
-                  closeProfileMenu();
-                  router.push("/(app)/userprofiles");
-                }}
-                onChangePassword={() => {
-                  closeProfileMenu();
-                  setChangePwdVisible(true);
-                }}
-                onUserSettings={() => {
-                  closeProfileMenu();
-                  setUserSettingsVisible(true);
-                }}
-                onLogout={async () => {
-                  closeProfileMenu();
-                  await clearAuthSession();
-                  router.replace("/(auth)");
-                }}
-              />
-
-        <ChangePasswordModal
-          key={lang}
-          visible={changePwdVisible}
-          userId={user?.id ?? null}
-          onClose={() => setChangePwdVisible(false)}
-          onSuccess={() => {
-            // opcional: toast / setSuccess global
-          }}
-          onAuthExpired={async () => {
-            await clearAuthSession();
-            router.replace("/(auth)");
-          }}
-        />
-
-        <UserSettingsModal
-          key={lang}
-          visible={userSettingsVisible}
-          userId={user?.id ?? null}
-          onClose={() => setUserSettingsVisible(false)}
-          onSuccess={() => {
-            // opcional: toast / setSuccess global
-          }}
-          onLanguageChanged={async (newLang) => {
-            setLanguage(newLang);
-          }}
-          onAuthExpired={async () => {
-            await clearAuthSession();
-            router.replace("/(auth)");
-          }}
-          
-        />
-      </>    
+      <UserSettingsModal
+        key={lang}
+        visible={userSettingsVisible}
+        userId={user?.id ?? null}
+        onClose={() => setUserSettingsVisible(false)}
+        onLanguageChanged={async (newLang) => setLanguage(newLang)}
+        onAuthExpired={async () => {
+          await clearAuthSession();
+          router.replace("/(auth)");
+        }}
+      />
+    </>
   );
-
 }

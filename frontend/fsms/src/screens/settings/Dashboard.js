@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View} from "react-native";
-import { ScoreCard } from "../screens/ScoreCard";
-import { api } from "../api/client";
+import { ScoreCard } from "@/src/screens/helpers/ScoreCard";
+import { ChartCard } from "@/src/screens/helpers/ChartCard";
+import { api } from "@/src/api/client";
 import { t } from "@/src/i18n";
 import { VictoryBar, VictoryChart, VictoryTheme, VictoryAxis } from "@/src/ui/victory";
-import { ChartCard } from "../screens/ChartCard";
 
 export default function Dashboard({ onAuthExpired }) {
   const [totalusers, setUsers] = useState([]);

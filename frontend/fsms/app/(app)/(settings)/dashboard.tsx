@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Redirect, type Href } from "expo-router";
 import { Text, View } from "react-native";
-import PaymentsScreen from "@/src/screens/PaymentsScreen";
+import Dashboard from "@/src/screens/settings/Dashboard";
 import { getAuthToken } from "@/src/storage/authStorage";
 
-export default function PaymentsRoute() {
+export default function DashboardRoute() {
   const [loading, setLoading] = useState(true);
   const [hasToken, setHasToken] = useState(false);
 
@@ -33,5 +33,5 @@ export default function PaymentsRoute() {
     return <Redirect href={LOGIN} />;
   }
 
-  return <PaymentsScreen />;
+  return <Dashboard />;
 }
