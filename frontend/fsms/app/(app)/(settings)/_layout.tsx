@@ -45,6 +45,7 @@ export default function SettingsLayout() {
 
   return (
       <Drawer
+        id="settingsDrawer"
                  drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
                  screenOptions={{
                    drawerType: isPermanent ? "permanent" : "front",

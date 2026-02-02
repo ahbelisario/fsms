@@ -123,13 +123,18 @@ export default function AppLayout() {
 
             return (
               <Pressable
-                onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+                onPress={() => {
+                  // ✅ togglear el drawer correcto (main)
+                  const parent = navigation.getParent?.("mainDrawer");
+                  parent?.dispatch(DrawerActions.toggleDrawer());
+                }}
                 style={{ paddingHorizontal: 12 }}
               >
                 <Ionicons name="menu" size={24} color="#0b1220" />
               </Pressable>
             );
           },
+
         }}
       >
         {/* “Shells” */}

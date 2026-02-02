@@ -169,6 +169,7 @@ export default function MainLayout() {
   return (
       <>
         <Drawer
+            id="mainDrawer"
             drawerContent={(props) => <CustomDrawerContent {...props} user={user} />}
             screenOptions={{
               drawerType: isPermanent ? "permanent" : "front",
