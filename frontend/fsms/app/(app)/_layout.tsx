@@ -28,6 +28,23 @@ export default function AppLayout() {
 
   const isAdmin = user?.username === "admin";
 
+  function findActiveDrawerKey(state: any): string | null {
+    if (!state) return null;
+
+    // En RN 6/7: el tipo puede estar en state.type
+    if (state.type === "drawer" && state.key) return state.key;
+
+    const route = state.routes?.[state.index ?? 0];
+    if (!route) return null;
+
+    // Algunos estados anidados vienen en route.state
+    if (route.state) return findActiveDrawerKey(route.state);
+
+    // A veces viene en state.routes[index].state pero no siempre
+    return null;
+  }
+
+
   useEffect(() => {
     let mounted = true;
 
@@ -125,8 +142,16 @@ export default function AppLayout() {
               <Pressable
                 onPress={() => {
                   // ✅ togglear el drawer correcto (main)
-                  const parent = navigation.getParent?.("mainDrawer");
-                  parent?.dispatch(DrawerActions.toggleDrawer());
+                  const state = navigation.getState();
+                  const drawerKey = findActiveDrawerKey(state);
+
+                  if (drawerKey) {
+                    navigation.dispatch({ ...DrawerActions.toggleDrawer(), target: drawerKey });
+                  } else {
+                    // fallback (por si todavía no está montado el drawer)
+                    navigation.dispatch(DrawerActions.toggleDrawer());
+                  }
+
                 }}
                 style={{ paddingHorizontal: 12 }}
               >

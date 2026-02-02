@@ -19,11 +19,8 @@ function CustomDrawerContent(props: any) {
   const router = useRouter();
   const USERS: Href = "/(app)/(main)/users";
   const HOME: Href = "/(app)/(main)/home";
-  const DISCIPLINES: Href = "/(app)/(settings)/disciplines";
-  const PACKAGES: Href = "/(app)/(settings)/packages";
   const MEMBERSHIPS: Href = "/(app)/(main)/memberships";
   const DASHBOARD: Href = "/(app)/(main)/dashboard";
-  const RANKS: Href = "/(app)/(settings)/ranks";
   const PAYMENTS: Href = "/(app)/(main)/payments";
   const SETTINGS: Href = "/(app)/(settings)";
   const LOGIN: Href = "/(auth)";
