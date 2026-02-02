@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigation, DrawerActions } from "@react-navigation/native";
-import { View, Text, Pressable } from "react-native";
-import { Stack, useRouter, usePathname, useSegments } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Platform, useWindowDimensions, View, Text, Pressable } from "react-native";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+
 import { api } from "@/src/api/client";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import ProfileMenu from "@/src/ui/ProfileMenu";
@@ -11,11 +11,19 @@ import UserSettingsModal from "@/src/ui/UserSettings";
 import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
 import { useLanguage } from "@/src/i18n/LanguageProvider";
 
-export default function AppLayout() {
+import { DrawerControlProvider, useDrawerControl } from "@/src/context/DrawerControlContext";
 
-  const navigation = useNavigation();
+function AppShell() {
   const { lang, setLanguage, t, ready } = useLanguage();
   const router = useRouter();
+  const segments = useSegments();
+  const isInSettings = segments.includes("(settings)");
+
+  const { width } = useWindowDimensions();
+  const isWebDesktop = Platform.OS === "web" && width >= 1024;
+
+  // ✅ aquí sí se puede consumir, porque AppShell está dentro del Provider
+  const { toggleMainDrawer } = useDrawerControl();
 
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -26,26 +34,6 @@ export default function AppLayout() {
   const [userSettingsVisible, setUserSettingsVisible] = useState(false);
 
   const isAdmin = user?.username === "admin";
-
-  const segments = useSegments();
-  const isInSettings = segments.includes("(settings)");
-
-  function findActiveDrawerKey(state: any): string | null {
-    if (!state) return null;
-
-    // En RN 6/7: el tipo puede estar en state.type
-    if (state.type === "drawer" && state.key) return state.key;
-
-    const route = state.routes?.[state.index ?? 0];
-    if (!route) return null;
-
-    // Algunos estados anidados vienen en route.state
-    if (route.state) return findActiveDrawerKey(route.state);
-
-    // A veces viene en state.routes[index].state pero no siempre
-    return null;
-  }
-
 
   useEffect(() => {
     let mounted = true;
@@ -91,7 +79,6 @@ export default function AppLayout() {
     };
   }, []);
 
-  // Redirección al login si no hay sesión
   useEffect(() => {
     if (!loading && !hasSession) {
       router.replace("/(auth)");
@@ -108,15 +95,12 @@ export default function AppLayout() {
 
   if (!hasSession) return null;
 
-  
-
   return (
     <>
       <Stack
         screenOptions={{
           headerShown: true,
 
-          // ✅ Header global (se ve en main y settings)
           headerRight: () => (
             <View style={ScreenStyles.rowNoWidth}>
               <Text style={{ fontWeight: "800" }} onPress={() => setProfileMenuOpen(true)}>
@@ -129,6 +113,7 @@ export default function AppLayout() {
           ),
 
           headerLeft: () => {
+            // ← Back en settings
             if (isInSettings) {
               return (
                 <Pressable
@@ -140,36 +125,25 @@ export default function AppLayout() {
               );
             }
 
+            // En web desktop el drawer es fijo: opcional ocultar botón
+            if (isWebDesktop) return null;
+
+            // ☰ Hamburguesa en móvil: abrir drawer MAIN (registrado desde (main)/_layout)
             return (
               <Pressable
-                onPress={() => {
-                  // ✅ togglear el drawer correcto (main)
-                  const state = navigation.getState();
-                  const drawerKey = findActiveDrawerKey(state);
-
-                  if (drawerKey) {
-                    navigation.dispatch({ ...DrawerActions.toggleDrawer(), target: drawerKey });
-                  } else {
-                    // fallback (por si todavía no está montado el drawer)
-                    navigation.dispatch(DrawerActions.toggleDrawer());
-                  }
-
-                }}
+                onPress={() => toggleMainDrawer?.()}
                 style={{ paddingHorizontal: 12 }}
               >
                 <Ionicons name="menu" size={24} color="#0b1220" />
               </Pressable>
             );
           },
-
         }}
       >
-        {/* “Shells” */}
         <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
         <Stack.Screen name="(settings)" options={{ title: "Configuración" }} />
       </Stack>
 
-      {/* Modales siguen globales */}
       <ProfileMenu
         key={lang}
         visible={profileMenuOpen}
@@ -217,5 +191,13 @@ export default function AppLayout() {
         }}
       />
     </>
+  );
+}
+
+export default function AppLayout() {
+  return (
+    <DrawerControlProvider>
+      <AppShell />
+    </DrawerControlProvider>
   );
 }

@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useDrawerControl } from "@/src/context/DrawerControlContext";
 import { Platform, useWindowDimensions, View } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { useRouter, type Href } from "expo-router";
@@ -40,6 +42,21 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function MainLayout() {
+  const navigation = useNavigation();
+  const { setToggleMainDrawer } = useDrawerControl();
+
+  useEffect(() => {
+    const fn = () => navigation.dispatch(DrawerActions.toggleDrawer());
+
+    // registra el handler
+    setToggleMainDrawer(() => fn);
+
+    // cleanup
+    return () => setToggleMainDrawer(undefined);
+  }, [navigation, setToggleMainDrawer]);
+
+  // ... tu lógica de drawerWidth, isPermanent, etc
+
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
