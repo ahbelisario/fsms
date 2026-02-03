@@ -9,7 +9,7 @@ export default function Index() {
     (async () => {
       const token = await getAuthToken();
       if (token && !isSessionExpired(token)) {
-        router.replace("/(app)/home");
+        router.replace("/(app)/(main)/home");
       } else {
         router.replace("/(auth)");
       }

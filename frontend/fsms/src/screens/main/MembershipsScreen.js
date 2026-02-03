@@ -262,7 +262,7 @@ export default function MembershipsScreen({ onAuthExpired }) {
 
   return (
     <View style={ScreenStyles.page}>
-      <View style={ScreenStyles.header}>
+    <View style={ScreenStyles.header}>
         <Text style={ScreenStyles.title}>{t("memberships.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
           <Text style={ScreenStyles.btnPrimaryText}>{t("memberships.add_membership")}</Text>

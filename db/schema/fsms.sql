@@ -41,6 +41,67 @@ INSERT INTO `disciplines` VALUES (1,'Aikido','El Aikido Tendoryu, es un estilo q
 UNLOCK TABLES;
 
 --
+-- Table structure for table `income_types`
+--
+
+DROP TABLE IF EXISTS `income_types`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `income_types` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) NOT NULL,
+  `description` mediumtext,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `income_types`
+--
+
+LOCK TABLES `income_types` WRITE;
+/*!40000 ALTER TABLE `income_types` DISABLE KEYS */;
+INSERT INTO `income_types` VALUES (1,'Payment',NULL),(2,'Adjustment',NULL),(3,'Surcharge',NULL),(4,'Applied',NULL),(5,'Pending',NULL);
+/*!40000 ALTER TABLE `income_types` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `incomes`
+--
+
+DROP TABLE IF EXISTS `incomes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `incomes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `description` varchar(150) DEFAULT NULL,
+  `membership_id` int DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `income_date` datetime NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `currency` varchar(3) NOT NULL,
+  `income_method` varchar(25) DEFAULT NULL,
+  `reference` varchar(100) DEFAULT NULL,
+  `status` varchar(25) DEFAULT NULL,
+  `income_type` int NOT NULL,
+  `created_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_inc_type_idx` (`income_type`),
+  KEY `fk_inc_types_idx` (`income_type`),
+  CONSTRAINT `fk_inc_types` FOREIGN KEY (`income_type`) REFERENCES `income_types` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `incomes`
+--
+
+LOCK TABLES `incomes` WRITE;
+/*!40000 ALTER TABLE `incomes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `incomes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `memberships`
 --
 
@@ -337,4 +398,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-31 12:05:54
+-- Dump completed on 2026-02-03 10:34:13

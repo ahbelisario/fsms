@@ -17,7 +17,7 @@ function CustomDrawerContent(props: any) {
   const DASHBOARD: Href = "/(app)/(main)/dashboard";
   const USERS: Href = "/(app)/(main)/users";
   const MEMBERSHIPS: Href = "/(app)/(main)/memberships";
-  const PAYMENTS: Href = "/(app)/(main)/payments";
+  const INCOMES: Href = "/(app)/(main)/incomes";
   const SETTINGS: Href = "/(app)/(settings)";
 
   return (
@@ -27,12 +27,12 @@ function CustomDrawerContent(props: any) {
 
       <DrawerItem label={t("users.members")} onPress={() => router.push(USERS)} />
       <DrawerItem label={t("memberships.title")} onPress={() => router.push(MEMBERSHIPS)} />
-      <DrawerItem label={t("payments.title")} onPress={() => router.push(PAYMENTS)} />
+      <DrawerItem label={t("incomes.title")} onPress={() => router.push(INCOMES)} />
 
       <View style={ScreenStyles.divider} />
 
       <DrawerItem
-        label="Configuración"
+        label={t("common.settings")}
         icon={({ size, color }) => (
           <Ionicons name="settings-outline" size={size} color={color} />
         )}
@@ -65,7 +65,7 @@ export default function MainLayout() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
-  const drawerWidth = 250;
+  const drawerWidth = 220;
   const isPermanent = isWeb && isDesktop;
 
   return (
@@ -89,7 +89,7 @@ export default function MainLayout() {
       <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title") }} />
       <Drawer.Screen name="users" options={{ title: t("users.title") }} />
       <Drawer.Screen name="memberships" options={{ title: t("memberships.title") }} />
-      <Drawer.Screen name="payments" options={{ title: t("payments.title") }} />
+      <Drawer.Screen name="incomes" options={{ title: t("incomes.title") }} />
       <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title") }} />
       <Drawer.Screen name="userprofiles/[userId]" options={{ title: t("userprofiles.title") }} />
     </Drawer>

@@ -10,13 +10,14 @@ import DatePickerField from "@/src/ui/DatePickerField";
 import { formatDate } from "@/src/utils/utils";
 
 
-export default function PaymentsScreen({ onAuthExpired }) {
+export default function IncomesScreen({ onAuthExpired }) {
 
-  const [payments, setPayments] = useState([]);
+  const [incomes, setIncomes] = useState([]);
   const [memberships, setMemberships] = useState([]);
   const [packages, setPackages] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [income_types, setIncomeTypes] = useState([]);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -25,15 +26,16 @@ export default function PaymentsScreen({ onAuthExpired }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  const [description, setDescription] = useState("");
   const [membership_id, setMembershipId] = useState(null); 
   const [user_id, setUserId] = useState(null); 
-  const [payment_date, setPaymentDate] = useState(null); 
+  const [income_date, setIncomeDate] = useState(null); 
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("MXN");
-  const [paymentmethod, setPaymentMethod] = useState("cash"); 
+  const [incomemethod, setIncomeMethod] = useState("cash"); 
   const [reference, setReference] = useState(""); 
   const [status, setStatus] = useState("applied"); 
-  const [type, setType] = useState("payment");
+  const [income_type_id, setIncomeTypeId] = useState(null);
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
@@ -66,7 +68,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
     const finish = new Date(today);
     finish.setMonth(finish.getMonth() + 12);
 
-    setPaymentDate(toYMD(today));
+    setIncomeDate(toYMD(today));
   }
 
   function findName(uId) {
@@ -90,7 +92,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
     return findPackage(pkgId);
   }
 
-  function setPaymentUserIdMembership(uId,mId) {
+  function setIncomeUserIdMembership(uId,mId) {
     setUserId(uId);
     setMembershipId(mId);
   }
@@ -102,7 +104,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
     const m = memberships.find(x => x.id === id);
     if (!m) return;
 
-    setPaymentUserIdMembership(m.user_id, m.id); // o setPaymentUserId(m.user_id) + setMembershipId(m.id)
+    setIncomeUserIdMembership(m.user_id, m.id); // o setIncomeUserId(m.user_id) + setMembershipId(m.id)
   }
 
   function toYMD(value) {
@@ -131,15 +133,15 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
   function resetForm() {
     setEditingId(null);
-
+    setDescription(""); 
     setUserId(user_id ? user_id : null); 
     setMembershipId(membership_id ? membership_id : null);
-    setPaymentDate(null); 
+    setIncomeDate(null); 
     setAmount("");
-    setPaymentMethod(paymentmethod ? paymentmethod : ""); 
+    setIncomeMethod(incomemethod ? incomemethod : ""); 
     setReference(reference ? reference : ""); 
     setStatus(status ? status : ""); 
-    setType(type ? type : "");
+    setIncomeTypeId(income_type_id ? income_type_id : 1);
 
   }
 
@@ -153,16 +155,17 @@ export default function PaymentsScreen({ onAuthExpired }) {
   function openEdit(u) {
     clearMsgs();
     setEditingId(u.id);
-
+    
+    setDescription(u.description ?? ""); 
     setUserId(u.user_id ?? null);
     setMembershipId(u.membership_id ?? null);
 
-    setPaymentDate(toYMD(u.payment_date ?? null));
+    setIncomeDate(toYMD(u.income_date ?? null));
     setAmount(u.amount ?? "");
-    setPaymentMethod(u.payment_method ?? ""); 
+    setIncomeMethod(u.income_method ?? ""); 
     setReference(u.reference ?? ""); 
     setStatus(u.status ?? ""); 
-    setType(u.type ?? "");
+    setIncomeTypeId(u.income_type_id ?? null);
 
     setModalVisible(true);
   }
@@ -200,11 +203,11 @@ export default function PaymentsScreen({ onAuthExpired }) {
     return `${d}/${m}/${y}`;
   }
 
-  function buildYearMonthSections(payments) {
+  function buildYearMonthSections(incomes) {
     // Orden: más reciente primero
-    const sorted = [...payments].sort((a, b) => {
-      const da = ymdFromApi(a.payment_date);
-      const db = ymdFromApi(b.payment_date);
+    const sorted = [...incomes].sort((a, b) => {
+      const da = ymdFromApi(a.income_date);
+      const db = ymdFromApi(b.income_date);
       // string compare funciona para YYYY-MM-DD
       return db.localeCompare(da);
     });
@@ -213,7 +216,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
     const map = new Map();
 
     for (const p of sorted) {
-      const ymd = ymdFromApi(p.payment_date);
+      const ymd = ymdFromApi(p.income_date);
       if (!ymd) continue;
       const year = ymd.slice(0, 4);
       const month = Number(ymd.slice(5, 7)) - 1;
@@ -242,22 +245,23 @@ export default function PaymentsScreen({ onAuthExpired }) {
   }
 
 
-  async function loadPayments() {
+  async function loadIncomes() {
     clearMsgs();
     setLoading(true);
     try {
 
       
-      const data = await api.listPayments();
+      const data = await api.listIncomes();
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
-      setPayments(list);
+      setIncomes(list);
+
+      const dataIncomeTypes = await api.listIncomeTypes();
+      const listIncomeTypes = Array.isArray(dataIncomeTypes) ? dataIncomeTypes : dataIncomeTypes?.response || dataIncomeTypes?.data || [];
+      setIncomeTypes(listIncomeTypes);
 
       const sections = buildYearMonthSections(list);
       const firstYear = sections[0]?.title;
       if (firstYear) setExpandedYears({ [firstYear]: true });
-
-
-      console.log(list);
 
       const userData = await api.listUsers();
       const userList = Array.isArray(userData) ? userData : userData?.response || userData?.data || [];
@@ -290,15 +294,15 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadPayments();
+      loadIncomes();
     }, [])
   );
 
   function validate() {
-    if (!user_id) return "User required.";
-    if (!membership_id) return "Membership required.";
-    if (!payment_date) return "Payment Date required.";
+    if (!income_date) return "Income Date required.";
     if (!amount) return "Amount required.";
+    if (!currency) return "Currency required.";
+    if (!income_type_id) return "Type required.";
     return "";
   }
 
@@ -314,32 +318,35 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
     try {
       const payload = {
+        description: description.trim(),
         membership_id: membership_id,
         user_id: user_id,
-        payment_date: payment_date,
+        income_date: income_date,
         amount: Number(amount),
         currency: currency.trim(),
-        payment_method: paymentmethod.trim(), 
+        income_method: incomemethod.trim(), 
         reference: reference.trim(),
         status: status.trim(), 
-        type: type.trim(),
+        income_type: income_type_id,
         created_by: me.data.id
       };
 
+      console.log(payload);
+
       if (isEditing) {   
 
-        await api.updatePayments(editingId, payload);
-        setSuccess("Payment updated.");
+        await api.updateIncomes(editingId, payload);
+        setSuccess("Income updated.");
 
       } else {
 
-        await api.createPayments(payload);
-        setSuccess("Payment created.");
+        await api.createIncomes(payload);
+        setSuccess("Income created.");
 
       }
 
       setModalVisible(false);
-      await loadPayments();
+      await loadIncomes();
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -357,9 +364,9 @@ export default function PaymentsScreen({ onAuthExpired }) {
     clearMsgs();
     setLoading(true);
     try {
-      await api.deletePayments(id);
-      setSuccess("Payment deleted.");
-      await loadPayments();
+      await api.deleteIncomes(id);
+      setSuccess("Income deleted.");
+      await loadIncomes();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -374,18 +381,17 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
   return (
     <View style={ScreenStyles.page}>
-      <View style={ScreenStyles.header}>
-        <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
-          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-            <Text style={ScreenStyles.btnPrimaryText}>{t("payments.add_payment")}</Text>
-          </Pressable>
-        </View>
+    <View style={ScreenStyles.header}>
+        <Text style={ScreenStyles.title}>{t("incomes.title")}</Text>
+        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("incomes.add_income")}</Text>
+        </Pressable>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
-      <Pressable style={ScreenStyles.btnSecondary} onPress={loadPayments} disabled={loading}>
+      <Pressable style={ScreenStyles.btnSecondary} onPress={loadIncomes} disabled={loading}>
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
@@ -393,7 +399,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
         <SectionList
-          sections={buildYearMonthSections(payments)}
+          sections={buildYearMonthSections(incomes)}
           keyExtractor={(row) => `month-${row.month}`} // cada row = {month, items}
           stickySectionHeadersEnabled
           renderSectionHeader={({ section }) => {
@@ -422,30 +428,30 @@ export default function PaymentsScreen({ onAuthExpired }) {
                   style={ScreenStyles.monthHeaderRow}
                 >
                   <Text style={ScreenStyles.sectionHeaderText}>{monthLabel}</Text>
-                  <Text style={ScreenStyles.sectionHeaderArrow}>{item.items.length} {isMonthOpen ? "▲" : "▼"}</Text>
+                  <Text style={ScreenStyles.sectionHeaderArrow}>{t("incomes.title") + ": "+ item.items.length+ " "} {isMonthOpen ? "▲" : "▼"}</Text>
                 </Pressable>
 
                 {/* Items del mes (solo si mes abierto) */}
                 {isMonthOpen && item.items.map((pay) => (
                   <View key={pay.id} style={ScreenStyles.row}>
                     <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("payments.payment_date")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{dmyFromApi(pay.payment_date)}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{t("incomes.income_date")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{dmyFromApi(pay.income_date)}</Text>
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("payments.user_id")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{findName(pay.user_id)}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{pay.user_id ? t("incomes.user_id") : t("common.description")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{pay.user_id ? findName(pay.user_id) : pay.description}</Text>
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("payments.amount")}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{t("incomes.amount")}</Text>
                       <Text style={ScreenStyles.rowTitle}>{pay.amount + " " + pay.currency}</Text>
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("payments.status")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{t("payments." + pay.status)}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{t("incomes.status")}</Text>
+                      <Text style={ScreenStyles.rowTitle}>{t("incomes." + pay.status)}</Text>
                     </View>
 
                     <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(pay)}>
@@ -466,7 +472,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
           ListEmptyComponent={
             <View style={ScreenStyles.center}>
-              <Text style={{ color: "#64748b" }}>{t("payments.empty")}</Text>
+              <Text style={{ color: "#64748b" }}>{t("incomes.empty")}</Text>
             </View>
           }
         />
@@ -476,10 +482,10 @@ export default function PaymentsScreen({ onAuthExpired }) {
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
-            <Text style={ScreenStyles.modalTitle}>{isEditing? t("payments.edit_payment") : t("payments.add_payment")}</Text>
+            <Text style={ScreenStyles.modalTitle}>{isEditing? t("incomes.edit_income") : t("incomes.add_income")}</Text>
 
             {/* Users 
-            <Text style={ScreenStyles.label}>{t("payments.user_id")}</Text>
+            <Text style={ScreenStyles.label}>{t("incomes.user_id")}</Text>
             <View style={ScreenStyles.pickerWrapper}>
               <Picker selectedValue={user_id} onValueChange={(v) => setUserId(v)}>
                 {users
@@ -494,18 +500,37 @@ export default function PaymentsScreen({ onAuthExpired }) {
            */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("incomes.type")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={income_type_id} onValueChange={setIncomeTypeId}>
+                    {income_types.map((d) => (
+                      <Picker.Item key={d.id} label={d.name} value={d.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View> 
+              <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("memberships.title")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={membership_id} onValueChange={onMembershipChange}>
+                      <Picker.Item label="N/A" value="" />
                     {memberships.map((d) => (
                       <Picker.Item key={d.id} label={findName(d.user_id)+ " - " +findMembership(d.id)} value={d.id} />
                     ))}
                   </Picker>
                 </View>
               </View>
-              {/* Fees and Currency */}
+            </View>
+            <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("payments.amount")}</Text>
+                <Text style={ScreenStyles.label}>{t("common.description")}</Text>
+                <TextInput style={ScreenStyles.input} value={description} onChangeText={setDescription} />
+              </View>
+            </View>
+              {/* Fees and Currency */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("incomes.amount")}</Text>
                 <TextInput style={ScreenStyles.input} value={amount} onChangeText={setAmount} />
               </View>
               <View style={{ flex: 1 }}>
@@ -517,49 +542,40 @@ export default function PaymentsScreen({ onAuthExpired }) {
                 </View>
               </View>              
             </View>
-            <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("payments.payment_method")}</Text>
-                <View style={ScreenStyles.pickerWrapper}>
-                  <Picker selectedValue={paymentmethod} onValueChange={setPaymentMethod}>
-                    <Picker.Item label={t("payments.cash")} value="cash" />
-                    <Picker.Item label={t("payments.transfer")}value="transfer" />
-                    <Picker.Item label={t("payments.card")} value="card" />
-                  </Picker>
-                </View>
-              </View>  
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("payments.payment_date")}</Text>
+                <Text style={ScreenStyles.label}>{t("incomes.income_method")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={incomemethod} onValueChange={setIncomeMethod}>
+                    <Picker.Item label={t("incomes.cash")} value="cash" />
+                    <Picker.Item label={t("incomes.transfer")}value="transfer" />
+                    <Picker.Item label={t("incomes.card")} value="card" />
+                  </Picker>
+                </View>
+              </View>
+              <View style={{ flex: 1 }}>
                 <DatePickerField
-                  label={t("payments.payment_date")}
-                  value={payment_date}
-                  onChange={(v) => setPaymentDate(toYMD(v))}
+                  label={t("incomes.income_date")}
+                  value={income_date}
+                  onChange={(v) => setIncomeDate(toYMD(v))}
                 />
               </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={ScreenStyles.label}>{t("payments.reference")}</Text>
-              <TextInput style={ScreenStyles.input} value={reference} onChangeText={setReference} />
-            </View>
-            <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("payments.status")}</Text>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("incomes.reference")}</Text>
+                <TextInput style={ScreenStyles.input} value={reference} onChangeText={setReference} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("incomes.status")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={status} onValueChange={setStatus}>
-                    <Picker.Item label={t("payments.applied")} value="applied" />
-                    <Picker.Item label={t("payments.pending")} value="pending" />
+                    <Picker.Item label={t("incomes.applied")} value="applied" />
+                    <Picker.Item label={t("incomes.pending")} value="pending" />
                   </Picker>
                 </View>
-              </View>            
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("payments.type")}</Text>
-                <View style={ScreenStyles.pickerWrapper}>
-                  <Picker selectedValue={type} onValueChange={setType}>
-                    <Picker.Item label={t("payments.payment")} value="payment" />
-                    <Picker.Item label={t("payments.adjustment")} value="adjustment" />
-                    <Picker.Item label={t("payments.surcharge")} value="surcharge" />
-                  </Picker>
-                </View>
-              </View> 
+              </View>      
+            </View>
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable style={[ScreenStyles.btnSecondary, { flex: 1 }]} onPress={() => setModalVisible(false)} disabled={saving}>
                 <Text style={ScreenStyles.btnSecondaryText}>{t("common.cancel")}</Text>
@@ -575,7 +591,7 @@ export default function PaymentsScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={t("payments.delete_membership")}
+        title={t("incomes.delete_membership")}
         message={t("messages.sure_delete_membership")}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}

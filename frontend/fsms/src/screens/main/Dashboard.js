@@ -62,15 +62,6 @@ export default function Dashboard({ onAuthExpired }) {
       const dataUsers = await api.listUsers();
       setUsers(Number(dataUsers?.total_rows ?? 0));
 
-      const dataRanks = await api.listRanks();
-      setRanks(Number(dataRanks?.total_rows ?? 0));
-
-      const dataDisciplines = await api.listDisciplines();
-      setDisciplines(Number(dataDisciplines?.total_rows ?? 0));
-
-      const dataPackages = await api.listPackages();
-      setPackages(Number(dataPackages?.total_rows ?? 0));
-
       const dataMemberships = await api.listMemberships();
       setMemberships(Number(dataMemberships?.total_rows ?? 0));
 
@@ -82,6 +73,8 @@ export default function Dashboard({ onAuthExpired }) {
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
       setMonthlyPayments(normalizedData);
+
+
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -108,15 +101,6 @@ export default function Dashboard({ onAuthExpired }) {
         </View>
         <View style={s.cell}>
           <ScoreCard title={t("users.title")} value={totalusers ? totalusers : "0"} subtitle="Total" />
-        </View>
-        <View style={s.cell}>
-          <ScoreCard title={t("packages.title")} value={totalpackages ? totalpackages : "0"} subtitle="Total" />
-        </View>
-        <View style={s.cell}>
-          <ScoreCard title={t("disciplines.title")} value={totaldisciplines ? totaldisciplines : "0"} subtitle="Total" />
-        </View>
-        <View style={s.cell}>
-          <ScoreCard title={t("ranks.title")} value={totalranks ? totalranks : "0"} subtitle="Total" />
         </View>
       </View>
       <View style={s.grid}>

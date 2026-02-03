@@ -17,11 +17,11 @@ router.get('/payments/monthly-summary', (req, res) => {
 
   const sql = `
     SELECT 
-      DATE_FORMAT(payment_date, '%Y-%m') AS month,
+      DATE_FORMAT(income_date, '%Y-%m') AS month,
       SUM(amount) AS total
-    FROM payments
+    FROM incomes
     WHERE status = ?
-      AND payment_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+      AND income_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
     GROUP BY month
     ORDER BY month
   `;

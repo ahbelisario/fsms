@@ -18,12 +18,10 @@ function AppShell() {
   const router = useRouter();
   const segments = useSegments();
   const isInSettings = segments.includes("(settings)");
+  const { toggleMainDrawer, toggleSettingsDrawer } = useDrawerControl();
 
   const { width } = useWindowDimensions();
   const isWebDesktop = Platform.OS === "web" && width >= 1024;
-
-  // ✅ aquí sí se puede consumir, porque AppShell está dentro del Provider
-  const { toggleMainDrawer } = useDrawerControl();
 
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -113,25 +111,17 @@ function AppShell() {
           ),
 
           headerLeft: () => {
-            // ← Back en settings
-            if (isInSettings) {
-              return (
-                <Pressable
-                  onPress={() => router.replace("/(app)/(main)/dashboard")}
-                  style={{ paddingHorizontal: 12 }}
-                >
-                  <Ionicons name="arrow-back" size={22} color="#0b1220" />
-                </Pressable>
-              );
-            }
-
-            // En web desktop el drawer es fijo: opcional ocultar botón
             if (isWebDesktop) return null;
 
-            // ☰ Hamburguesa en móvil: abrir drawer MAIN (registrado desde (main)/_layout)
             return (
               <Pressable
-                onPress={() => toggleMainDrawer?.()}
+                onPress={() => {
+                  if (isInSettings) {
+                    toggleSettingsDrawer?.();
+                  } else {
+                    toggleMainDrawer?.();
+                  }
+                }}
                 style={{ paddingHorizontal: 12 }}
               >
                 <Ionicons name="menu" size={24} color="#0b1220" />
@@ -141,7 +131,7 @@ function AppShell() {
         }}
       >
         <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
-        <Stack.Screen name="(settings)" options={{ title: "Configuración" }} />
+        <Stack.Screen name="(settings)" options={{ title: t("common.settings") }} />
       </Stack>
 
       <ProfileMenu

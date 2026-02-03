@@ -184,11 +184,10 @@ export default function PackagesScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <View style={{ flexDirection: "row", width: "100%", justifyContent: "flex-end" }}>
-          <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-            <Text style={ScreenStyles.btnPrimaryText}>{t("packages.add_package")}</Text>
-          </Pressable>
-        </View>
+        <Text style={ScreenStyles.title}>{t("packages.title")}</Text>
+        <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("packages.add_package")}</Text>
+        </Pressable>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}

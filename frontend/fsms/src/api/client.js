@@ -73,10 +73,15 @@ export const api = {
   updateMemberships: (id, payload) => request(`/api/memberships/${id}`, { method: "PUT", body: payload }),
   deleteMemberships: (id) => request(`/api/memberships/${id}`, { method: "DELETE" }),
 
-  listPayments: () => request("/api/payments"),
-  createPayments: (payload) => request("/api/payments", { method: "POST", body: payload }),
-  updatePayments: (id, payload) => request(`/api/payments/${id}`, { method: "PUT", body: payload }),
-  deletePayments: (id) => request(`/api/payments/${id}`, { method: "DELETE" }),
+  listIncomes: () => request("/api/incomes"),
+  createIncomes: (payload) => request("/api/incomes", { method: "POST", body: payload }),
+  updateIncomes: (id, payload) => request(`/api/incomes/${id}`, { method: "PUT", body: payload }),
+  deleteIncomes: (id) => request(`/api/incomes/${id}`, { method: "DELETE" }),
+
+  listIncomeTypes: () => request("/api/incometypes"),
+  createIncomeTypes: (payload) => request("/api/incometypes", { method: "POST", body: payload }),
+  updateIncomeTypes: (id, payload) => request(`/api/incometypes/${id}`, { method: "PUT", body: payload }),
+  deleteIncomeTypes: (id) => request(`/api/incometypes/${id}`, { method: "DELETE" }),
 
   reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
 

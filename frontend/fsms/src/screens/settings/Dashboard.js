@@ -73,23 +73,21 @@ export default function Dashboard({ onAuthExpired }) {
       const dataMemberships = await api.listMemberships();
       setMemberships(Number(dataMemberships?.total_rows ?? 0));
 
-      const dataReportPaymentMonthlySummary = await api.reportsPaymentsMonthlySummary();
-      const listReportPaymentMonthlySummary = Array.isArray(dataReportPaymentMonthlySummary) ? dataReportPaymentMonthlySummary : dataReportPaymentMonthlySummary?.response || dataReportPaymentMonthlySummary?.data || [];
-      const normalizedData = listReportPaymentMonthlySummary.map(r => ({
-        month: r.month,               // "2025-02"
-        total: Number(r.total),       // 1950
-      }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-      setMonthlyPayments(normalizedData);
     } catch (e) {
+
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
         setError(e.message);
         return;
+
       }
+
       setError(e.message || "No se pudo cargar usuarios.");
+
     } finally {
+
       setLoading(false);
+
     }
   }
 
@@ -105,12 +103,16 @@ export default function Dashboard({ onAuthExpired }) {
         <View style={s.cell}>
           <ScoreCard title={t("memberships.title")} value={totalmemberships ? totalmemberships : "0"} subtitle="Total" />
         </View>
+      </View>
+      <View style={s.grid}>
         <View style={s.cell}>
           <ScoreCard title={t("users.title")} value={totalusers ? totalusers : "0"} subtitle="Total" />
         </View>
         <View style={s.cell}>
           <ScoreCard title={t("packages.title")} value={totalpackages ? totalpackages : "0"} subtitle="Total" />
         </View>
+      </View>
+      <View style={s.grid}>        
         <View style={s.cell}>
           <ScoreCard title={t("disciplines.title")} value={totaldisciplines ? totaldisciplines : "0"} subtitle="Total" />
         </View>
@@ -119,20 +121,7 @@ export default function Dashboard({ onAuthExpired }) {
         </View>
       </View>
       <View style={s.grid}>
-        
-      </View>
-      <View style={s.grid}>
-        <View style={s.cell}>
-          <ChartCard title="Pagos por mes" subtitle="Resumen mensual">
-            <VictoryChart theme={VictoryTheme.clean} domainPadding={{ x: 20, y: 10 }}>
-              <VictoryAxis tickFormat={formatMonthTick} />
-              <VictoryAxis dependentAxis />
-              <VictoryBar data={monthlypayments} x="month" y="total" barRatio={0.8} />
-            </VictoryChart>
-          </ChartCard>
-
-        </View>
-      </View>
+      </View>  
     </View>
   );
 }

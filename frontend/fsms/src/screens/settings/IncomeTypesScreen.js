@@ -6,8 +6,8 @@ import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 
 
-export default function DisciplinesScreen({ onAuthExpired }) {
-  const [Disciplines, setDisciplines] = useState([]);
+export default function IncomeTypesScreen({ onAuthExpired }) {
+  const [incometypes, setIncomeTypes] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -66,14 +66,14 @@ export default function DisciplinesScreen({ onAuthExpired }) {
     setToDeleteId(null);
   }
 
-  async function loadDisciplines() {
+  async function loadIncomeTypes() {
     clearMsgs();
     setLoading(true);
     try {
-      const data = await api.listDisciplines();
+      const data = await api.listIncomeTypes();
       // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
-      setDisciplines(list);
+      setIncomeTypes(list);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -81,19 +81,19 @@ export default function DisciplinesScreen({ onAuthExpired }) {
         setError(e.message);
         return;
       }
-      setError(e.message || "No se pudo cargar las diciplinas.");
+      setError(e.message || "Income types couldn't be loaded.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadDisciplines();
+    loadIncomeTypes();
   }, []);
 
   function validate() {
-    if (!name.trim()) return "Nombre requerido.";
-    if (!description.trim()) return "Descripción requerida.";
+    if (!name.trim()) return "Name required.";
+    if (!description.trim()) return "Description required.";
     return "";
   }
 
@@ -111,26 +111,26 @@ export default function DisciplinesScreen({ onAuthExpired }) {
 
       if (isEditing) {   
 
-        await api.updateDisciplines(editingId, payload);
-        setSuccess("Disciplina actualizada.");
+        await api.updateIncomeTypes(editingId, payload);
+        setSuccess("Income type updated.");
 
       } else {
 
-        await api.createDisciplines(payload);
-        setSuccess("Disciplina creada.");
+        await api.createIncomeTypes(payload);
+        setSuccess("Income type created.");
 
       }
 
       setModalVisible(false);
       resetForm();
-      await loadDisciplines();
+      await loadIncomeTypes();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
         setError(e.message);
         return;
       }
-      setError(e.message || "No se pudo guardar.");
+      setError(e.message || "Couldn't be saved.");
     } finally {
       setSaving(false);
     }
@@ -140,16 +140,16 @@ export default function DisciplinesScreen({ onAuthExpired }) {
     clearMsgs();
     setLoading(true);
     try {
-      await api.deleteDisciplines(id);
-      setSuccess("Disciplina eliminada.");
-      await loadDisciplines();
+      await api.deleteIncomeTypes(id);
+      setSuccess("Income type deleted.");
+      await loadIncomeTypes();
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
         setError(e.message);
         return;
       }
-      setError(e.message || "No se pudo eliminar.");
+      setError(e.message || "Couldn't be deleted.");
     } finally {
       setLoading(false);
     }
@@ -158,16 +158,16 @@ export default function DisciplinesScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
     <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{t("disciplines.title")}</Text>
+        <Text style={ScreenStyles.title}>{t("incometypes.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>{t("disciplines.add_discipline")}</Text>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("incometypes.add_incometype")}</Text>
         </Pressable>
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
-      <Pressable style={ScreenStyles.btnSecondary} onPress={loadDisciplines} disabled={loading}>
+      <Pressable style={ScreenStyles.btnSecondary} onPress={loadIncomeTypes} disabled={loading}>
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
@@ -175,9 +175,9 @@ export default function DisciplinesScreen({ onAuthExpired }) {
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
         <FlatList
-          data={Disciplines}
+          data={incometypes}
           refreshing={loading}
-          onRefresh={loadDisciplines}
+          onRefresh={loadIncomeTypes}
           keyExtractor={(u) => String(u.id)}
           renderItem={({ item }) => (
             <View style={ScreenStyles.row}>
@@ -195,14 +195,14 @@ export default function DisciplinesScreen({ onAuthExpired }) {
               </Pressable>
             </View>
           )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("disciplines.empty")}</Text></View>}
+          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("incometypes.empty")}</Text></View>}
         />
       )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
-            <Text style={ScreenStyles.modalTitle}>{isEditing? t("disciplines.edit_discipline") : t("disciplines.add_discipline")}</Text>
+            <Text style={ScreenStyles.modalTitle}>{isEditing? t("incometypes.edit_incometype") : t("incometypes.add_incometype")}</Text>
 
             <Text style={ScreenStyles.label}>{t("common.name")}</Text>
             <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
@@ -225,8 +225,8 @@ export default function DisciplinesScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={t("disciplines.delete_discipline")}
-        message={t("messages.sure_delete_discipline")}
+        title={t("incometypes.delete_incometype")}
+        message={t("messages.sure_delete_incometype")}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}
         danger

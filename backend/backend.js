@@ -68,7 +68,17 @@ app.use('/api/memberships', requireAuth, membershipsRoutes);
 const { router: paymentsRoutes } = require('./routes/payments');
 app.use('/api/payments', requireAuth, paymentsRoutes);
 
-//CustomQuery
+//Incomes
+
+const { router: incomesRoutes } = require('./routes/incomes');
+app.use('/api/incomes', requireAuth, incomesRoutes);
+
+//IncomeTypes
+
+const incometypesRoutes = require('./routes/incometypes');
+app.use('/api/incometypes', requireAuth, incometypesRoutes);
+
+//Reports
 
 const { router: reportsRoutes } = require('./routes/reports');
 app.use('/api/reports', requireAuth, reportsRoutes);

@@ -23,7 +23,7 @@ export const ScreenStyles = StyleSheet.create({
 
   page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", paddingTop: 48, paddingHorizontal: 16, width: "100%" },
   header: { width: "100%", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  title: { color: "#3c3c3cff", fontSize: 22, fontWeight: "700" },
+  title: { color: "#3c3c3cff", fontSize: 22, fontWeight: "700" , textAlign: "center" },
 
   alertError: { backgroundColor: "#fee2e2", borderColor: "#fecaca", borderWidth: 1, padding: 10, borderRadius: 10, marginBottom: 10 },
   alertErrorText: { color: "#991b1b" },
