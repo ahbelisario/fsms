@@ -48,6 +48,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [start_date, setStartDate] = useState(null);
   const [blood_type, setBloodType] = useState("");
   const [medical_notes, setMedicalNotes] = useState("");
+  const [notes, setNotes] = useState("");
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
@@ -164,6 +165,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setStartDate(toYMD(u.start_date ?? null));
     setBloodType(u.blood_type ?? "");
     setMedicalNotes(u.medical_notes ?? "");
+    setNotes(u.notes ?? "");
   }
 
   async function loadUserProfiles() {
@@ -253,6 +255,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         start_date: start_date,
         blood_type: blood_type.trim(),
         medical_notes: medical_notes.trim(),
+        notes: notes.trim(),
       };
 
       if (isEditing) {
@@ -462,15 +465,27 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             </View>
 
             {/* Notas médicas */}
-            <View>
-              <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
-              <TextInput
-                style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
-                value={medical_notes}
-                onChangeText={setMedicalNotes}
-                multiline
-                numberOfLines={4}
-              />
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
+                <TextInput
+                  style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
+                  value={medical_notes}
+                  onChangeText={setMedicalNotes}
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("common.notes")}</Text>
+                <TextInput
+                  style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
             </View>
 
              {/* Contacto de emergencia */}
@@ -500,7 +515,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <View style={{ flex: 1 }}>
-                <Pressable style={ScreenStyles.btnSecondary} onPress={router.back} disabled={!isEditing}>
+                <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)} disabled={!isEditing}>
                   <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
                 </Pressable>
               </View>

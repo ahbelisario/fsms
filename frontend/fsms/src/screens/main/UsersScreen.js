@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View, Switch} from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View, SectionList, Switch} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
@@ -7,6 +7,7 @@ import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { useRouter } from "expo-router";
 import { t } from "@/src/i18n";
 import { loadLang } from "@/src/i18n/lang";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function UsersScreen({ onAuthExpired }) {
   
@@ -40,6 +41,55 @@ export default function UsersScreen({ onAuthExpired }) {
   const visibleUsers = users.filter((u) => u.username !== "admin"); 
 
   const disableSave = saving || (!isEditing && (!!password || !!confirmPassword) && password !== confirmPassword);
+  const [expandedLetters, setExpandedLetters] = useState({}); // { "A": true/false, "#": true/false }
+
+  function toggleLetter(letter) {
+    setExpandedLetters((prev) => ({ ...prev, [letter]: !prev[letter] }));
+  }
+
+  function normalizeLetter(name) {
+    const s = String(name ?? "").trim();
+    if (!s) return "#";
+
+    // Quita acentos y pasa a mayúscula
+    const first = s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .charAt(0)
+      .toUpperCase();
+
+    // Si no es A-Z, lo mandamos a "#"
+    return /^[A-Z]$/.test(first) ? first : "#";
+  }
+
+  function buildLetterSections(list) {
+    const map = new Map(); // letter -> users[]
+
+    // Ordena por nombre + apellido (estable y bonito)
+    const sorted = [...list].sort((a, b) => {
+      const an = `${a.name ?? ""} ${a.lastname ?? ""}`.trim().toLowerCase();
+      const bn = `${b.name ?? ""} ${b.lastname ?? ""}`.trim().toLowerCase();
+      return an.localeCompare(bn);
+    });
+
+    for (const u of sorted) {
+      const letter = normalizeLetter(u.name ?? u.username ?? "");
+      if (!map.has(letter)) map.set(letter, []);
+      map.get(letter).push(u);
+    }
+
+    // Letras A-Z, y "#" al final si existe
+    const letters = Array.from(map.keys()).sort((a, b) => {
+      if (a === "#") return 1;
+      if (b === "#") return -1;
+      return a.localeCompare(b);
+    });
+
+    return letters.map((letter) => ({
+      title: letter,
+      data: map.get(letter), // aquí cada item ya es user
+    }));
+  }
 
 
   function askDelete(id) {
@@ -108,6 +158,11 @@ export default function UsersScreen({ onAuthExpired }) {
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setUsers(list);
 
+      const visible = list.filter((u) => u.username !== "admin");
+      const sections = buildLetterSections(visible);
+      const first = sections[0]?.title;
+      if (first) setExpandedLetters({ [first]: true });
+
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
@@ -171,26 +226,7 @@ export default function UsersScreen({ onAuthExpired }) {
         };
 
       const user_data = await api.createUser(payload);
-
-      const payload_up = {
-          user_id: user_data.data.id,
-          name: name.trim(),
-          lastname: lastname.trim(),
-          email: email.trim()
-        };
-
-        await api.createUserProfiles(payload_up);
-        setSuccess("Perfil creado.");
-
-      const language = await loadLang();
-
-      const payload_us = {
-          user_id: user_data.data.id,
-          language: language
-        };
-
-      await api.createUserSettings(payload_us);
-        setSuccess("Preferencias del usuario creadas.");
+      setSuccess("User created.")
 
       }
 
@@ -233,6 +269,7 @@ export default function UsersScreen({ onAuthExpired }) {
   }
 
   return (
+    
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
         <Text style={ScreenStyles.title}>{t("users.title")}</Text>
@@ -251,30 +288,65 @@ export default function UsersScreen({ onAuthExpired }) {
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
-        <FlatList
-          data={visibleUsers}
+        <SectionList
+          sections={buildLetterSections(visibleUsers)}
+          keyExtractor={(u) => String(u.id)}
+          stickySectionHeadersEnabled
           refreshing={loading}
           onRefresh={loadUsers}
-          keyExtractor={(u) => String(u.id)}
-          renderItem={({ item }) => (
-            <View style={ScreenStyles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}{item.username !== "admin" && ` ${item.lastname ?? "(sin apellido)"}`}</Text>
-                <Text style={ScreenStyles.rowMeta}>{`Usuario: ${item.username ?? ""}`}{item.role ? ` • Rol: ${ROLE_LABELS[item.role] ?? item.role}` : ""}</Text>
+          renderSectionHeader={({ section }) => {
+            const isOpen = !!expandedLetters[section.title];
+
+            return (
+              <Pressable onPress={() => toggleLetter(section.title)} style={ScreenStyles.sectionHeaderRow}>
+                <Text style={ScreenStyles.sectionHeaderText}>
+                  {section.title}
+                </Text>
+                <Text style={ScreenStyles.sectionHeaderArrow}>
+                  {section.data.length} {isOpen ? "▲" : "▼"}
+                </Text>
+              </Pressable>
+            );
+          }}
+          renderItem={({ item, section }) => {
+            if (!expandedLetters[section.title]) return null;
+
+            return (
+              <View style={ScreenStyles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ScreenStyles.rowTitle}>
+                    {item.name ?? "(sin nombre)"} {item.lastname ?? ""}
+                  </Text>
+                  <Text style={ScreenStyles.rowMeta}>
+                    {`Usuario: ${item.username ?? ""}`}
+                    {item.role ? ` • Rol: ${ROLE_LABELS[item.role] ?? item.role}` : ""}
+                  </Text>
+                </View>
+
+                <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]}
+                  onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}
+                >
+                  <Text style={ScreenStyles.smallBtnText}>{t("userprofiles.title")}</Text>
+                </Pressable>
+
+                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
+                </Pressable>
               </View>
-              <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-              </Pressable>
-              <Pressable style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]} onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("userprofiles.title")}</Text>
-              </Pressable>
-              <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={ScreenStyles.center}>
+              <Text style={{ color: "#64748b" }}>{t("users.empty")}</Text>
             </View>
-          )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("users.empty")}</Text></View>}
+          }
         />
+
       )}
 
       <Modal visible={modalVisible} transparent animationType="slide">

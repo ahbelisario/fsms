@@ -1,8 +1,8 @@
 -- MySQL dump 10.13  Distrib 8.0.41, for macos15 (arm64)
 --
--- Host: 10.0.0.51    Database: fsms
+-- Host: 127.0.0.1    Database: fsms
 -- ------------------------------------------------------
--- Server version	9.2.0
+-- Server version	9.5.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -14,6 +14,14 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
+SET @@SESSION.SQL_LOG_BIN= 0;
+
+--
+-- GTID state at the beginning of the backup 
+--
+
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '87230b43-012b-11f1-b58d-02792b7880a2:1-87';
 
 --
 -- Table structure for table `disciplines`
@@ -165,43 +173,6 @@ LOCK TABLES `packages` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `payments`
---
-
-DROP TABLE IF EXISTS `payments`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `payments` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `membership_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `payment_date` datetime NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
-  `currency` varchar(3) NOT NULL,
-  `payment_method` varchar(25) DEFAULT NULL,
-  `reference` varchar(100) DEFAULT NULL,
-  `status` varchar(25) DEFAULT NULL,
-  `type` varchar(25) DEFAULT NULL,
-  `created_by` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_userid_p_idx` (`user_id`),
-  KEY `fk_memb_p_idx` (`membership_id`),
-  KEY `idx_payments_status_date` (`status`,`payment_date`),
-  CONSTRAINT `fk_memb_p` FOREIGN KEY (`membership_id`) REFERENCES `memberships` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_userid_p` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `payments`
---
-
-LOCK TABLES `payments` WRITE;
-/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
-/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `ranks`
 --
 
@@ -282,9 +253,11 @@ CREATE TABLE `user_profiles` (
   `rank_id` int DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `blood_type` varchar(10) DEFAULT NULL,
-  `medical_notes` text,
+  `medical_notes` mediumtext,
+  `notes` mediumtext,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `user_id, type=int, pos=2` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `user_id` (`user_id`),
@@ -293,18 +266,8 @@ CREATE TABLE `user_profiles` (
   CONSTRAINT `fk_discipline` FOREIGN KEY (`discipline_id`) REFERENCES `disciplines` (`id`),
   CONSTRAINT `fk_rank` FOREIGN KEY (`rank_id`) REFERENCES `ranks` (`id`),
   CONSTRAINT `fk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `user_profiles`
---
-
-LOCK TABLES `user_profiles` WRITE;
-/*!40000 ALTER TABLE `user_profiles` DISABLE KEYS */;
-INSERT INTO `user_profiles` VALUES (1,1,'Arturo',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2018-11-08',NULL,NULL,'2026-01-16 01:33:46','2026-01-16 01:33:46');
-/*!40000 ALTER TABLE `user_profiles` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `user_ranks`
@@ -343,7 +306,7 @@ CREATE TABLE `user_settings` (
   PRIMARY KEY (`id`),
   KEY `fk_user_idx` (`user_id`),
   CONSTRAINT `fk_userset` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -376,7 +339,7 @@ CREATE TABLE `users` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -388,6 +351,27 @@ LOCK TABLES `users` WRITE;
 INSERT INTO `users` VALUES (1,'admin','$2a$12$C44Md5djPD7LgRbnVcVSXenUpdkj7a5CN5LmlMQdQF7i3Pg83aYwu','Administrator',NULL,'arthur@hdez.mx','admin',1,NULL,'2026-01-01 00:00:00');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER `users_AFTER_INSERT` AFTER INSERT ON `users` FOR EACH ROW BEGIN
+  INSERT INTO user_profiles (user_id, name, lastname, email)
+  VALUES (NEW.id, NEW.name, NEW.lastname, NEW.email);
+  INSERT INTO user_settings (user_id, language)
+  VALUES (NEW.id, 'es');
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -398,4 +382,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-03 10:34:13
+-- Dump completed on 2026-02-03 15:59:23

@@ -108,14 +108,13 @@ export default function Dashboard({ onAuthExpired }) {
       </View>
       <View style={s.grid}>
         <View style={s.cell}>
-          <ChartCard title="Pagos por mes" subtitle="Resumen mensual">
+         <ChartCard title="Pagos por mes" subtitle="Resumen mensual">
             <VictoryChart theme={VictoryTheme.clean} domainPadding={{ x: 20, y: 10 }}>
               <VictoryAxis tickFormat={formatMonthTick} />
               <VictoryAxis dependentAxis />
               <VictoryBar data={monthlypayments} x="month" y="total" barRatio={0.8} />
             </VictoryChart>
           </ChartCard>
-
         </View>
       </View>
     </View>

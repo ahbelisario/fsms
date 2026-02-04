@@ -1,13 +1,13 @@
 import { StyleSheet } from 'react-native';
 
 export const appStyles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", alignItems: "center", justifyContent: "center", padding: 24, },
-  card: { width: "100%", maxWidth: 420, backgroundColor: "white", borderRadius: 14, padding: 24, borderWidth: 1, borderColor: "#cbd5e1" },
+  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", alignItems: "center", justifyContent: "center", },
+  card: { width: "100%", maxWidth: 350, backgroundColor: "white", borderRadius: 14, padding: 24, borderWidth: 1, borderColor: "#cbd5e1" },
   title: { fontSize: 24, fontWeight: "700" },
   subtitle: { marginTop: 6, marginBottom: 18, color: "#475569" },
 
-  label: { fontSize: 14, marginBottom: 6, color: "#0f172a" },
-  input: { width: "100%", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "#cbd5e1", fontSize: 14, marginBottom: 14, },
+  label: { fontSize: 12, marginBottom: 6, color: "#0f172a" },
+  input: { width: "100%", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "#cbd5e1", fontSize: 12, marginBottom: 14, },
 
   passwordRow: { flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 14 },
   toggleBtn: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "#cbd5e1", backgroundColor: "#f8fafc", },
@@ -21,9 +21,9 @@ export const appStyles = StyleSheet.create({
 
 export const ScreenStyles = StyleSheet.create({
 
-  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", paddingTop: 48, paddingHorizontal: 16, width: "100%" },
+  page: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.00)", paddingTop: 24, paddingHorizontal: 16, alignSelf: "stretch", minWidth: 0, },
   header: { width: "100%", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  title: { color: "#3c3c3cff", fontSize: 22, fontWeight: "700" , textAlign: "center" },
+  title: { color: "#3c3c3cff", fontSize: 20, fontWeight: "700" , textAlign: "center" },
 
   alertError: { backgroundColor: "#fee2e2", borderColor: "#fecaca", borderWidth: 1, padding: 10, borderRadius: 10, marginBottom: 10 },
   alertErrorText: { color: "#991b1b" },
@@ -37,12 +37,12 @@ export const ScreenStyles = StyleSheet.create({
 
   center: { paddingVertical: 24, alignItems: "center" },
 
-  row: { fontSize: 12, borderWidth: 1, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
-  rowNoWidth: { fontSize: 12, borderWidth: 0, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
-  rowTitle: { fontWeight: "700", fontSize: 14 },
+  row: { fontSize: 10, borderWidth: 1, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
+  rowNoWidth: { fontSize: 10, borderWidth: 0, borderColor: "#cbd5e1", flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "white", borderRadius: 12, padding: 12, marginBottom: 10 },
+  rowTitle: { fontWeight: "700", fontSize: 12 },
   rowMeta: { color: "#64748b", marginTop: 2, fontSize: 12,},
 
-  textArea: { borderWidth: 1, textAlign: "top", borderColor: "#cbd5e1", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, minHeight: 100, fontSize: 14 },
+  textArea: { borderWidth: 1, textAlign: "top", borderColor: "#cbd5e1", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, minHeight: 100, fontSize: 12 },
 
   smallBtn: { backgroundColor: "#262c39ff", paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10 },
   dangerBtn: { backgroundColor: "#7f1d1d" },
@@ -58,7 +58,7 @@ export const ScreenStyles = StyleSheet.create({
   pickerWrapper: { fontSize: 13, borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 10, overflow: "hidden", backgroundColor: "white", paddingHorizontal: 12, paddingVertical: 10},  
 
   sectionHeader: { backgroundColor: "#38435cff", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginTop: 10, marginBottom: 8, },
-  sectionHeaderText: { color: "white", fontWeight: "700", fontSize: 14, },
+  sectionHeaderText: { color: "white", fontWeight: "700", fontSize: 12, },
 
   sectionHeaderRow: {
     flexDirection: "row",
@@ -74,7 +74,7 @@ export const ScreenStyles = StyleSheet.create({
   sectionHeaderArrow: {
     color: "white",
     fontWeight: "800",
-    fontSize: 14,
+    fontSize: 12,
   },
   divider: {
     height: 1,

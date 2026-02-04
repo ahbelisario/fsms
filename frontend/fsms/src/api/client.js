@@ -6,8 +6,8 @@ async function request(path, { method = "GET", body } = {}) {
 
   const token = await getAuthToken();
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-  //const res = await fetch(`${path}`, {  
+  //const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${path}`, {  
     method,
     headers: {
       "Content-Type": "application/json",

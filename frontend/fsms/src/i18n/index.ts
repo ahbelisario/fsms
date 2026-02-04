@@ -26,6 +26,7 @@ const translations = {
       password_confirm: "Confirmar contraseña",
       currency: "Moneda",
       settings: "Configuración",
+      notes:  "Notas"
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -236,7 +237,8 @@ const translations = {
       password_required: "Password (Required)",
       password_confirm: "Confirm password",
       currency: "Currency",
-      settings: "Settings"
+      settings: "Settings",
+      notes: "Notes"
     },
     messages: {
       password_dont_match: "Passwords don't match",

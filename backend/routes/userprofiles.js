@@ -22,7 +22,7 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, created_at, updated_at FROM user_profiles ORDER BY id DESC', (err, rows) => {
+        fsms_pool.query('SELECT id, user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes, created_at, updated_at FROM user_profiles ORDER BY id DESC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -54,7 +54,7 @@ router.get('/:id', (req, res) => {
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, created_at, updated_at FROM user_profiles WHERE user_id = ?',
+    'SELECT user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes, created_at, updated_at FROM user_profiles WHERE user_id = ?',
     [id],
     (err, rows) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -69,15 +69,15 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes } = req.body;
+  const { user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes } = req.body;
 
   if (!name || !lastname || !user_id ) {
     return res.status(400).json({ status: 'error', message: 'Name and Lastname are required' });
   }
 
   try {
-    const sql = 'INSERT INTO user_profiles (user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-    fsms_pool.query(sql, [user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes], (err, result) => {
+    const sql = 'INSERT INTO user_profiles (user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+    fsms_pool.query(sql, [user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes], (err, result) => {
       if (err) {
         // Si username es UNIQUE, aquí puedes mapear el error a 409
         console.error(err);
@@ -86,7 +86,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
       res.status(201).json({
         status: 'success',
-        data: { user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes }
+        data: { user_id, name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes }
       });
     });
   } catch (e) {
@@ -110,12 +110,12 @@ router.put('/:id', (req, res) => {
   //  return res.status(403).json({ status: 'error', message: 'Not allowed' });
   // }
 
-  const { name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes } = req.body;
+  const { name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes } = req.body;
   
   // Actualiza solo campos permitidos para no-admin
   // (Si admin, puedes incluir role/active en otro SQL)
-  const sql = 'UPDATE user_profiles SET name = ?, lastname = ?, gender = ?, date_of_birth = ?, email = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, country = ?, postal_code = ?, discipline_id = ?, rank_id = ?, start_date = ?, blood_type = ?, medical_notes = ? WHERE user_id = ?';
-  const params = [name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, id];
+  const sql = 'UPDATE user_profiles SET name = ?, lastname = ?, gender = ?, date_of_birth = ?, email = ?, phone = ?, emergency_contact_name = ?, emergency_contact_phone = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, country = ?, postal_code = ?, discipline_id = ?, rank_id = ?, start_date = ?, blood_type = ?, medical_notes = ?, notes = ? WHERE user_id = ?';
+  const params = [name, lastname, gender, date_of_birth, email, phone, emergency_contact_name, emergency_contact_phone, address_line1, address_line2, city, state, country, postal_code, discipline_id, rank_id, start_date, blood_type, medical_notes, notes, id];
 
   fsms_pool.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });

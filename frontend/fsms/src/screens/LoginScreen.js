@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Alert, ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { encode as b64encode } from "base-64";
-import { notify, confirmDialog } from "../ui/notify";
-import { appStyles } from '../styles/appStyles';
+import { notify, confirmDialog } from "@/src/ui/notify";
+import { appStyles } from '@/src/styles/appStyles';
 import { i18n, t } from "@/src/i18n";
 import { setLang } from "@/src/i18n/lang";
 
@@ -39,8 +39,8 @@ export default function LoginScreen({ onLoginSuccess }) {
         password: b64encode(password),
       };
 
-      //const res = await fetch(`/api/auth/login`, {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`/api/auth/login`, {
+      //const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
