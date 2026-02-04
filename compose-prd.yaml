@@ -44,6 +44,7 @@ services:
     ports:
       - "3307:3306"
     networks:
+      - fsms-client
       - fsms-server
 
 volumes:

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, SectionList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
@@ -37,6 +37,57 @@ export default function MembershipsScreen({ onAuthExpired }) {
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
+
+  const [expandedLetters, setExpandedLetters] = useState({});
+  function toggleLetter(letter) {
+    setExpandedLetters((prev) => ({ ...prev, [letter]: !prev[letter] }));
+  }
+
+  function normalizeLetter(name) {
+    const s = String(name ?? "").trim();
+    if (!s) return "#";
+
+    const first = s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .charAt(0)
+      .toUpperCase();
+
+    return /^[A-Z]$/.test(first) ? first : "#";
+  }
+
+  function userFullNameById(uId) {
+    const numericId = Number(uId);
+    const usr = users.find((u) => u.id === numericId);
+    return `${usr?.name ?? ""} ${usr?.lastname ?? ""}`.trim();
+  }
+
+  function buildMembershipSections(list) {
+    const map = new Map(); // letter -> memberships[]
+
+    // ordena por nombre de usuario + fecha fin (opcional)
+    const sorted = [...list].sort((a, b) => {
+      const an = userFullNameById(a.user_id).toLowerCase();
+      const bn = userFullNameById(b.user_id).toLowerCase();
+      if (an !== bn) return an.localeCompare(bn);
+      return String(a.finish_date ?? "").localeCompare(String(b.finish_date ?? ""));
+    });
+
+    for (const m of sorted) {
+      const fullName = userFullNameById(m.user_id);
+      const letter = normalizeLetter(fullName || m.user_id);
+      if (!map.has(letter)) map.set(letter, []);
+      map.get(letter).push(m);
+    }
+
+    const letters = Array.from(map.keys()).sort((a, b) => {
+      if (a === "#") return 1;
+      if (b === "#") return -1;
+      return a.localeCompare(b);
+    });
+
+    return letters.map((letter) => ({ title: letter, data: map.get(letter) }));
+  }
 
   function clearMsgs() {
     setError("");
@@ -136,6 +187,10 @@ export default function MembershipsScreen({ onAuthExpired }) {
       const data = await api.listMemberships();
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setMemberships(list);
+
+      const sections = buildMembershipSections(list);
+      const first = sections[0]?.title;
+      if (first) setExpandedLetters({ [first]: true });
 
       const userData = await api.listUsers();
       const userList = Array.isArray(userData) ? userData : userData?.response || userData?.data || [];
@@ -279,39 +334,73 @@ export default function MembershipsScreen({ onAuthExpired }) {
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
-        <FlatList
-          data={memberships}
+        <SectionList
+          sections={buildMembershipSections(memberships)}
+          keyExtractor={(item) => String(item.id)}
+          stickySectionHeadersEnabled
           refreshing={loading}
           onRefresh={loadMemberships}
-          keyExtractor={(u) => String(u.id)}
-          renderItem={({ item }) => (
-            <View style={ScreenStyles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("memberships.user_id")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{findName(item.user_id)}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("memberships.package_id")} </Text>
-                <Text style={ScreenStyles.rowTitle}>{findPackage(item.package_id)}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("memberships.finish_date")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{formatDate(item.finish_date)}</Text>
-              </View>
-               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.rowMeta}>{t("memberships.fee")}</Text>
-                <Text style={ScreenStyles.rowTitle}>{item.fee + " " + item.currency}</Text>
-              </View>
-              <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
+          renderSectionHeader={({ section }) => {
+            const isOpen = !!expandedLetters[section.title];
+            return (
+              <Pressable onPress={() => toggleLetter(section.title)} style={ScreenStyles.sectionHeaderRow}>
+                <Text style={ScreenStyles.sectionHeaderText}>{section.title}</Text>
+                <Text style={ScreenStyles.sectionHeaderArrow}>
+                  {section.data.length} {isOpen ? "▲" : "▼"}
+                </Text>
               </Pressable>
-               <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-              </Pressable>
+            );
+          }}
+          renderItem={({ item, section }) => {
+            if (!expandedLetters[section.title]) return null;
+
+            return (
+              <View style={[ScreenStyles.row, { minWidth: 0, width: "100%" }]}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={ScreenStyles.rowMeta}>{t("memberships.user_id")}</Text>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                    {userFullNameById(item.user_id)}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={ScreenStyles.rowMeta}>{t("memberships.package_id")}</Text>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                    {findPackage(item.package_id)}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={ScreenStyles.rowMeta}>{t("memberships.finish_date")}</Text>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                    {formatDate(item.finish_date)}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={ScreenStyles.rowMeta}>{t("memberships.fee")}</Text>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                    {item.fee + " " + item.currency}
+                  </Text>
+                </View>
+
+                <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
+                </Pressable>
+
+                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
+                </Pressable>
+              </View>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={ScreenStyles.center}>
+              <Text style={{ color: "#64748b" }}>{t("memberships.empty")}</Text>
             </View>
-          )}
-          ListEmptyComponent={<View style={ScreenStyles.center}><Text style={{ color: "#64748b" }}>{t("memberships.empty")}</Text></View>}
+          }
         />
+
       )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -365,7 +454,6 @@ export default function MembershipsScreen({ onAuthExpired }) {
 
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("packages.title_single")}</Text>
                 <DatePickerField
                   label={t("memberships.start_date")}
                   value={start_date}
@@ -373,7 +461,6 @@ export default function MembershipsScreen({ onAuthExpired }) {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("memberships.fee")}</Text>
                 <DatePickerField
                   label={t("memberships.finish_date")}
                   value={finish_date}

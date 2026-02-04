@@ -21,7 +21,7 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, user_id, package_id, start_date, finish_date, fee, discounted_fee, currency, notes FROM memberships ORDER BY id DESC', (err, rows) => {
+        fsms_pool.query('SELECT id, user_id, package_id, start_date, finish_date, fee, discounted_fee, currency, notes FROM memberships ORDER BY id ASC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });

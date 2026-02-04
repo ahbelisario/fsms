@@ -591,8 +591,8 @@ export default function IncomesScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={t("incomes.delete_membership")}
-        message={t("messages.sure_delete_membership")}
+        title={t("incomes.delete_income")}
+        message={t("messages.sure_delete_income")}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}
         danger
