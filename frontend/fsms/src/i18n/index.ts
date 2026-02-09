@@ -54,6 +54,7 @@ const translations = {
     },
     users: {
       title: "Usuarios",
+      username: "Usuario",
       add: "Agregar Usuario",
       empty: "No hay usuarios.",
       role: "Rol",
@@ -64,7 +65,9 @@ const translations = {
       createuser: "Crear usuario",
       edituser: "Editar usuario",
       members: "Miembros",
-      member: "Miembro"
+      member: "Miembro",
+      students: "Alumnos",
+      student: "Alumno"
     },
     usersettings: {
       title: "Preferencias del Usuario",
@@ -99,7 +102,11 @@ const translations = {
       medical_notes: "Notas Médicas",
       male: "Masculino",
       female: "Femenino",
-      other: "Otro"
+      other: "Otro",
+      personal: "Personal",
+      contacto: "Contacto",
+      marcial: "Marcial",
+      medical: "Medica"
     },
     disciplines: {
       title: "Disciplinas",
@@ -266,6 +273,7 @@ const translations = {
     },
     users: {
       title: "Users",
+      username: "Username",
       add: "Add User",
       empty: "No users.",
       role: "Role",
@@ -276,7 +284,9 @@ const translations = {
       createuser: "Create user",
       edituser: "Edit user",
       members: "Members",
-      member: "Member"
+      member: "Member",
+      students: "Students",
+      student: "Student"
     },
     usersettings: {
       title: "User Settings",
@@ -311,7 +321,11 @@ const translations = {
       medical_notes: "Medical",
       male: "Male",
       female: "Female",
-      other: "Other"
+      other: "Other",
+      personal: "Personal",
+      contacto: "Contact",
+      marcial: "Marcial",
+      medical: "Medical"
     },
     disciplines: {
       title: "Disciplines",

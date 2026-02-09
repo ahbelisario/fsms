@@ -29,6 +29,9 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState(0);
+  
   const [name, setName] = useState("");
   const [lastname, setLastName] = useState("");
   const [gender, setGender] = useState("");
@@ -63,22 +66,27 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     action: null,
   });
 
+  // Definir tabs
+  const tabs = [
+    { id: 0, label: t("userprofiles.personal") },
+    { id: 1, label: t("userprofiles.contacto") },
+    { id: 2, label: t("userprofiles.marcial") },
+    { id: 3, label: t("userprofiles.medical") }
+  ];
+
   function toYMD(value) {
     if (!value) return "";
-    // si ya viene YYYY-MM-DD
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return ""; // inválido
+    if (Number.isNaN(d.getTime())) return "";
     return d.toISOString().slice(0, 10);
   }
 
   useFocusEffect(
     useCallback(() => {
-      loadUserProfiles(); //
+      loadUserProfiles();
     }, [targetUserId])
   );
-
 
   async function onRefresh() {
     setRefreshing(true);
@@ -99,7 +107,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       confirmText: t("common.save"),
       danger: false,
       action: async () => {
-        await save(); // tu función real
+        await save();
       },
     });
   }
@@ -110,7 +118,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   async function doConfirm() {
     const action = confirm.action;
-    cancelConfirm(); // cierra primero (UX mejor)
+    cancelConfirm();
     if (action) await action();
   }
 
@@ -145,7 +153,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   function openEdit(u) {
     clearMsgs();
     setEditingId(u.id);
-
     setName(u.name ?? "");
     setLastName(u.lastname ?? "");
     setGender(u.gender ?? "");
@@ -169,18 +176,14 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }
 
   async function loadUserProfiles() {
-
     setProfile(profile ?? null);
-
     const me = await api.me();
     setUser(me.data);
-
     const idToUse = targetUserId ?? me.data.id;
 
     clearMsgs();
     setLoading(true);
     try {
-
       const dataDisciplines = await api.listDisciplines();
       const listDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.data || [];
       setDisciplines(listDisciplines);
@@ -190,7 +193,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       setRanks(listRanks);
       
       const data = await api.listUserProfiles(idToUse);
-
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setUserProfiles(list);
       
@@ -198,17 +200,16 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       setProfile(profile ?? null);
 
       if (profile) openEdit(profile);
-        else resetForm();
+      else resetForm();
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();
         return;
       }
-     setError(e.message || "No se pudo cargar el perfil.");
-
+      setError(e.message || "No se pudo cargar el perfil.");
     } finally {
-     setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -223,10 +224,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }
 
   async function save() {
-
     const me = await api.me();
     const idToUse = targetUserId ?? me.data.id;
-    
 
     clearMsgs();
     const v = validate();
@@ -234,7 +233,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
     setSaving(true);
     try {
-
       const payload = {
         name: name.trim(),
         lastname: lastname.trim(),
@@ -259,12 +257,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       };
 
       if (isEditing) {
-
         await api.updateUserProfiles(idToUse, payload);
         setSuccess("Perfil actualizado.");
-
-       // if (!isMyProfile) { router.push(`/(app)/users`); } else { router.push(`/(app)/home`); }
-
       }
 
       resetForm();
@@ -281,42 +275,17 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     }
   }
 
-
-  return (
-    
-    <View style={ScreenStyles.page}>
-      <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>
-        {isMyProfile
-          ? t("userprofiles.myprofile")
-          : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
-        }
-      </Text>
-      </View>
-
-      {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
-      {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
-     
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        contentContainerStyle={{ paddingBottom: 120 }} 
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-
-     {loading ? (
-        <View style={ScreenStyles.center}><ActivityIndicator /></View>
-      ) : (
-         <View style={{ gap: 12 }}>
+  // Renderizar contenido de cada tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 0: // Personal
+        return (
+          <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              {/* Nombre */}
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.name")}</Text>
                 <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
               </View>
-              {/* Apellido */}
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.lastname")}</Text>
                 <TextInput style={ScreenStyles.input} value={lastname} onChangeText={setLastName} />
@@ -324,7 +293,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             </View>
 
             <View style={{ flexDirection: "row", gap: 10 }}>
-            {/* Género */}
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.gender")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
@@ -337,7 +305,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 </View>
               </View>
 
-              {/* Fecha de nacimiento */}
               <View style={{ flex: 1 }}>
                 <DatePickerField
                   label={t("userprofiles.date_of_birth")}
@@ -346,8 +313,28 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 />
               </View>
             </View>
+
+            <View>
+              <Text style={ScreenStyles.label}>{t("common.notes")}</Text>
+              <TextInput
+                style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          </View>
+        );
+
+      case 1: // Contacto
+        return (
+          <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              {/* Teléfono */}
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
+                <TextInput disabled={true} style={ScreenStyles.input} value={email} onChangeText={setEmail} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.phone")}</Text>
                 <TextInput
@@ -357,14 +344,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                   keyboardType="phone-pad"
                 />
               </View>
-              {/* Correo Electronico */}
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
-                <TextInput style={ScreenStyles.input} value={email} onChangeText={setEmail} />
-              </View>
             </View>
 
-            {/* Dirección */}
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.address_line1")}</Text>
               <TextInput style={ScreenStyles.input} value={address_line1} onChangeText={setAddressLine1} />
@@ -375,26 +356,22 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <TextInput style={ScreenStyles.input} value={address_line2} onChangeText={setAddressLine2} />
             </View>
 
-            {/* Ciudad / Estado */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.city")}</Text>
                 <TextInput style={ScreenStyles.input} value={city} onChangeText={setCity} />
               </View>
-
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.state")}</Text>
                 <TextInput style={ScreenStyles.input} value={state} onChangeText={setState} />
               </View>
             </View>
 
-            {/* País / Código postal */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.country")}</Text>
                 <TextInput style={ScreenStyles.input} value={country} onChangeText={setCountry} />
               </View>
-
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.postal_code")}</Text>
                 <TextInput
@@ -406,47 +383,75 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
             </View>
 
+            <Text style={[ScreenStyles.label, { marginTop: 12, fontSize: 16, fontWeight: '600' }]}>
+              Contacto de Emergencia
+            </Text>
+
             <View style={{ flexDirection: "row", gap: 10 }}>
-            {/* Disciplina */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("userprofiles.discipline")}</Text>
-                <View style={ScreenStyles.pickerWrapper}>
-                  <Picker
-                    selectedValue={discipline_id}
-                    onValueChange={(v) => setDisciplineId(v)}
-                  >
-                    <Picker.Item label={t("userprofiles.discipline")} value={null} />
-                    {disciplines.map((d) => (
-                      <Picker.Item key={d.id} label={d.name} value={d.id} />
-                    ))}
-                  </Picker>
-                </View>
+                <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_name")}</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={emergency_contact_name}
+                  onChangeText={setEmergencyContantName}
+                />
               </View>
-
-              {/* Grado */}
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("userprofiles.rank")}</Text>
-                <View style={ScreenStyles.pickerWrapper}>
-                  <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
-                    <Picker.Item label={t("userprofiles.rank")} value={null} />
-                    {ranks.map((r) => (
-                      <Picker.Item key={r.id} label={r.name} value={r.id} />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-
-              {/* Fecha de inicio */}
-              <View style={{ flex: 1 }}>
-                <DatePickerField
-                  label={t("userprofiles.start_date")}
-                  value={start_date}
-                  onChange={setStartDate}
+                <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_phone")}</Text>
+                <TextInput
+                  style={ScreenStyles.input}
+                  value={emergency_contact_phone}
+                  onChangeText={setEmergencyContantPhone}
+                  keyboardType="phone-pad"
                 />
               </View>
             </View>
+          </View>
+        );
 
-            {/* Tipo de sangre */}
+      case 2: // Marcial
+        return (
+          <View style={{ gap: 12 }}>
+            <View>
+              <Text style={ScreenStyles.label}>{t("userprofiles.discipline")}</Text>
+              <View style={ScreenStyles.pickerWrapper}>
+                <Picker
+                  selectedValue={discipline_id}
+                  onValueChange={(v) => setDisciplineId(v)}
+                >
+                  <Picker.Item label={t("userprofiles.discipline")} value={null} />
+                  {disciplines.map((d) => (
+                    <Picker.Item key={d.id} label={d.name} value={d.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            <View>
+              <Text style={ScreenStyles.label}>{t("userprofiles.rank")}</Text>
+              <View style={ScreenStyles.pickerWrapper}>
+                <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
+                  <Picker.Item label={t("userprofiles.rank")} value={null} />
+                  {ranks.map((r) => (
+                    <Picker.Item key={r.id} label={r.name} value={r.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            <View>
+              <DatePickerField
+                label={t("userprofiles.start_date")}
+                value={start_date}
+                onChange={setStartDate}
+              />
+            </View>
+          </View>
+        );
+
+      case 3: // Médico
+        return (
+          <View style={{ gap: 12 }}>
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.blood_type")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
@@ -464,71 +469,108 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
             </View>
 
-            {/* Notas médicas */}
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
-                <TextInput
-                  style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
-                  value={medical_notes}
-                  onChangeText={setMedicalNotes}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("common.notes")}</Text>
-                <TextInput
-                  style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
+            <View>
+              <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
+              <TextInput
+                style={[ScreenStyles.input, { height: 120, textAlignVertical: "top" }]}
+                value={medical_notes}
+                onChangeText={setMedicalNotes}
+                multiline
+                numberOfLines={6}
+              />
             </View>
+          </View>
+        );
 
-             {/* Contacto de emergencia */}
-            <View style={{ flexDirection: "row", gap: 10 }}>
-               <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_name")}</Text>
-                  <TextInput
-                    style={ScreenStyles.input}
-                    value={emergency_contact_name}
-                    onChangeText={setEmergencyContantName}
-                  />
-              </View>
+      default:
+        return null;
+    }
+  };
 
+  return (
+    <View style={ScreenStyles.page}>
+      <View style={ScreenStyles.header}>
+        <Text style={ScreenStyles.title}>
+          {isMyProfile
+            ? t("userprofiles.myprofile")
+            : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
+          }
+        </Text>
+      </View>
+
+      {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
+      {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
+
+      {/* Tab Navigation */}
+      <View style={{
+        flexDirection: 'row',
+        backgroundColor: '#f5f5f5',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        paddingHorizontal: 8,
+      }}>
+        {tabs.map((tab) => (
+          <Pressable
+            key={tab.id}
+            onPress={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              alignItems: 'center',
+              borderBottomWidth: 2,
+              borderBottomColor: activeTab === tab.id ? '#007AFF' : 'transparent',
+            }}
+          >
+            <Text style={{
+              fontSize: 14,
+              fontWeight: activeTab === tab.id ? '600' : '400',
+              color: activeTab === tab.id ? '#007AFF' : '#666',
+            }}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading ? (
+          <View style={ScreenStyles.center}><ActivityIndicator /></View>
+        ) : (
+          <View style={{ padding: 16 }}>
+            {renderTabContent()}
+
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
               <View style={{ flex: 1 }}>
-                <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_phone")}</Text>
-                <TextInput
-                  style={ScreenStyles.input}
-                  value={emergency_contact_phone}
-                  onChangeText={setEmergencyContantPhone}
-                  keyboardType="phone-pad"
-                />
-              </View>
-            </View>
-
-            {/* <Pressable style={ScreenStyles.btnSecondary} onPress={onRefresh} disabled={!isEditing}> 
-             <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/(app)/users`) : () => router.push(`/(app)/home`)} disabled={!isEditing}>
-            */}
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-              <View style={{ flex: 1 }}>
-                <Pressable style={ScreenStyles.btnSecondary} onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)} disabled={!isEditing}>
+                <Pressable
+                  style={ScreenStyles.btnSecondary}
+                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)}
+                  disabled={!isEditing}
+                >
                   <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
                 </Pressable>
               </View>
-              <View style={{ flex: 1 }}>         
-                <Pressable style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]} onPress={askSave} disabled={saving}>
-                  <Text style={ScreenStyles.btnPrimaryText}>{saving ? t("common.saving") : t("common.save")}</Text>
+              <View style={{ flex: 1 }}>
+                <Pressable
+                  style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]}
+                  onPress={askSave}
+                  disabled={saving}
+                >
+                  <Text style={ScreenStyles.btnPrimaryText}>
+                    {saving ? t("common.saving") : t("common.save")}
+                  </Text>
                 </Pressable>
-              </View>         
+              </View>
             </View>
-
           </View>
-
-      )}
+        )}
+      </ScrollView>
 
       <ConfirmDialog
         visible={confirm.visible}
@@ -540,9 +582,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         onConfirm={doConfirm}
         onCancel={cancelConfirm}
       />
-
-      </ScrollView>
-
     </View>
   );
 }

@@ -26,6 +26,8 @@ export default function RanksScreen({ onAuthExpired }) {
 
   const [disciplines, setDisciplines] = useState([]);
 
+  const sectionListRef = React.useRef(null);
+
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
   const sections = useMemo(() => groupByDiscipline(Ranks), [Ranks]);
@@ -35,6 +37,18 @@ export default function RanksScreen({ onAuthExpired }) {
 
   function toggleSection(title) {
     setExpanded((prev) => ({ ...prev, [title]: !prev[title] }));
+  }
+
+  function scrollToSection(title) {
+    toggleSection(title);
+    const index = sections.findIndex(s => s.title === title);
+    if (index >= 0 && sectionListRef.current) {
+      sectionListRef.current.scrollToLocation({
+        sectionIndex: index,
+        itemIndex: 0,
+        animated: true,
+      });
+    }
   }
 
   function findDisciplineIdByName(disciplines, name) {
@@ -107,14 +121,16 @@ export default function RanksScreen({ onAuthExpired }) {
     setLoading(true);
     try {
       const data = await api.listRankswDiscipline();
-      // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setRanks(list);
 
       const dataDisciplines = await api.listDisciplines();
-      // Soporta: [..] o {response:[..]} o {data:[..]}
       const listDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.data || [];
       setDisciplines(listDisciplines);
+
+      const sections = groupByDiscipline(list);
+      const first = sections[0]?.title;
+      if (first) setExpanded({ [first]: true });
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -197,8 +213,6 @@ export default function RanksScreen({ onAuthExpired }) {
     }
   }
 
-  
-
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
@@ -212,52 +226,88 @@ export default function RanksScreen({ onAuthExpired }) {
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       <Pressable style={ScreenStyles.btnSecondary} onPress={loadRanks} disabled={loading}>
-        <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.saving") : t("common.refresh")}</Text>
+        <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
+
+      {/* Barra de disciplinas */}
+      {!loading && Ranks.length > 0 && (
+        <View style={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: 8, 
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: '#f8fafc',
+          borderRadius: 8,
+          marginBottom: 8,
+          marginTop: 8
+        }}>
+          {sections.map(section => (
+            <Pressable
+              key={section.title}
+              onPress={() => scrollToSection(section.title)}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: expanded[section.title] ? '#3b82f6' : '#e2e8f0',
+                borderRadius: 6,
+                minWidth: 100,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{
+                color: expanded[section.title] ? '#ffffff' : '#475569',
+                fontWeight: '600',
+                fontSize: 14
+              }}>
+                {section.title}
+              </Text>
+              <Text style={{
+                color: expanded[section.title] ? '#dbeafe' : '#64748b',
+                fontSize: 11,
+                marginTop: 2
+              }}>
+                {section.data.length}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
-          ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => String(item.id)}
-              renderSectionHeader={({ section }) => {
-                const isOpen = !!expanded[section.title];
-                return (
-                  <Pressable onPress={() => toggleSection(section.title)} style={ScreenStyles.sectionHeaderRow} >
-                    <Text style={ScreenStyles.sectionHeaderText}>{section.title}</Text>
-                    <Text style={ScreenStyles.sectionHeaderArrow}>{isOpen ? "▲" : "▼"}</Text>
-                  </Pressable>
-                );
-              }}
-              renderItem={({ item, section }) => {
-                // Si está colapsada, no renderizamos items
-                if (!expanded[section.title]) return null;
-                return (
-                  <View style={ScreenStyles.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}</Text>
-                    </View>
-
-                    <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                      <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-                    </Pressable>
-
-                    <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                      <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-                    </Pressable>
-                  </View>
-                );
-              }}
-              ListEmptyComponent={
-                <View style={ScreenStyles.center}>
-                  <Text style={{ color: "#64748b" }}>{t("ranks.empty")}</Text>
+      ) : (
+        <SectionList
+          ref={sectionListRef}
+          sections={sections}
+          keyExtractor={(item) => String(item.id)}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={() => null}
+          renderItem={({ item, section }) => {
+            if (!expanded[section.title]) return null;
+            return (
+              <View style={ScreenStyles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}</Text>
                 </View>
-              }
-              stickySectionHeadersEnabled
-            />
-          )}
 
+                <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
+                </Pressable>
+
+                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
+                  <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
+                </Pressable>
+              </View>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={ScreenStyles.center}>
+              <Text style={{ color: "#64748b" }}>{t("ranks.empty")}</Text>
+            </View>
+          }
+        />
+      )}
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>

@@ -8,6 +8,8 @@ import { t } from "@/src/i18n";
 import { Picker } from "@react-native-picker/picker";
 import DatePickerField from "@/src/ui/DatePickerField";
 import { formatDate } from "@/src/utils/utils";
+import { Ionicons } from "@expo/vector-icons";
+
 
 
 export default function MembershipsScreen({ onAuthExpired }) {
@@ -37,6 +39,22 @@ export default function MembershipsScreen({ onAuthExpired }) {
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
+
+  const sectionListRef = React.useRef(null);
+
+  function scrollToLetter(letter) {
+    toggleLetter(letter);
+    // Opcional: hacer scroll a esa sección
+    const sections = buildMembershipSections(memberships);
+    const index = sections.findIndex(s => s.title === letter);
+    if (index >= 0 && sectionListRef.current) {
+      sectionListRef.current.scrollToLocation({
+        sectionIndex: index,
+        itemIndex: 0,
+        animated: true,
+      });
+    }
+  }
 
   const [expandedLetters, setExpandedLetters] = useState({});
   function toggleLetter(letter) {
@@ -327,70 +345,111 @@ export default function MembershipsScreen({ onAuthExpired }) {
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
-      <Pressable style={ScreenStyles.btnSecondary} onPress={loadMemberships} disabled={loading}>
+     <Pressable style={ScreenStyles.btnSecondary} onPress={loadMemberships} disabled={loading}>
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
+
+      {/* Barra alfabética */}
+      {!loading && memberships.length > 0 && (
+        <View style={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: 8, 
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: '#f8fafc',
+          borderRadius: 8,
+          marginBottom: 8
+        }}>
+          {buildMembershipSections(memberships).map(section => (
+            <Pressable
+              key={section.title}
+              onPress={() => scrollToLetter(section.title)}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: expandedLetters[section.title] ? '#3b82f6' : '#e2e8f0',
+                borderRadius: 6,
+                minWidth: 45,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{
+                color: expandedLetters[section.title] ? '#ffffff' : '#475569',
+                fontWeight: '600',
+                fontSize: 14
+              }}>
+                {section.title}
+              </Text>
+              <Text style={{
+                color: expandedLetters[section.title] ? '#dbeafe' : '#64748b',
+                fontSize: 11,
+                marginTop: 2
+              }}>
+                {section.data.length}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
         <SectionList
+          ref={sectionListRef}
           sections={buildMembershipSections(memberships)}
           keyExtractor={(item) => String(item.id)}
-          stickySectionHeadersEnabled
+          stickySectionHeadersEnabled={false}  // Cambia a false
           refreshing={loading}
           onRefresh={loadMemberships}
           renderSectionHeader={({ section }) => {
-            const isOpen = !!expandedLetters[section.title];
-            return (
-              <Pressable onPress={() => toggleLetter(section.title)} style={ScreenStyles.sectionHeaderRow}>
-                <Text style={ScreenStyles.sectionHeaderText}>{section.title}</Text>
-                <Text style={ScreenStyles.sectionHeaderArrow}>
-                  {section.data.length} {isOpen ? "▲" : "▼"}
-                </Text>
-              </Pressable>
-            );
+            // Retorna null para no mostrar nada
+            return null;
+            
+            // O si quieres un separador simple:
+            // return (
+            //   <View style={{ height: 1, backgroundColor: '#e2e8f0', marginVertical: 8 }} />
+            // );
           }}
           renderItem={({ item, section }) => {
             if (!expandedLetters[section.title]) return null;
 
             return (
+
               <View style={[ScreenStyles.row, { minWidth: 0, width: "100%" }]}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={ScreenStyles.rowMeta}>{t("memberships.user_id")}</Text>
-                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 , fontSize: 14 }]}>
                     {userFullNameById(item.user_id)}
                   </Text>
-                </View>
-
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={ScreenStyles.rowMeta}>{t("memberships.package_id")}</Text>
-                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                  <Text numberOfLines={1} style={[ScreenStyles.rowMeta, { flexShrink: 1 , borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 12, marginBottom: 12 }]}>
                     {findPackage(item.package_id)}
                   </Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("memberships.finish_date")}</Text>
+                      <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                        {formatDate(item.finish_date)}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 , alignItems: 'flex-end' }}>
+                      <Text style={ScreenStyles.rowMeta}>{t("memberships.fee")}</Text>
+                      <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
+                        {item.fee + " " + item.currency}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={ScreenStyles.rowMeta}>{t("memberships.finish_date")}</Text>
-                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
-                    {formatDate(item.finish_date)}
-                  </Text>
+                <View style={{ flex: 1, maxWidth: 50 }}>
+                  <Pressable style={{minWidth: 0, alignItems: 'center', paddingBottom: 18}} onPress={() => openEdit(item)}>
+                    <Ionicons name="pencil" size={18} color="#0b1220" />
+                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.edit")}</Text>
+                  </Pressable>
+                  <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => askDelete(item.id)}>
+                    <Ionicons name="trash-outline" size={18} color="#d60000" />
+                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
+                  </Pressable>
                 </View>
-
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={ScreenStyles.rowMeta}>{t("memberships.fee")}</Text>
-                  <Text numberOfLines={1} style={[ScreenStyles.rowTitle, { flexShrink: 1 }]}>
-                    {item.fee + " " + item.currency}
-                  </Text>
-                </View>
-
-                <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                  <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-                </Pressable>
-
-                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                  <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-                </Pressable>
               </View>
             );
           }}

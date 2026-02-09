@@ -145,7 +145,7 @@ router.put('/:id', (req, res) => {
     : [username, name, lastname, email, id];
 
   fsms_pool.query(sql, params, (err, result) => {
-    if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
+    if (err) return res.status(500).json({ status: 'error', message: 'Error:' + err.message });
     if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
     res.json({ status: 'success', message: 'User updated' });
   });

@@ -10,11 +10,9 @@ import { VictoryBar, VictoryChart, VictoryTheme, VictoryAxis } from "@/src/ui/vi
 
 export default function Dashboard({ onAuthExpired }) {
   const [totalusers, setUsers] = useState([]);
-  const [totaldisciplines, setDisciplines] = useState([]);
-  const [totalranks, setRanks] = useState([]);
-  const [totalpackages, setPackages] = useState([]);
   const [totalmemberships, setMemberships] = useState([]);
   const [monthlypayments, setMonthlyPayments] = useState([]);
+  const [mpnn, setMpnn] = useState([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -24,10 +22,6 @@ export default function Dashboard({ onAuthExpired }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
-  const isEditing = useMemo(() => editingId !== null, [editingId]);
-  const ROLE_LABELS = { admin: "Administrador", user: "Usuario" };
-
 
   function formatMonthTick(m) {
   // Caso Date
@@ -67,13 +61,14 @@ export default function Dashboard({ onAuthExpired }) {
 
       const dataReportPaymentMonthlySummary = await api.reportsPaymentsMonthlySummary();
       const listReportPaymentMonthlySummary = Array.isArray(dataReportPaymentMonthlySummary) ? dataReportPaymentMonthlySummary : dataReportPaymentMonthlySummary?.response || dataReportPaymentMonthlySummary?.data || [];
+      setMpnn(listReportPaymentMonthlySummary);
+
       const normalizedData = listReportPaymentMonthlySummary.map(r => ({
-        month: r.month,               // "2025-02"
-        total: Number(r.total),       // 1950
+        month: r.month,
+        total: Number(r.total),
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
       setMonthlyPayments(normalizedData);
-
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -104,8 +99,14 @@ export default function Dashboard({ onAuthExpired }) {
         </View>
       </View>
       <View style={s.grid}>
-        
+        <View style={s.cell}>
+          <ScoreCard title="Current Month" value={"$ "+mpnn[0]?.total+" MXN"} subtitle="Total" />
+        </View>
+        <View style={s.cell}>
+          <ScoreCard title="Past Month" value={"$ "+mpnn[1]?.total+" MXN"}  subtitle="Total" />
+        </View>
       </View>
+
       <View style={s.grid}>
         <View style={s.cell}>
          <ChartCard title="Pagos por mes" subtitle="Resumen mensual">

@@ -1,12 +1,10 @@
 export function formatDate(value) {
   if (!value) return "";
 
-  // Si viene ISO "YYYY-MM-DDT..." o "YYYY-MM-DD ..."
   if (typeof value === "string") {
     if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
   }
 
-  // fallback si viene Date/number
   const d = new Date(value);
   if (isNaN(d.getTime())) return "";
   const y = d.getFullYear();

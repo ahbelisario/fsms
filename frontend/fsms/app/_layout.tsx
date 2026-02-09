@@ -8,8 +8,6 @@ import { Ionicons } from "@expo/vector-icons";
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(Ionicons.font);
 
-  // Si no quieres “pantalla en blanco”, puedes regresar el Stack igual,
-  // pero para que el header no renderice antes de fonts, mantenlo así:
   if (!fontsLoaded) return null;
 
   return (

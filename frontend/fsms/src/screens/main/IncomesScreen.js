@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, SectionList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
@@ -8,6 +8,7 @@ import { t } from "@/src/i18n";
 import { Picker } from "@react-native-picker/picker";
 import DatePickerField from "@/src/ui/DatePickerField";
 import { formatDate } from "@/src/utils/utils";
+import { Ionicons } from "@expo/vector-icons";
 
 
 export default function IncomesScreen({ onAuthExpired }) {
@@ -42,8 +43,8 @@ export default function IncomesScreen({ onAuthExpired }) {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
 
-  const [expandedYears, setExpandedYears] = useState({});   // { "2025": true/false }
-  const [expandedMonths, setExpandedMonths] = useState({}); // { "2025-07": true/false }
+  const [expandedYears, setExpandedYears] = useState({});
+  const [expandedMonths, setExpandedMonths] = useState({});
 
   function toggleYear(year) {
     const y = String(year);
@@ -56,7 +57,6 @@ export default function IncomesScreen({ onAuthExpired }) {
     setExpandedMonths(prev => ({ ...prev, [key]: !prev[key] }));
   }
 
-
   function clearMsgs() {
     setError("");
     setSuccess("");
@@ -64,10 +64,8 @@ export default function IncomesScreen({ onAuthExpired }) {
 
   function setDefaultDates() {
     const today = new Date();
-
     const finish = new Date(today);
     finish.setMonth(finish.getMonth() + 12);
-
     setIncomeDate(toYMD(today));
   }
 
@@ -98,25 +96,21 @@ export default function IncomesScreen({ onAuthExpired }) {
   }
 
   function onMembershipChange(membershipId) {
-    const id = Number(membershipId); // por si viene como string
+    const id = Number(membershipId);
     setMembershipId(id);
-
     const m = memberships.find(x => x.id === id);
     if (!m) return;
-
-    setIncomeUserIdMembership(m.user_id, m.id); // o setIncomeUserId(m.user_id) + setMembershipId(m.id)
+    setIncomeUserIdMembership(m.user_id, m.id);
   }
 
   function toYMD(value) {
     if (!value) return "";
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}[T\s]/.test(value)) {
       return value.slice(0, 10);
     }
     const d = new Date(value);
     if (isNaN(d.getTime())) return "";
-
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -125,24 +119,22 @@ export default function IncomesScreen({ onAuthExpired }) {
 
   function toDMY(v) {
     if (!v) return "";
-    // v viene como "2025-07-01T00:00:00.000Z"
-    const ymd = String(v).slice(0, 10); // "2025-07-01"
+    const ymd = String(v).slice(0, 10);
     const [y, m, d] = ymd.split("-");
-    return `${d}/${m}/${y}`; // "01/07/2025"
+    return `${d}/${m}/${y}`;
   }
 
   function resetForm() {
     setEditingId(null);
     setDescription(""); 
     setUserId(user_id ? user_id : null); 
-    setMembershipId(membership_id ? membership_id : null);
+    setMembershipId(membership_id ? membership_id : 0);
     setIncomeDate(null); 
     setAmount("");
     setIncomeMethod(incomemethod ? incomemethod : ""); 
     setReference(reference ? reference : ""); 
     setStatus(status ? status : ""); 
     setIncomeTypeId(income_type_id ? income_type_id : 1);
-
   }
 
   function openCreate() {
@@ -155,18 +147,15 @@ export default function IncomesScreen({ onAuthExpired }) {
   function openEdit(u) {
     clearMsgs();
     setEditingId(u.id);
-    
     setDescription(u.description ?? ""); 
     setUserId(u.user_id ?? null);
     setMembershipId(u.membership_id ?? null);
-
     setIncomeDate(toYMD(u.income_date ?? null));
     setAmount(u.amount ?? "");
     setIncomeMethod(u.income_method ?? ""); 
     setReference(u.reference ?? ""); 
     setStatus(u.status ?? ""); 
     setIncomeTypeId(u.income_type_id ?? null);
-
     setModalVisible(true);
   }
 
@@ -191,9 +180,14 @@ export default function IncomesScreen({ onAuthExpired }) {
     "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
   ];
 
+  const MONTHS_SHORT = [
+    "Ene","Feb","Mar","Abr","May","Jun",
+    "Jul","Ago","Sep","Oct","Nov","Dic"
+  ];
+
   function ymdFromApi(v) {
     if (!v) return "";
-    return String(v).slice(0, 10); // "YYYY-MM-DD" (evita TZ)
+    return String(v).slice(0, 10);
   }
 
   function dmyFromApi(v) {
@@ -204,15 +198,12 @@ export default function IncomesScreen({ onAuthExpired }) {
   }
 
   function buildYearMonthSections(incomes) {
-    // Orden: más reciente primero
     const sorted = [...incomes].sort((a, b) => {
       const da = ymdFromApi(a.income_date);
       const db = ymdFromApi(b.income_date);
-      // string compare funciona para YYYY-MM-DD
       return db.localeCompare(da);
     });
 
-    // year -> monthIndex(0-11) -> items[]
     const map = new Map();
 
     for (const p of sorted) {
@@ -228,29 +219,29 @@ export default function IncomesScreen({ onAuthExpired }) {
       monthsMap.get(month).push(p);
     }
 
-    // Construye sections: [{ title: "2025", data: [{month: 6, items:[...]} ...] }]
     const years = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
 
     return years.map((year) => {
       const monthsMap = map.get(year);
-      const months = Array.from(monthsMap.keys()).sort((a, b) => b - a); // desc
+      const months = Array.from(monthsMap.keys()).sort((a, b) => b - a);
 
-      const data = months.map((month) => ({
+      const monthsData = months.map((month) => ({
         month,
         items: monthsMap.get(month),
       }));
 
-      return { title: year, year, data };
+      return { 
+        year, 
+        monthsData,
+        totalIncomes: monthsData.reduce((sum, m) => sum + m.items.length, 0)
+      };
     });
   }
-
 
   async function loadIncomes() {
     clearMsgs();
     setLoading(true);
     try {
-
-      
       const data = await api.listIncomes();
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setIncomes(list);
@@ -260,14 +251,12 @@ export default function IncomesScreen({ onAuthExpired }) {
       setIncomeTypes(listIncomeTypes);
 
       const sections = buildYearMonthSections(list);
-      const firstYear = sections[0]?.title;
+      const firstYear = sections[0]?.year;
       if (firstYear) setExpandedYears({ [firstYear]: true });
 
       const userData = await api.listUsers();
       const userList = Array.isArray(userData) ? userData : userData?.response || userData?.data || [];
-
       setUsers(userList);
-      setUserId(userList[0]?.id);
 
       const membershipsData = await api.listMemberships();
       const membershipsList = Array.isArray(membershipsData) ? membershipsData : membershipsData?.response || membershipsData?.data || [];
@@ -276,9 +265,6 @@ export default function IncomesScreen({ onAuthExpired }) {
       const packagesData = await api.listPackages();
       const packagesList = Array.isArray(packagesData) ? packagesData : packagesData?.response || packagesData?.data || [];
       setPackages(packagesList);
-
-      const firstPkg = membershipsList[0] ?? null;
-      setMembershipId(firstPkg?.id ?? null);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -307,13 +293,11 @@ export default function IncomesScreen({ onAuthExpired }) {
   }
 
   async function save() {
-
     clearMsgs();
     const v = validate();
     if (v) return setError(v);
 
     const me = await api.me();
-
     setSaving(true);
 
     try {
@@ -331,18 +315,12 @@ export default function IncomesScreen({ onAuthExpired }) {
         created_by: me.data.id
       };
 
-      console.log(payload);
-
       if (isEditing) {   
-
         await api.updateIncomes(editingId, payload);
         setSuccess("Income updated.");
-
       } else {
-
         await api.createIncomes(payload);
         setSuccess("Income created.");
-
       }
 
       setModalVisible(false);
@@ -379,9 +357,11 @@ export default function IncomesScreen({ onAuthExpired }) {
     }
   }
 
+  const yearSections = buildYearMonthSections(incomes);
+
   return (
     <View style={ScreenStyles.page}>
-    <View style={ScreenStyles.header}>
+      <View style={ScreenStyles.header}>
         <Text style={ScreenStyles.title}>{t("incomes.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
           <Text style={ScreenStyles.btnPrimaryText}>{t("incomes.add_income")}</Text>
@@ -395,81 +375,170 @@ export default function IncomesScreen({ onAuthExpired }) {
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
+      {/* Barra de años */}
+      {!loading && incomes.length > 0 && (
+        <View style={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: 8, 
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: '#f8fafc',
+          borderRadius: 8,
+          marginBottom: 8,
+          marginTop: 8
+        }}>
+          {yearSections.map(section => (
+            <Pressable
+              key={section.year}
+              onPress={() => toggleYear(section.year)}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: expandedYears[section.year] ? '#3b82f6' : '#e2e8f0',
+                borderRadius: 6,
+                minWidth: 80,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{
+                color: expandedYears[section.year] ? '#ffffff' : '#475569',
+                fontWeight: '600',
+                fontSize: 14
+              }}>
+                {section.year}
+              </Text>
+              <Text style={{
+                color: expandedYears[section.year] ? '#dbeafe' : '#64748b',
+                fontSize: 11,
+                marginTop: 2
+              }}>
+                {section.totalIncomes}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
-        <SectionList
-          sections={buildYearMonthSections(incomes)}
-          keyExtractor={(row) => `month-${row.month}`} // cada row = {month, items}
-          stickySectionHeadersEnabled
-          renderSectionHeader={({ section }) => {
-          const isOpen = !!expandedYears[section.title];
-          return (
-            <Pressable onPress={() => toggleYear(section.title)} style={ScreenStyles.sectionHeaderRow}>
-              <Text style={ScreenStyles.sectionHeaderText}>{section.title}</Text>
-              <Text style={ScreenStyles.sectionHeaderArrow}>{isOpen ? "▲" : "▼"}</Text>
-            </Pressable>
-          );
-        }}
-
-          renderItem={({ item, section }) => {
-            // item = { month, items: [...] }
-            if (!expandedYears[section.title]) return null; // año colapsado
-
-            const monthLabel = MONTHS_ES[item.month];
-            const monthKey = `${section.title}-${String(item.month + 1).padStart(2, "0")}`;
-            const isMonthOpen = !!expandedMonths[monthKey];
+        <FlatList
+          data={yearSections}
+          keyExtractor={(item) => item.year}
+          refreshing={loading}
+          onRefresh={loadIncomes}
+          renderItem={({ item: yearSection }) => {
+            if (!expandedYears[yearSection.year]) return null;
 
             return (
-              <View>
-                {/* Header del mes con mismo look que section header */}
-                <Pressable
-                  onPress={() => toggleMonth(section.title, item.month)}
-                  style={ScreenStyles.monthHeaderRow}
-                >
-                  <Text style={ScreenStyles.sectionHeaderText}>{monthLabel}</Text>
-                  <Text style={ScreenStyles.sectionHeaderArrow}>{t("incomes.title") + ": "+ item.items.length+ " "} {isMonthOpen ? "▲" : "▼"}</Text>
-                </Pressable>
+              <View style={{ marginBottom: 16 }}>
+                {/* Barra de meses horizontal */}
+                <View style={{ 
+                  flexDirection: 'row', 
+                  flexWrap: 'wrap', 
+                  gap: 6,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: 8,
+                  marginBottom: 8
+                }}>
+                  {yearSection.monthsData.map((monthData) => {
+                    const monthKey = `${yearSection.year}-${String(monthData.month + 1).padStart(2, "0")}`;
+                    const isMonthOpen = !!expandedMonths[monthKey];
 
-                {/* Items del mes (solo si mes abierto) */}
-                {isMonthOpen && item.items.map((pay) => (
-                  <View key={pay.id} style={ScreenStyles.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("incomes.income_date")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{dmyFromApi(pay.income_date)}</Text>
+                    return (
+                      <Pressable
+                        key={monthData.month}
+                        onPress={() => toggleMonth(yearSection.year, monthData.month)}
+                        style={{
+                          paddingHorizontal: 14,
+                          paddingVertical: 10,
+                          backgroundColor: isMonthOpen ? '#3b82f6' : '#e2e8f0',
+                          borderRadius: 8,
+                          minWidth: 70,
+                          alignItems: 'center',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 2,
+                          elevation: 2,
+                        }}
+                      >
+                        <Text style={{
+                          color: isMonthOpen ? '#ffffff' : '#475569',
+                          fontWeight: '700',
+                          fontSize: 13
+                        }}>
+                          {MONTHS_SHORT[monthData.month]}
+                        </Text>
+                        <Text style={{
+                          color: isMonthOpen ? '#dbeafe' : '#64748b',
+                          fontSize: 10,
+                          marginTop: 2,
+                          fontWeight: '500'
+                        }}>
+                          {monthData.items.length}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {/* Items de todos los meses abiertos */}
+                {yearSection.monthsData.map((monthData) => {
+                  const monthKey = `${yearSection.year}-${String(monthData.month + 1).padStart(2, "0")}`;
+                  const isMonthOpen = !!expandedMonths[monthKey];
+
+                  if (!isMonthOpen) return null;
+
+                  return (
+                    <View key={monthKey}>
+                      {monthData.items.map((pay) => (
+                        <View key={pay.id} >
+                          <View style={ScreenStyles.row}>
+                            <View style={{ flex: 1 }}>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between' , flexShrink: 1 , borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 12, marginBottom: 12 }}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={ScreenStyles.rowMeta}>{pay.user_id ? t("incomes.user_id") : t("common.description")}</Text>
+                                  <Text style={[ScreenStyles.rowTitle, { fontSize: 14}]}>{pay.user_id ? findName(pay.user_id) : pay.description}</Text>
+                                </View>
+                                <View style={{ flex: 1 , alignItems: 'flex-end'}}>
+                                  <Text style={ScreenStyles.rowMeta}>{t("incomes.amount")}</Text>
+                                  <Text style={[ScreenStyles.rowTitle, { fontSize: 14}]}>{pay.amount + " " + pay.currency}</Text>
+                                </View>
+                              </View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={ScreenStyles.rowMeta}>{t("incomes.income_date")}</Text>
+                                  <Text style={[ScreenStyles.rowTitle, { fontSize: 14}]}>{dmyFromApi(pay.income_date)}</Text>
+                                </View>
+                                <View style={{ flex: 1 , alignItems: 'flex-end' }}>
+                                  <Text style={ScreenStyles.rowMeta}>{t("incomes.status")}</Text>
+                                  <Text style={ScreenStyles.rowTitle}>{t("incomes." + pay.status)}</Text>
+                                </View>
+                              </View>
+                              </View>
+                              <View style={{ flex: 1, maxWidth: 50 }}>
+                                <Pressable style={{minWidth: 0, alignItems: 'center', paddingBottom: 18}} onPress={() => openEdit(pay)}>
+                                  <Ionicons name="pencil" size={18} color="#0b1220" />
+                                  <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.edit")}</Text>
+                                </Pressable>
+                                <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => askDelete(pay.id)}>
+                                  <Ionicons name="trash-outline" size={18} color="#d60000" />
+                                  <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
+                                </Pressable>
+                              </View>
+                          </View>
+                        </View>
+                      ))}
                     </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{pay.user_id ? t("incomes.user_id") : t("common.description")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{pay.user_id ? findName(pay.user_id) : pay.description}</Text>
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("incomes.amount")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{pay.amount + " " + pay.currency}</Text>
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={ScreenStyles.rowMeta}>{t("incomes.status")}</Text>
-                      <Text style={ScreenStyles.rowTitle}>{t("incomes." + pay.status)}</Text>
-                    </View>
-
-                    <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(pay)}>
-                      <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]}
-                      onPress={() => askDelete(pay.id)}
-                    >
-                      <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-                    </Pressable>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             );
           }}
-
           ListEmptyComponent={
             <View style={ScreenStyles.center}>
               <Text style={{ color: "#64748b" }}>{t("incomes.empty")}</Text>
@@ -478,26 +547,11 @@ export default function IncomesScreen({ onAuthExpired }) {
         />
       )}
 
-
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
           <View style={ScreenStyles.modalCard}>
             <Text style={ScreenStyles.modalTitle}>{isEditing? t("incomes.edit_income") : t("incomes.add_income")}</Text>
 
-            {/* Users 
-            <Text style={ScreenStyles.label}>{t("incomes.user_id")}</Text>
-            <View style={ScreenStyles.pickerWrapper}>
-              <Picker selectedValue={user_id} onValueChange={(v) => setUserId(v)}>
-                {users
-                  .filter(d => d.name.trim() !== "Administrator")
-                  .map(d => (
-                    <Picker.Item key={d.id} label={`${d.name} ${d.lastname}`} value={d.id} />
-                  ))}
-              </Picker>
-            </View>*/}
-           {/* Memberships 
-           <Picker selectedValue={membership_id} onValueChange={(v) => setMembershipId(v)}>
-           */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("incomes.type")}</Text>
@@ -513,7 +567,7 @@ export default function IncomesScreen({ onAuthExpired }) {
                 <Text style={ScreenStyles.label}>{t("memberships.title")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker selectedValue={membership_id} onValueChange={onMembershipChange}>
-                      <Picker.Item label="N/A" value="" />
+                    <Picker.Item label="N/A" value="0" />
                     {memberships.map((d) => (
                       <Picker.Item key={d.id} label={findName(d.user_id)+ " - " +findMembership(d.id)} value={d.id} />
                     ))}
@@ -527,7 +581,6 @@ export default function IncomesScreen({ onAuthExpired }) {
                 <TextInput style={ScreenStyles.input} value={description} onChangeText={setDescription} />
               </View>
             </View>
-              {/* Fees and Currency */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("incomes.amount")}</Text>

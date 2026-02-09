@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View, SectionList, Switch} from "react-native";
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View, SectionList, Switch} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { useRouter } from "expo-router";
 import { t } from "@/src/i18n";
-import { loadLang } from "@/src/i18n/lang";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+
 
 export default function UsersScreen({ onAuthExpired }) {
   
@@ -33,39 +33,51 @@ export default function UsersScreen({ onAuthExpired }) {
   const [active, setActive] = useState(true);
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
-  const ROLE_LABELS = { admin: "Administrador", user: "Usuario" };
+  const ROLE_LABELS = { admin: t("users.role_admin"), user: t("users.role_user") };
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
 
+  const sectionListRef = React.useRef(null);
+
   const visibleUsers = users.filter((u) => u.username !== "admin"); 
 
   const disableSave = saving || (!isEditing && (!!password || !!confirmPassword) && password !== confirmPassword);
-  const [expandedLetters, setExpandedLetters] = useState({}); // { "A": true/false, "#": true/false }
+  const [expandedLetters, setExpandedLetters] = useState({});
 
   function toggleLetter(letter) {
     setExpandedLetters((prev) => ({ ...prev, [letter]: !prev[letter] }));
+  }
+
+  function scrollToLetter(letter) {
+    toggleLetter(letter);
+    const sections = buildLetterSections(visibleUsers);
+    const index = sections.findIndex(s => s.title === letter);
+    if (index >= 0 && sectionListRef.current) {
+      sectionListRef.current.scrollToLocation({
+        sectionIndex: index,
+        itemIndex: 0,
+        animated: true,
+      });
+    }
   }
 
   function normalizeLetter(name) {
     const s = String(name ?? "").trim();
     if (!s) return "#";
 
-    // Quita acentos y pasa a mayúscula
     const first = s
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .charAt(0)
       .toUpperCase();
 
-    // Si no es A-Z, lo mandamos a "#"
     return /^[A-Z]$/.test(first) ? first : "#";
   }
 
   function buildLetterSections(list) {
-    const map = new Map(); // letter -> users[]
+    const map = new Map();
 
-    // Ordena por nombre + apellido (estable y bonito)
     const sorted = [...list].sort((a, b) => {
       const an = `${a.name ?? ""} ${a.lastname ?? ""}`.trim().toLowerCase();
       const bn = `${b.name ?? ""} ${b.lastname ?? ""}`.trim().toLowerCase();
@@ -78,7 +90,6 @@ export default function UsersScreen({ onAuthExpired }) {
       map.get(letter).push(u);
     }
 
-    // Letras A-Z, y "#" al final si existe
     const letters = Array.from(map.keys()).sort((a, b) => {
       if (a === "#") return 1;
       if (b === "#") return -1;
@@ -87,10 +98,9 @@ export default function UsersScreen({ onAuthExpired }) {
 
     return letters.map((letter) => ({
       title: letter,
-      data: map.get(letter), // aquí cada item ya es user
+      data: map.get(letter),
     }));
   }
-
 
   function askDelete(id) {
     setToDeleteId(id);
@@ -154,7 +164,6 @@ export default function UsersScreen({ onAuthExpired }) {
     setLoading(true);
     try {
       const data = await api.listUsers();
-      // Soporta: [..] o {response:[..]} o {data:[..]}
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setUsers(list);
 
@@ -262,10 +271,6 @@ export default function UsersScreen({ onAuthExpired }) {
     } finally {
       setLoading(false);
     }
-
-   // <Text style={ScreenStyles.label}>Password {isEditing ? "(opcional)" : "(requerido)"}</Text>
-   // <TextInput editable={isEditing ? false : true} style={isEditing ? [ScreenStyles.input,{ backgroundColor: "#e5e7eb", color: "#6b7280" }] : ScreenStyles.input} value={password} onChangeText={setPassword} secureTextEntry />
-
   }
 
   return (
@@ -285,58 +290,103 @@ export default function UsersScreen({ onAuthExpired }) {
         <Text style={ScreenStyles.btnSecondaryText}>{loading ? t("common.loading") : t("common.refresh")}</Text>
       </Pressable>
 
+      {/* Barra alfabética */}
+      {!loading && visibleUsers.length > 0 && (
+        <View style={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: 8, 
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: '#f8fafc',
+          borderRadius: 8,
+          marginBottom: 8,
+          marginTop: 8
+        }}>
+          {buildLetterSections(visibleUsers).map(section => (
+            <Pressable
+              key={section.title}
+              onPress={() => scrollToLetter(section.title)}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                backgroundColor: expandedLetters[section.title] ? '#3b82f6' : '#e2e8f0',
+                borderRadius: 6,
+                minWidth: 45,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{
+                color: expandedLetters[section.title] ? '#ffffff' : '#475569',
+                fontWeight: '600',
+                fontSize: 14
+              }}>
+                {section.title}
+              </Text>
+              <Text style={{
+                color: expandedLetters[section.title] ? '#dbeafe' : '#64748b',
+                fontSize: 11,
+                marginTop: 2
+              }}>
+                {section.data.length}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
         <SectionList
+          ref={sectionListRef}
           sections={buildLetterSections(visibleUsers)}
           keyExtractor={(u) => String(u.id)}
-          stickySectionHeadersEnabled
+          stickySectionHeadersEnabled={false}
           refreshing={loading}
           onRefresh={loadUsers}
-          renderSectionHeader={({ section }) => {
-            const isOpen = !!expandedLetters[section.title];
-
-            return (
-              <Pressable onPress={() => toggleLetter(section.title)} style={ScreenStyles.sectionHeaderRow}>
-                <Text style={ScreenStyles.sectionHeaderText}>
-                  {section.title}
-                </Text>
-                <Text style={ScreenStyles.sectionHeaderArrow}>
-                  {section.data.length} {isOpen ? "▲" : "▼"}
-                </Text>
-              </Pressable>
-            );
-          }}
+          renderSectionHeader={() => null}
           renderItem={({ item, section }) => {
             if (!expandedLetters[section.title]) return null;
 
             return (
-              <View style={ScreenStyles.row}>
+              <View style={[ScreenStyles.row, { minWidth: 0, width: "100%" }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.rowTitle}>
-                    {item.name ?? "(sin nombre)"} {item.lastname ?? ""}
-                  </Text>
-                  <Text style={ScreenStyles.rowMeta}>
-                    {`Usuario: ${item.username ?? ""}`}
-                    {item.role ? ` • Rol: ${ROLE_LABELS[item.role] ?? item.role}` : ""}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[ScreenStyles.rowTitle, { fontSize: 14, flexShrink: 1 , borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 13, marginBottom: 12 }]}>
+                      {item.name ?? "(sin nombre)"} {item.lastname ?? ""}
+                    </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[ScreenStyles.rowMeta, { fontSize:14 }]}>
+                          {t("users.username") + ": " + item.username ?? ""}
+                        </Text>
+                        <Text style={ScreenStyles.rowMeta}>
+                          {item.role ? `${t("users.role")}: ${ROLE_LABELS[item.role] ?? item.role}` : ""}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end'  }}>
+                          <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => askDelete(item.id)}>
+                    <Ionicons name="trash-outline" size={18} color="#d60000" />
+                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
+                  </Pressable>
+                        </View>
+                    </View>
+                  </View>
                 </View>
+                <View style={{ flex: 1 , maxWidth: 50 }}>  
+                  <Pressable style={{minWidth: 0, alignItems: 'center', paddingBottom: 7}} onPress={() => openEdit(item)}>
+                    <Ionicons name="pencil" size={18} color="#0b1220" />
+                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.edit")}</Text>
+                  </Pressable>
 
-                <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
-                  <Text style={ScreenStyles.smallBtnText}>{t("common.edit")}</Text>
-                </Pressable>
+                  <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}>
+                    <Ionicons name="person-circle-outline" size={18} color="#0b1220" />
+                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("userprofiles.title")}</Text>
+                  </Pressable>
 
-                <Pressable
-                  style={[ScreenStyles.smallBtn, { backgroundColor: "#64748b" }]}
-                  onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}
-                >
-                  <Text style={ScreenStyles.smallBtnText}>{t("userprofiles.title")}</Text>
-                </Pressable>
-
-                <Pressable style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} onPress={() => askDelete(item.id)}>
-                  <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
-                </Pressable>
+                  
+                </View>
               </View>
             );
           }}
@@ -383,7 +433,6 @@ export default function UsersScreen({ onAuthExpired }) {
               <Text style={ScreenStyles.label}>{t("common.password_confirm")}</Text>
               <TextInput style={ScreenStyles.input} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
 
-              {/* Mensaje inline opcional */}
               {password && confirmPassword && password !== confirmPassword ? (
                 <Text style={{ color: "#b91c1c", marginTop: 6 }}>
                   {t("messages.password_dont_match")}

@@ -23,7 +23,8 @@ router.get('/payments/monthly-summary', (req, res) => {
     WHERE status = ?
       AND income_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
     GROUP BY month
-    ORDER BY month
+    ORDER BY month DESC
+    LIMIT 12
   `;
 
   fsms_pool.query(sql, ['applied'], (err, rows) => {
