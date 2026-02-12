@@ -2,16 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Platform, useWindowDimensions, View, Text, Pressable } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-import { api } from "@/src/api/client";
+import { api, setAuthExpiredHandler } from "@/src/api/client";
 import { ScreenStyles } from "@/src/styles/appStyles";
-import ProfileMenu from "@/src/ui/ProfileMenu";
-import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
-import UserSettingsModal from "@/src/ui/UserSettings";
 import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession } from "@/src/storage/authStorage";
 import { useLanguage } from "@/src/i18n/LanguageProvider";
-
 import { DrawerControlProvider, useDrawerControl } from "@/src/context/DrawerControlContext";
+import { UserProvider, useUser } from "@/src/context/UserContext";
 
 function AppShell() {
   const { lang, setLanguage, t, ready } = useLanguage();
@@ -19,19 +15,25 @@ function AppShell() {
   const segments = useSegments();
   const isInSettings = segments.includes("(settings)");
   const { toggleMainDrawer, toggleSettingsDrawer } = useDrawerControl();
+  const { user, setUser, isAdmin } = useUser();
 
   const { width } = useWindowDimensions();
   const isWebDesktop = Platform.OS === "web" && width >= 1024;
 
   const [loading, setLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [changePwdVisible, setChangePwdVisible] = useState(false);
-  const [userSettingsVisible, setUserSettingsVisible] = useState(false);
+  // Handler global de sesión expirada
+  useEffect(() => {
+    setAuthExpiredHandler(async () => {
+      await clearAuthSession();
+      setHasSession(false);
+      setUser(null);
+      router.replace("/(auth)");
+    });
 
-  const isAdmin = user?.username === "admin";
+    return () => setAuthExpiredHandler(null);
+  }, [router]);
 
   useEffect(() => {
     let mounted = true;
@@ -61,12 +63,18 @@ function AppShell() {
         setUser(me);
         setHasSession(true);
         setLanguage(language);
+
       } catch (e: any) {
-        await clearAuthSession();
-        if (!mounted) return;
-        setHasSession(false);
-        setUser(null);
+        // ✅ No retornamos para que el finally siempre ejecute setLoading(false)
+        if (e?.code !== "AUTH_EXPIRED") {
+          // Solo limpiar sesión si no es AUTH_EXPIRED (el handler global ya lo maneja)
+          await clearAuthSession();
+          if (!mounted) return;
+          setHasSession(false);
+          setUser(null);
+        }
       } finally {
+        // ✅ Siempre se ejecuta, sin importar el tipo de error
         if (!mounted) return;
         setLoading(false);
       }
@@ -101,11 +109,12 @@ function AppShell() {
 
           headerRight: () => (
             <View style={ScreenStyles.rowNoWidth}>
-              <Text style={{ fontWeight: "800" }} onPress={() => setProfileMenuOpen(true)}>
+              <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
+              <Text style={{ fontWeight: "500" }}>
                 {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
               </Text>
-              <Pressable onPress={() => setProfileMenuOpen(true)} style={{ marginRight: 14 }}>
-                <Ionicons name="person-circle-outline" size={26} color="#0b1220" />
+              <Pressable onPress={() => router.push("/(app)/(main)/userprofiles")} style={{ marginRight: 14 }}>
+                <Ionicons name="settings-outline" size={20} color="#0b1220" />
               </Pressable>
             </View>
           ),
@@ -133,53 +142,6 @@ function AppShell() {
         <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
         <Stack.Screen name="(settings)" options={{ title: t("common.settings") }} />
       </Stack>
-
-      <ProfileMenu
-        key={lang}
-        visible={profileMenuOpen}
-        onClose={() => setProfileMenuOpen(false)}
-        isAdmin={isAdmin}
-        onGoProfile={() => {
-          setProfileMenuOpen(false);
-          router.push("/(app)/(main)/userprofiles");
-        }}
-        onChangePassword={() => {
-          setProfileMenuOpen(false);
-          setChangePwdVisible(true);
-        }}
-        onUserSettings={() => {
-          setProfileMenuOpen(false);
-          setUserSettingsVisible(true);
-        }}
-        onLogout={async () => {
-          setProfileMenuOpen(false);
-          await clearAuthSession();
-          router.replace("/(auth)");
-        }}
-      />
-
-      <ChangePasswordModal
-        key={lang}
-        visible={changePwdVisible}
-        userId={user?.id ?? null}
-        onClose={() => setChangePwdVisible(false)}
-        onAuthExpired={async () => {
-          await clearAuthSession();
-          router.replace("/(auth)");
-        }}
-      />
-
-      <UserSettingsModal
-        key={lang}
-        visible={userSettingsVisible}
-        userId={user?.id ?? null}
-        onClose={() => setUserSettingsVisible(false)}
-        onLanguageChanged={async (newLang) => setLanguage(newLang)}
-        onAuthExpired={async () => {
-          await clearAuthSession();
-          router.replace("/(auth)");
-        }}
-      />
     </>
   );
 }
@@ -187,7 +149,9 @@ function AppShell() {
 export default function AppLayout() {
   return (
     <DrawerControlProvider>
-      <AppShell />
+      <UserProvider>
+        <AppShell />
+      </UserProvider>
     </DrawerControlProvider>
   );
 }

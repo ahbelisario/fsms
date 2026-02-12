@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Redirect } from "expo-router";
 import { Text, View } from "react-native";
 import LoginScreen from "@/src/screens/LoginScreen";
-import { getAuthToken, setAuthSession, isSessionExpired, clearAuthSession, } from "@/src/storage/authStorage";
+import { getAuthToken, setAuthSession, isSessionExpired, clearAuthSession } from "@/src/storage/authStorage";
 import { api } from "@/src/api/client";
 
 export default function Index() {
@@ -25,7 +25,10 @@ export default function Index() {
         const me = meResp?.data ?? meResp;
 
         const role = String(me?.role ?? "").trim().toLowerCase();
-        setRedirectTo(role === "admin" ? "/(app)/dashboard" : "/(app)/home");
+        // ✅ Rutas correctas
+        setRedirectTo(role === "admin" ? "/(app)/(main)/dashboard" : "/(app)/(main)/home");
+      } catch (e) {
+        await clearAuthSession();
       } finally {
         setLoading(false);
       }
@@ -34,9 +37,9 @@ export default function Index() {
 
   async function onLoginSuccess({ token, role }: { token: string; role: string }) {
     await setAuthSession(token);
-
     const r = String(role ?? "").trim().toLowerCase();
-    setRedirectTo(r === "admin" ? "/(app)/dashboard" : "/(app)/home");
+    // ✅ Rutas correctas
+    setRedirectTo(r === "admin" ? "/(app)/(main)/dashboard" : "/(app)/(main)/home");
   }
 
   if (loading) {
@@ -46,7 +49,6 @@ export default function Index() {
       </View>
     );
   }
-
 
   if (redirectTo) {
     return <Redirect href={redirectTo as any} />;

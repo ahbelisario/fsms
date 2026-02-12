@@ -1,25 +1,34 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View, ScrollView, RefreshControl } from "react-native";
+import { ActivityIndicator, Pressable, Text, TextInput, View, ScrollView, RefreshControl, Switch } from "react-native";
+import { clearAuthSession } from "@/src/storage/authStorage";
 import { Picker } from "@react-native-picker/picker";
 import { api } from "@/src/api/client";
-import { ScreenStyles } from '@/src/styles/appStyles';
+import { appStyles, ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import DatePickerField from "@/src/ui/DatePickerField";
+import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
 import { t } from "@/src/i18n";
 
 export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const router = useRouter();
+  
+  const [changePwdVisible, setChangePwdVisible] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const [ranks, setRanks] = useState([]);
   const [disciplines, setDisciplines] = useState([]);
   
   const [user, setUser] = useState({});
+
+  const [idtouse, setIdtoUse] = useState(null);
+  const [myrole, setMyRole] = useState("");
+  const [userdata, setUserData] = useState([]);
   const [userprofiles, setUserProfiles] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [language, setLanguage] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +40,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   
   // Tab state
   const [activeTab, setActiveTab] = useState(0);
-  
+
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("user");
+  const [active, setActive] = useState(true);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [name, setName] = useState("");
   const [lastname, setLastName] = useState("");
   const [gender, setGender] = useState("");
@@ -54,6 +69,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [notes, setNotes] = useState("");
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
+  const disableSave = saving || (!isEditing && (!!password || !!confirmPassword) && password !== confirmPassword);
+
 
   const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
   
@@ -68,10 +85,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   // Definir tabs
   const tabs = [
-    { id: 0, label: t("userprofiles.personal") },
-    { id: 1, label: t("userprofiles.contacto") },
-    { id: 2, label: t("userprofiles.marcial") },
-    { id: 3, label: t("userprofiles.medical") }
+    { id: 0, label: "Login"},
+    { id: 1, label: t("userprofiles.personal") },
+    { id: 2, label: t("userprofiles.contacto") },
+    { id: 3, label: t("userprofiles.marcial") },
+    { id: 4, label: t("userprofiles.medical") },
+    { id: 5, label: "Settings" },
   ];
 
   function toYMD(value) {
@@ -128,6 +147,9 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }
 
   function resetForm() {
+    setUsername("");
+    setRole("user");
+    setActive(true);
     setName("");
     setLastName("");
     setGender("");
@@ -147,42 +169,82 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setStartDate(null);
     setBloodType("");
     setMedicalNotes("");
+    setNotes("");
     setEditingId(null);
   }
 
-  function openEdit(u) {
+  function loadAllFormData(userData, profileData) {
     clearMsgs();
-    setEditingId(u.id);
-    setName(u.name ?? "");
-    setLastName(u.lastname ?? "");
-    setGender(u.gender ?? "");
-    setDateofBirth(toYMD(u.date_of_birth ?? null));
-    setEmail(u.email ?? "");
-    setPhone(u.phone ?? "");
-    setEmergencyContantName(u.emergency_contact_name ?? "");
-    setEmergencyContantPhone(u.emergency_contact_phone ?? "");
-    setAddressLine1(u.address_line1 ?? "");
-    setAddressLine2(u.address_line2 ?? "");
-    setCity(u.city ?? "");
-    setState(u.state ?? "");
-    setCountry(u.country ?? "");
-    setPostalCode(u.postal_code ?? "");
-    setDisciplineId(u.discipline_id ?? null);
-    setRankId(u.rank_id ?? null);
-    setStartDate(toYMD(u.start_date ?? null));
-    setBloodType(u.blood_type ?? "");
-    setMedicalNotes(u.medical_notes ?? "");
-    setNotes(u.notes ?? "");
+    
+    // Siempre cargar datos de usuario si existen
+    if (userData) {
+      setUsername(userData.username ?? "");
+      setRole(userData.role ?? "user");
+      setActive(userData.active ?? true);
+    }
+    
+    // Cargar datos de perfil si existen
+    if (profileData) {
+      setEditingId(profileData.id);
+      setName(profileData.name ?? "");
+      setLastName(profileData.lastname ?? "");
+      setGender(profileData.gender ?? "");
+      setDateofBirth(toYMD(profileData.date_of_birth ?? null));
+      setEmail(profileData.email ?? "");
+      setPhone(profileData.phone ?? "");
+      setEmergencyContantName(profileData.emergency_contact_name ?? "");
+      setEmergencyContantPhone(profileData.emergency_contact_phone ?? "");
+      setAddressLine1(profileData.address_line1 ?? "");
+      setAddressLine2(profileData.address_line2 ?? "");
+      setCity(profileData.city ?? "");
+      setState(profileData.state ?? "");
+      setCountry(profileData.country ?? "");
+      setPostalCode(profileData.postal_code ?? "");
+      setDisciplineId(profileData.discipline_id ?? null);
+      setRankId(profileData.rank_id ?? null);
+      setStartDate(toYMD(profileData.start_date ?? null));
+      setBloodType(profileData.blood_type ?? "");
+      setMedicalNotes(profileData.medical_notes ?? "");
+      setNotes(profileData.notes ?? "");
+    } else {
+      // Si no hay profile, resetear solo los campos de perfil
+      setEditingId(null);
+      setName("");
+      setLastName("");
+      setGender("");
+      setDateofBirth(null);
+      setEmail("");
+      setPhone("");
+      setEmergencyContantName("");
+      setEmergencyContantPhone("");
+      setAddressLine1("");
+      setAddressLine2("");
+      setCity("");
+      setState("");
+      setCountry("");
+      setPostalCode("");
+      setDisciplineId(null);
+      setRankId(null);
+      setStartDate(null);
+      setBloodType("");
+      setMedicalNotes("");
+      setNotes("");
+    }
   }
 
   async function loadUserProfiles() {
+  
     setProfile(profile ?? null);
+    
     const me = await api.me();
     setUser(me.data);
     const idToUse = targetUserId ?? me.data.id;
+    setMyRole(me.data.role);
+    setIdtoUse(idToUse);
 
     clearMsgs();
     setLoading(true);
+
     try {
       const dataDisciplines = await api.listDisciplines();
       const listDisciplines = Array.isArray(dataDisciplines) ? dataDisciplines : dataDisciplines?.response || dataDisciplines?.data || [];
@@ -192,6 +254,14 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       const listRanks = Array.isArray(dataRanks) ? dataRanks : dataRanks?.response || dataRanks?.data || [];
       setRanks(listRanks);
       
+      const userdata = await api.getUser(idToUse);
+      const userdatalist = Array.isArray(userdata) ? userdata : userdata?.response || userdata?.data || [];
+      setUserData(userdatalist);
+
+      const userSets = await api.listUserSettings(idToUse);
+      const userLang = userSets?.data.language;
+      setLanguage(userLang);
+
       const data = await api.listUserProfiles(idToUse);
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setUserProfiles(list);
@@ -199,8 +269,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       const profile = Array.isArray(list) ? list[0] : list;
       setProfile(profile ?? null);
 
-      if (profile) openEdit(profile);
-      else resetForm();
+      // Cargar todos los datos del formulario en una sola llamada
+      loadAllFormData(userdatalist, profile);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -218,21 +288,25 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }, [targetUserId]);
 
   function validate() {
-    if (!name.trim()) return "Nombre requerido.";
-    if (!lastname.trim()) return "Apellido requerido.";
+    if (!username.trim()) return "Username required.";
+    if (!name.trim()) return "Name required.";
+    if (!lastname.trim()) return "Lastname required.";
     return "";
   }
 
   async function save() {
     const me = await api.me();
     const idToUse = targetUserId ?? me.data.id;
+    const iAmAdmin = me.data.role === "admin" ? true : false;
 
     clearMsgs();
     const v = validate();
     if (v) return setError(v);
 
     setSaving(true);
+
     try {
+
       const payload = {
         name: name.trim(),
         lastname: lastname.trim(),
@@ -254,11 +328,29 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         blood_type: blood_type.trim(),
         medical_notes: medical_notes.trim(),
         notes: notes.trim(),
+      }; 
+
+      const user_payload = {
+        username: username.trim(),
+        name: name.trim(),
+        lastname: lastname.trim(),
+        email: email.trim(),
+        ...(iAmAdmin && {
+          role: role.trim(),
+          active: active
+        })
       };
 
+      const user_settings = { lang: language };
+
       if (isEditing) {
+
+        await api.updateUser(idToUse, user_payload);
         await api.updateUserProfiles(idToUse, payload);
-        setSuccess("Perfil actualizado.");
+        await api.updateUserSettingLanguage(idToUse, user_settings);
+
+        setSuccess("User updated.");
+        
       }
 
       resetForm();
@@ -278,7 +370,47 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   // Renderizar contenido de cada tab
   const renderTabContent = () => {
     switch (activeTab) {
-      case 0: // Personal
+      case 0: // Login
+        return (
+          <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 , marginTop: 12 }}>
+                            <Text>{t("users.active")}</Text>
+                            <Switch disabled={username === "admin" ? true : false} value={active} onValueChange={setActive}/>
+                        </View>
+            
+            <Text style={ScreenStyles.label}>{t("login.username")}</Text>
+            <TextInput disabled={user?.role !== "admin"} style={ScreenStyles.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />  
+              
+            <Text style={ScreenStyles.label}>{t("login.password")}</Text>
+            <View style={{ flexDirection: "row", gap: 10 }}> 
+              <View style={{ flex: 1  }}>
+                <TextInput disabled="true" style={[ScreenStyles.input]} placeholder="••••••••"/>
+              </View>
+              <View style={{ maxWidth: 150 , alignItems: 'flex-end'}}>
+                <Pressable style={[ScreenStyles.btnPrimary]} onPress={() => setChangePwdVisible(true)}>
+                  <Text style={ScreenStyles.btnPrimaryText}>
+                    {t("users.changePass")}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+            
+            <View style={{ flexDirection: "row", gap: 10  }}> 
+              <View style={{ flex: 1 }}>
+                <Text style={ScreenStyles.label}>{t("users.role")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker disabled={user?.role !== "admin"} selectedValue={role} onValueChange={setRole}>
+                    <Picker.Item label={t("users.role_user")} value="user" />
+                    <Picker.Item label={t("users.role_admin")} value="admin" />
+                  </Picker>
+                </View>
+              </View>
+            </View>
+
+          </View>
+        );
+
+      case 1: // Personal
         return (
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -327,13 +459,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
           </View>
         );
 
-      case 1: // Contacto
+      case 2: // Contacto
         return (
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
-                <TextInput disabled={true} style={ScreenStyles.input} value={email} onChangeText={setEmail} />
+                <TextInput disabled={user?.role !== "admin"}  style={ScreenStyles.input} value={email} onChangeText={setEmail} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.phone")}</Text>
@@ -409,7 +541,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
           </View>
         );
 
-      case 2: // Marcial
+      case 3: // Marcial
         return (
           <View style={{ gap: 12 }}>
             <View>
@@ -449,7 +581,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
           </View>
         );
 
-      case 3: // Médico
+      case 4: // Médico
         return (
           <View style={{ gap: 12 }}>
             <View>
@@ -478,6 +610,21 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 multiline
                 numberOfLines={6}
               />
+            </View>
+          </View>
+        );
+
+      case 5: // Settings
+        return (
+          <View style={{ gap: 12 }}>
+            <View>
+              <Text style={ScreenStyles.label}>{t("usersettings.language")}</Text>
+              <View style={ScreenStyles.pickerWrapper}>
+                <Picker selectedValue={language} onValueChange={setLanguage}>
+                  <Picker.Item key="lang-en" label={t("usersettings.english")} value="en" />
+                  <Picker.Item key="lang-es" label={t("usersettings.spanish")} value="es" />
+                </Picker>
+              </View>
             </View>
           </View>
         );
@@ -550,7 +697,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <View style={{ flex: 1 }}>
                 <Pressable
                   style={ScreenStyles.btnSecondary}
-                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)}
+                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/students`) : () => router.push(`/(app)/(main)/home`)}
                   disabled={!isEditing}
                 >
                   <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
@@ -582,6 +729,18 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         onConfirm={doConfirm}
         onCancel={cancelConfirm}
       />
+
+      <ChangePasswordModal
+        role={myrole}
+        visible={changePwdVisible}
+        userId={idtouse}
+        onClose={() => setChangePwdVisible(false)}
+        onAuthExpired={async () => {
+          await clearAuthSession();
+          router.replace("/(auth)");
+        }}
+
+      />      
     </View>
   );
 }

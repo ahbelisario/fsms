@@ -69,6 +69,15 @@ const translations = {
       students: "Alumnos",
       student: "Alumno"
     },
+    students: {
+      title: "Alumnos",
+      add: "Agregar alumno",
+      empty: "No hay alumnos.",
+      createstudent: "Crear alumno",
+      edituser: "Editar alumno",
+      students: "Alumnos",
+      student: "Alumno"
+    },
     usersettings: {
       title: "Preferencias del Usuario",
       language: "Idioma",
@@ -285,6 +294,15 @@ const translations = {
       edituser: "Edit user",
       members: "Members",
       member: "Member",
+      students: "Students",
+      student: "Student"
+    },
+    students: {
+      title: "Students",
+      add: "Add student",
+      empty: "No students.",
+      createstudent: "Create student",
+      edituser: "Edit student",
       students: "Students",
       student: "Student"
     },

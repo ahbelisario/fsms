@@ -35,5 +35,25 @@ router.get('/payments/monthly-summary', (req, res) => {
   );
 });
 
+router.get('/payments/lastpayment/:user_id', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const { user_id } = req.params;
+
+  const sql = `
+    SELECT *
+    FROM incomes
+    WHERE user_id = ?
+    ORDER BY income_date DESC
+    LIMIT 1
+  `;
+
+  fsms_pool.query(sql, [user_id], (err, rows) => {
+      if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
+      if (!rows || rows.length === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
+      res.json({ status: 'success', data: rows });
+    }
+  );
+});
+
 
 module.exports = { router, requireAdmin };

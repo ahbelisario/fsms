@@ -277,9 +277,9 @@ export default function UsersScreen({ onAuthExpired }) {
     
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{t("users.title")}</Text>
+        <Text style={ScreenStyles.title}>{t("students.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>{t("users.add")}</Text>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("students.add")}</Text>
         </Pressable>
       </View>
       

@@ -13,8 +13,17 @@ export default function Home({ onAuthExpired }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
+  const [lastpayment, setLastPayment] = useState([]);
+  
   const isEditing = useMemo(() => editingId !== null, [editingId]);
+  
+  function toYMD(value) {
+    if (!value) return "";
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 10);
+  }
 
   function clearMsgs() {
     setError("");
@@ -22,6 +31,14 @@ export default function Home({ onAuthExpired }) {
   }
 
   async function loadTotals() {
+
+    const me = await api.me();
+    const datalastpayment = await api.reportsLastPaymentbyUser(me.data.id);
+    const listlastpayment = Array.isArray(datalastpayment) ? datalastpayment : datalastpayment?.response || datalastpayment?.data || [];
+    setLastPayment(listlastpayment);
+
+    console.log(lastpayment);
+
     clearMsgs();
     setLoading(true);
     try {
@@ -46,7 +63,7 @@ export default function Home({ onAuthExpired }) {
     <View style={s.container}>
       <View style={s.grid}>
         <View style={s.cell}>
-          <ScoreCard title="Horarios" value="" subtitle="Total" />
+          <ScoreCard title={"Last payment on " + toYMD(lastpayment[0]?.income_date)}  value={String(lastpayment[0]?.amount) + " " + lastpayment[0]?.currency} subtitle="Total" />
         </View>
         <View style={s.cell}>
           <ScoreCard title=" " value=" " subtitle=" " delta=" " />

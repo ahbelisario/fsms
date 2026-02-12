@@ -116,7 +116,7 @@ router.put('/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  const requesterId = Number(req.user.sub);
+  const requesterId = Number(req.user.id);
   const targetId = Number(id);
 
   // Solo admin o dueño
@@ -160,7 +160,7 @@ router.post('/:id/checkpassword', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  const requesterId = Number(req.user.sub);
+  const requesterId = Number(req.user.id);
   const targetId = Number(id);
 
   // Solo admin o dueño
@@ -215,7 +215,7 @@ router.patch('/:id/password', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  const requesterId = Number(req.user.sub);
+  const requesterId = Number(req.user.id);
   const targetId = Number(id);
 
   // Solo admin o dueño
@@ -250,8 +250,14 @@ router.patch('/:id/password', async (req, res) => {
 
     try {
       
-      const ok = await bcrypt.compare(oldPassword, user.password);
-      if (!ok) return res.status(403).json({ status: 'error', message: 'Invalid credentials' });
+      // ✅ Si es admin cambiando password de otro, saltarse validación
+      const isAdminChangingOther = req.user.role === 'admin' && requesterId !== targetId;
+      
+      if (!isAdminChangingOther) {
+        // Usuario normal o admin cambiando su propia contraseña
+        const ok = await bcrypt.compare(oldPassword, user.password);
+        if (!ok) return res.status(403).json({ status: 'error', message: 'Invalid credentials' });
+      }
 
       try {
         const hash = await bcrypt.hash(newPassword, 12);

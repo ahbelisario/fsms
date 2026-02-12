@@ -8,7 +8,9 @@ export default function Index() {
   useEffect(() => {
     (async () => {
       const token = await getAuthToken();
-      if (token && !isSessionExpired(token)) {
+      const expired = await isSessionExpired();
+
+      if (token && !expired) {
         router.replace("/(app)/(main)/home");
       } else {
         router.replace("/(auth)");

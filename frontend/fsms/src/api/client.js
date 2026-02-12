@@ -2,12 +2,18 @@ import { getAuthToken, clearAuthSession } from "../storage/authStorage";
 
 const API_BASE_URL = "http://localhost:3000";
 
+// Callback global para manejar sesión expirada
+let onAuthExpiredCallback = null;
+
+export function setAuthExpiredHandler(callback) {
+  onAuthExpiredCallback = callback;
+}
+
 async function request(path, { method = "GET", body } = {}) {
 
   const token = await getAuthToken();
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
-  //const res = await fetch(`${path}`, {  
     method,
     headers: {
       "Content-Type": "application/json",
@@ -18,11 +24,18 @@ async function request(path, { method = "GET", body } = {}) {
 
   const data = await res.json().catch(() => null);
 
-  if (res.status === 401 || res.status === 403) {
+  // ✅ Solo 401 (token inválido/expirado) dispara el logout
+  if (res.status === 401) {
     await clearAuthSession();
+    onAuthExpiredCallback?.();
     const err = new Error((data && (data.message || data.error)) || "Sesión expirada.");
     err.code = "AUTH_EXPIRED";
     throw err;
+  }
+
+  // ✅ 403 es "sin permisos", no cierra sesión - solo lanza error normal
+  if (res.status === 403) {
+    throw new Error((data && (data.message || data.error)) || "No tienes permisos para realizar esta acción.");
   }
 
   if (!res.ok) {
@@ -37,6 +50,7 @@ export const api = {
   me: () => request("/api/auth/me"),
 
   listUsers: () => request("/api/users"),
+  getUser: (id) => request(`/api/users/${id}`),
   createUser: (payload) => request("/api/users", { method: "POST", body: payload }),
   updateUser: (id, payload) => request(`/api/users/${id}`, { method: "PUT", body: payload }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
@@ -84,6 +98,5 @@ export const api = {
   deleteIncomeTypes: (id) => request(`/api/incometypes/${id}`, { method: "DELETE" }),
 
   reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
-
-  
+  reportsLastPaymentbyUser: (id) => request(`/api/reports/payments/lastpayment/${id}`),
 };

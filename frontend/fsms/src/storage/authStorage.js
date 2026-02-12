@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "auth_token";
 const EXPIRES_KEY = "auth_expires_at";
-const SESSION_MINUTES = 30;
+const SESSION_MINUTES = 60; // ✅ 8 horas en lugar de 30 minutos
 
 export async function setAuthSession(token) {
   const expiresAt = Date.now() + SESSION_MINUTES * 60 * 1000;
@@ -34,7 +34,8 @@ export async function isSessionExpired() {
       ? localStorage.getItem(EXPIRES_KEY)
       : await SecureStore.getItemAsync(EXPIRES_KEY);
 
-  if (!raw) return false;
+  // ✅ Si no hay fecha de expiración, asumir expirado por seguridad
+  if (!raw) return true;
 
   return Date.now() > Number(raw);
 }

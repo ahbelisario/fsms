@@ -5,6 +5,7 @@ import { api } from "@/src/api/client";
 import { encode as b64encode } from "base-64";
 
 export default function ChangePasswordModal({
+  role,
   visible,
   userId,
   onClose,
@@ -29,7 +30,9 @@ export default function ChangePasswordModal({
 
   function validate() {
     if (!userId) return "No se pudo identificar el usuario.";
-    if (!currentPassword) return "Contraseña actual requerida.";
+    if (role !== "admin") {
+      if (!currentPassword) return "Contraseña actual requerida.";
+    }
     if (!newPassword) return "Nueva contraseña requerida.";
     if (newPassword.length < 8) return "La nueva contraseña debe tener al menos 8 caracteres.";
     if (newPassword !== confirmNewPassword) return "Las nuevas contraseñas no coinciden.";
@@ -45,47 +48,43 @@ export default function ChangePasswordModal({
     setSaving(true);
 
     try {
-
-      const payload = {
+      // Si no es admin, verificar contraseña actual primero
+      if (role !== "admin") {
+        const checkPayload = {
           password: b64encode(currentPassword)
         };
 
-      const passwordMatch = await api.checkPassword(userId, payload);
-
-      if (passwordMatch?.status === "error") return setError("Contraseña actual no coincide");
-      
-      try {
-
-        const payload = {
-          password: b64encode(currentPassword),
-          newPassword: b64encode(newPassword)
-        };
-
-        await api.updatePassword(userId, payload);
-
-        onClose?.();
-        onSuccess?.();
-      
-      } catch (e) {
-          if (e?.code === "AUTH_EXPIRED") {
-            onAuthExpired?.();
-            return;
-          }
-        setError(e?.message || "No se pudo cambiar la contraseña.");
-      } finally {
-        setSaving(false);
+        const passwordMatch = await api.checkPassword(userId, checkPayload);
+        
+        // Si la contraseña no coincide, detener aquí
+        if (passwordMatch?.status === "error") {
+          setError("Contraseña actual incorrecta");
+          return;
+        }
       }
+      
+      // Proceder a cambiar la contraseña
+      const updatePayload = {
+        password: b64encode(currentPassword),
+        newPassword: b64encode(newPassword)
+      };
 
-    } catch (e){
+      await api.updatePassword(userId, updatePayload);
+
+      // Éxito - cerrar modal
+      onClose?.();
+      onSuccess?.();
+
+    } catch (e) {
+      // Manejar errores
       if (e?.code === "AUTH_EXPIRED") {
-            onAuthExpired?.();
-            return;
-          }
-
+        onAuthExpired?.();
+        return;
+      }
+      setError(e?.message || "No se pudo cambiar la contraseña.");
     } finally {
       setSaving(false);
     }
-
   }
 
   return (
@@ -100,15 +99,20 @@ export default function ChangePasswordModal({
             </View>
           ) : null}
 
-          <Text style={ScreenStyles.label}>Contraseña actual</Text>
-          <TextInput
-            style={ScreenStyles.input}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            editable={!saving}
-          />
+          {role !== "admin" ? 
+          (
+          <>
+            <Text style={ScreenStyles.label}>Contraseña actual</Text>
+            <TextInput
+              style={ScreenStyles.input}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              editable={!saving}
+            />
+          </>
+          ) : null}
 
           <Text style={ScreenStyles.label}>Nueva contraseña</Text>
           <TextInput
@@ -130,12 +134,11 @@ export default function ChangePasswordModal({
             editable={!saving}
           />
 
-           {newPassword && confirmNewPassword && newPassword !== confirmNewPassword ? (
-              <Text style={{ color: "#b91c1c", marginTop: 6 }}>
-                Las contraseñas no coinciden.
-              </Text>
-            ) : null}
-
+          {newPassword && confirmNewPassword && newPassword !== confirmNewPassword ? (
+            <Text style={{ color: "#b91c1c", marginTop: 6 }}>
+              Las contraseñas no coinciden.
+            </Text>
+          ) : null}
 
           <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
             <Pressable
