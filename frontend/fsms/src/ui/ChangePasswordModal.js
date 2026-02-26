@@ -8,6 +8,7 @@ export default function ChangePasswordModal({
   role,
   visible,
   userId,
+  myId,
   onClose,
   onSuccess,
   onAuthExpired,
@@ -49,7 +50,7 @@ export default function ChangePasswordModal({
 
     try {
       // Si no es admin, verificar contraseña actual primero
-      if (role !== "admin") {
+      if ((role !== "admin") || (myId === userId)) {
         const checkPayload = {
           password: b64encode(currentPassword)
         };
@@ -99,7 +100,7 @@ export default function ChangePasswordModal({
             </View>
           ) : null}
 
-          {role !== "admin" ? 
+          {((role !== "admin") || (myId === userId))? 
           (
           <>
             <Text style={ScreenStyles.label}>Contraseña actual</Text>

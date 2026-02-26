@@ -97,6 +97,13 @@ export const api = {
   updateIncomeTypes: (id, payload) => request(`/api/incometypes/${id}`, { method: "PUT", body: payload }),
   deleteIncomeTypes: (id) => request(`/api/incometypes/${id}`, { method: "DELETE" }),
 
+  listScheduledClasses: () => request("/api/scheduled-classes"),
+  getScheduledClass: (id) => request(`/api/scheduled-classes/${id}`),
+  createScheduledClass: (payload) => request("/api/scheduled-classes", { method: "POST", body: payload }),
+  updateScheduledClass: (id, payload) => request(`/api/scheduled-classes/${id}`, { method: "PUT", body: payload }),
+  deleteScheduledClass: (id) => request(`/api/scheduled-classes/${id}`, { method: "DELETE" }),
+  getClassesByMonth: (year, month) => request(`/api/scheduled-classes/month/${year}/${month}`),
+
   reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
   reportsLastPaymentbyUser: (id) => request(`/api/reports/payments/lastpayment/${id}`),
 };

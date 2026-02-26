@@ -33,7 +33,7 @@ export default function UsersScreen({ onAuthExpired }) {
   const [active, setActive] = useState(true);
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
-  const ROLE_LABELS = { admin: t("users.role_admin"), user: t("users.role_user") };
+  const ROLE_LABELS = { admin: t("users.role_admin"), user: t("users.role_user"), instructor: t("users.role_instructor") };
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
@@ -277,9 +277,9 @@ export default function UsersScreen({ onAuthExpired }) {
     
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{t("students.title")}</Text>
+        <Text style={ScreenStyles.title}>{t("users.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={openCreate}>
-          <Text style={ScreenStyles.btnPrimaryText}>{t("students.add")}</Text>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("users.add")}</Text>
         </Pressable>
       </View>
       
@@ -365,26 +365,15 @@ export default function UsersScreen({ onAuthExpired }) {
                           {item.role ? `${t("users.role")}: ${ROLE_LABELS[item.role] ?? item.role}` : ""}
                         </Text>
                       </View>
-                      <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-end'  }}>
-                          <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => askDelete(item.id)}>
-                    <Ionicons name="trash-outline" size={18} color="#d60000" />
-                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
-                  </Pressable>
-                        </View>
                     </View>
                   </View>
                 </View>
                 <View style={{ flex: 1 , maxWidth: 50 }}>  
-                  <Pressable style={{minWidth: 0, alignItems: 'center', paddingBottom: 7}} onPress={() => openEdit(item)}>
-                    <Ionicons name="pencil" size={18} color="#0b1220" />
-                    <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.edit")}</Text>
-                  </Pressable>
-
+                  
                   <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={() => router.push(`/(app)/userprofiles/${item.id}`)}>
-                    <Ionicons name="person-circle-outline" size={18} color="#0b1220" />
+                    <Ionicons name="person-circle-outline" size={32} color="#0b1220" />
                     <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("userprofiles.title")}</Text>
                   </Pressable>
-
                   
                 </View>
               </View>
@@ -422,6 +411,7 @@ export default function UsersScreen({ onAuthExpired }) {
                     <Picker selectedValue={role} onValueChange={setRole}>
                         <Picker.Item label={t("users.role_user")} value="user" />
                         <Picker.Item label={t("users.role_admin")} value="admin" />
+                        <Picker.Item label={t("users.role_instructor")} value="instructor" />
                     </Picker>
                 </View>
             </View>

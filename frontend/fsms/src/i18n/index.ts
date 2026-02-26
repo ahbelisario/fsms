@@ -59,7 +59,8 @@ const translations = {
       empty: "No hay usuarios.",
       role: "Rol",
       role_admin: "Administrador",
-      role_user: "Usuario",
+      role_user: "Alumno",
+      role_instructor: "Instructor",
       changePass: "Cambiar contraseña",
       active: "Activo",
       createuser: "Crear usuario",
@@ -229,6 +230,39 @@ const translations = {
       adjustment: "Ajuste",
       surcharge: "Recargo",
     },
+    schedule: {
+      title: "Calendario",
+      new_class: "Nueva Clase",
+      edit_class: "Editar Clase",
+      delete_class: "Eliminar Clase",
+      no_classes: "No hay clases programadas",
+      instructor: "Instructor",
+      capacity: "Capacidad",
+      notes: "Notas"
+    },
+     months: {
+      jan: "Enero",
+      feb: "Febrero",
+      mar: "Marzo",
+      apr: "Abril",
+      may: "Mayo",
+      jun: "Junio",
+      jul: "Julio",
+      aug: "Agosto",
+      sep: "Septiembre",
+      oct: "Octubre",
+      nov: "Noviembre",
+      dec: "Diciembre"
+    },
+    days: {
+      sun: "Dom",
+      mon: "Lun",
+      tue: "Mar",
+      wed: "Mie",
+      thu: "Jue",
+      fri: "Vie",
+      sat: "Sab"
+    },
 },
   en: {
     common: {
@@ -287,7 +321,8 @@ const translations = {
       empty: "No users.",
       role: "Role",
       role_admin: "Admin",
-      role_user: "User",
+      role_user: "Student",
+      role_instructor: "Instructor",
       changePass: "Change password",
       active: "Active",
       createuser: "Create user",
@@ -454,6 +489,39 @@ const translations = {
       payment: "Payment",
       adjustment: "Adjustment",
       surcharge: "Surcharge",
+    },
+    schedule: {
+      title: "Schedule",
+      new_class: "New Class",
+      edit_class: "Edit Class",
+      delete_class: "Delete Class",
+      no_classes: "No class scheduled",
+      instructor: "Instructor",
+      capacity: "Capacity",
+      notes: "Notes"
+    },
+    months: {
+      jan: "January",
+      feb: "February",
+      mar: "March",
+      apr: "April",
+      may: "May",
+      jun: "June",
+      jul: "July",
+      aug: "August",
+      sep: "September",
+      oct: "Octuber",
+      nov: "November",
+      dec: "December"
+    },
+    days: {
+      sun: "Sun",
+      mon: "Mon",
+      tue: "Tue",
+      wed: "Web",
+      thu: "Thu",
+      fri: "Fri",
+      sat: "Sat"
     },
   }
 }

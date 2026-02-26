@@ -66,8 +66,9 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
 
   const HOME: Href = "/(app)/(main)/home";
   const DASHBOARD: Href = "/(app)/(main)/dashboard";
-  const STUDENTS: Href = "/(app)/(main)/students";
+  const USERS: Href = "/(app)/(main)/users";
   const MEMBERSHIPS: Href = "/(app)/(main)/memberships";
+  const SCHEDULE: Href = "/(app)/(main)/schedule";
   const INCOMES: Href = "/(app)/(main)/incomes";
   const SETTINGS: Href = "/(app)/(settings)";
 
@@ -103,11 +104,21 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
         <View style={ScreenStyles.divider} />
 
         <DrawerItem 
-          label={t("students.title")} 
+          label={t("schedule.title")} 
           icon={({ size, color }) => (
             <Ionicons name="people-outline" size={size} color={color} />
           )}
-          onPress={() => router.push(STUDENTS)} 
+          onPress={() => router.push(SCHEDULE)} 
+        />
+
+        <View style={ScreenStyles.divider} />
+
+        <DrawerItem 
+          label={t("users.title")} 
+          icon={({ size, color }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
+          )}
+          onPress={() => router.push(USERS)} 
         />
         <DrawerItem 
           label={t("memberships.title")} 
@@ -200,7 +211,8 @@ export default function MainLayout() {
     >
       <Drawer.Screen name="home" options={{ title: "Home" }} />
       <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title") }} />
-      <Drawer.Screen name="students" options={{ title: t("students.title") }} />
+      <Drawer.Screen name="schedule" options={{ title: t("schedule.title") }} />
+      <Drawer.Screen name="users" options={{ title: t("users.title") }} />
       <Drawer.Screen name="memberships" options={{ title: t("memberships.title") }} />
       <Drawer.Screen name="incomes" options={{ title: t("incomes.title") }} />
       <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title") }} />

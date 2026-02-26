@@ -10,6 +10,8 @@ import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import DatePickerField from "@/src/ui/DatePickerField";
 import ChangePasswordModal from "@/src/ui/ChangePasswordModal";
 import { t } from "@/src/i18n";
+import { Ionicons } from "@expo/vector-icons";
+
 
 export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
@@ -25,6 +27,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const [idtouse, setIdtoUse] = useState(null);
   const [myrole, setMyRole] = useState("");
+  const [myid, setMyId] = useState("");
+
   const [userdata, setUserData] = useState([]);
   const [userprofiles, setUserProfiles] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -70,7 +74,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
   const disableSave = saving || (!isEditing && (!!password || !!confirmPassword) && password !== confirmPassword);
-
 
   const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
   
@@ -127,6 +130,19 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       danger: false,
       action: async () => {
         await save();
+      },
+    });
+  }
+
+  function askDelete() {
+    setConfirm({
+      visible: true,
+      title: t("dialogs.delete_user"),
+      message: t("messages.sure_delete_user"),
+      confirmText: t("common.delete"),
+      danger: true,
+      action: async () => {
+        await deleteUser();
       },
     });
   }
@@ -233,13 +249,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   }
 
   async function loadUserProfiles() {
-  
     setProfile(profile ?? null);
     
     const me = await api.me();
     setUser(me.data);
     const idToUse = targetUserId ?? me.data.id;
     setMyRole(me.data.role);
+    setMyId(me.data.id)
     setIdtoUse(idToUse);
 
     clearMsgs();
@@ -297,7 +313,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   async function save() {
     const me = await api.me();
     const idToUse = targetUserId ?? me.data.id;
-    const iAmAdmin = me.data.role === "admin" ? true : false;
+    const iAmAdmin = me.data.role === "admin";
 
     clearMsgs();
     const v = validate();
@@ -306,12 +322,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setSaving(true);
 
     try {
-
       const payload = {
         name: name.trim(),
         lastname: lastname.trim(),
         gender: gender.trim(),
-        date_of_birth: date_of_birth,
+        date_of_birth: date_of_birth || null,
         email: email.trim(),
         phone: phone.trim(),
         emergency_contact_name: emergency_contact_name.trim(),
@@ -324,7 +339,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         postal_code: postal_code.trim(),
         discipline_id: discipline_id,
         rank_id: rank_id,
-        start_date: start_date,
+        start_date: start_date || null,
         blood_type: blood_type.trim(),
         medical_notes: medical_notes.trim(),
         notes: notes.trim(),
@@ -344,13 +359,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       const user_settings = { lang: language };
 
       if (isEditing) {
-
         await api.updateUser(idToUse, user_payload);
         await api.updateUserProfiles(idToUse, payload);
         await api.updateUserSettingLanguage(idToUse, user_settings);
-
         setSuccess("User updated.");
-        
       }
 
       resetForm();
@@ -367,27 +379,55 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     }
   }
 
+  async function deleteUser() {
+    clearMsgs();
+    setLoading(true);
+    try {
+      await api.deleteUser(idtouse);
+      setSuccess("Usuario eliminado.");
+      // Redirigir a la lista de estudiantes después de eliminar
+      router.push("/(app)/(main)/students");
+    } catch (e) {
+      if (e.code === "AUTH_EXPIRED") {
+        onAuthExpired?.();
+        return;
+      }
+      setError(e.message || "No se pudo eliminar.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Renderizar contenido de cada tab
   const renderTabContent = () => {
     switch (activeTab) {
       case 0: // Login
         return (
           <View style={{ gap: 6 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 , marginTop: 12 }}>
-                            <Text>{t("users.active")}</Text>
-                            <Switch disabled={username === "admin" ? true : false} value={active} onValueChange={setActive}/>
-                        </View>
+            {myrole === "admin" ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12, paddingBottom: 16 }}>
+                <Text>{t("users.active")}</Text>
+                <Switch disabled={username === "admin"} value={active} onValueChange={setActive} />
+              </View>
+            ) : null}
             
             <Text style={ScreenStyles.label}>{t("login.username")}</Text>
-            <TextInput disabled={user?.role !== "admin"} style={ScreenStyles.input} value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />  
+            <TextInput 
+              disabled={user?.role !== "admin"} 
+              style={ScreenStyles.input} 
+              value={username} 
+              onChangeText={setUsername} 
+              autoCapitalize="none" 
+              autoCorrect={false} 
+            />
               
             <Text style={ScreenStyles.label}>{t("login.password")}</Text>
             <View style={{ flexDirection: "row", gap: 10 }}> 
-              <View style={{ flex: 1  }}>
-                <TextInput disabled="true" style={[ScreenStyles.input]} placeholder="••••••••"/>
+              <View style={{ flex: 1 }}>
+                <TextInput disabled={true} style={ScreenStyles.input} placeholder="••••••••" />
               </View>
-              <View style={{ maxWidth: 150 , alignItems: 'flex-end'}}>
-                <Pressable style={[ScreenStyles.btnPrimary]} onPress={() => setChangePwdVisible(true)}>
+              <View style={{ maxWidth: 150, alignItems: 'flex-end' }}>
+                <Pressable style={ScreenStyles.btnPrimary} onPress={() => setChangePwdVisible(true)}>
                   <Text style={ScreenStyles.btnPrimaryText}>
                     {t("users.changePass")}
                   </Text>
@@ -395,18 +435,20 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
             </View>
             
-            <View style={{ flexDirection: "row", gap: 10  }}> 
+            <View style={{ flexDirection: "row", gap: 10 }}> 
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("users.role")}</Text>
                 <View style={ScreenStyles.pickerWrapper}>
                   <Picker disabled={user?.role !== "admin"} selectedValue={role} onValueChange={setRole}>
                     <Picker.Item label={t("users.role_user")} value="user" />
                     <Picker.Item label={t("users.role_admin")} value="admin" />
+                    <Picker.Item label={t("users.role_instructor")} value="instructor" />
                   </Picker>
                 </View>
               </View>
             </View>
 
+            
           </View>
         );
 
@@ -465,7 +507,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.email")}</Text>
-                <TextInput disabled={user?.role !== "admin"}  style={ScreenStyles.input} value={email} onChangeText={setEmail} />
+                <TextInput disabled={user?.role !== "admin"} style={ScreenStyles.input} value={email} onChangeText={setEmail} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.phone")}</Text>
@@ -643,6 +685,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
           }
         </Text>
+        {/* Botón de eliminar - solo si no es mi perfil, soy admin, y no es el usuario admin */}
+        {!isMyProfile && myrole === "admin" && username !== "admin" && (
+        <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={askDelete}>
+          <Ionicons name="trash-outline" size={18} color="#d60000" />
+          <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
+        </Pressable>
+        )}
       </View>
 
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
@@ -697,7 +746,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <View style={{ flex: 1 }}>
                 <Pressable
                   style={ScreenStyles.btnSecondary}
-                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/students`) : () => router.push(`/(app)/(main)/home`)}
+                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)}
                   disabled={!isEditing}
                 >
                   <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
@@ -734,12 +783,12 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         role={myrole}
         visible={changePwdVisible}
         userId={idtouse}
+        myId={myid}
         onClose={() => setChangePwdVisible(false)}
         onAuthExpired={async () => {
           await clearAuthSession();
           router.replace("/(auth)");
         }}
-
       />      
     </View>
   );

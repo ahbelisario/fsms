@@ -39,9 +39,9 @@ export default function DatePickerField({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           style={{
-            height: 22,
+            height: 40,
             padding: "8px 12px",
-            borderRadius: 6,
+            borderRadius: 9,
             border: "1px solid #cbd5e1",
             fontSize: 13,
           }}

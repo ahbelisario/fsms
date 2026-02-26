@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Redirect, type Href } from "expo-router";
 import { Text, View } from "react-native";
-import StudentsScreen from "@/src/screens/main/StudentsScreen";
+import UsersScreen from "@/src/screens/main/UsersScreen";
 import { getAuthToken } from "@/src/storage/authStorage";
 
 export default function UsersRoute() {
@@ -33,5 +33,5 @@ export default function UsersRoute() {
     return <Redirect href={LOGIN} />;
   }
 
-  return <StudentsScreen />;
+  return <UsersScreen />;
 }

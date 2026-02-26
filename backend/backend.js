@@ -78,6 +78,11 @@ app.use('/api/incomes', requireAuth, incomesRoutes);
 const incometypesRoutes = require('./routes/incometypes');
 app.use('/api/incometypes', requireAuth, incometypesRoutes);
 
+//Scheduled Clases
+
+const scheduledclassesRoutes = require('./routes/scheduled-classes');
+app.use('/api/scheduled-classes', requireAuth, scheduledclassesRoutes);
+
 //Reports
 
 const { router: reportsRoutes } = require('./routes/reports');

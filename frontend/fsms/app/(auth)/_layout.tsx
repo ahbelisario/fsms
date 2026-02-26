@@ -11,7 +11,7 @@ export default function AuthLayout() {
       const token = await getAuthToken();
 
       if (token && !isSessionExpired(token)) {
-        router.replace("/(app)/home"); // ajusta tu ruta default
+        router.replace("/(app)/(main)/home"); // ajusta tu ruta default
         return;
       }
 
