@@ -1,6 +1,5 @@
-import { getAuthToken, clearAuthSession } from "../storage/authStorage";
-
-const API_BASE_URL = "http://localhost:3000";
+import { getAuthToken, clearAuthSession } from "@src/storage/authStorage";
+import { API_BASE_URL } from '@src/config/api.config';
 
 // Callback global para manejar sesión expirada
 let onAuthExpiredCallback = null;

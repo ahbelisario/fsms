@@ -5,8 +5,7 @@ import { notify } from "@/src/ui/notify";
 import { appStyles } from '@/src/styles/appStyles';
 import { i18n, t } from "@/src/i18n";
 import { setLang } from "@/src/i18n/lang";
-
-const API_BASE_URL = "http://localhost:3000";
+import { API_BASE_URL } from '@src/config/api.config';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
