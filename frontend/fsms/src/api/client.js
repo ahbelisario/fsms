@@ -105,4 +105,9 @@ export const api = {
 
   reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
   reportsLastPaymentbyUser: (id) => request(`/api/reports/payments/lastpayment/${id}`),
+
+  getMyMembership: () => request("/api/memberships/my-membership"),
+  getMyPayments: () => request("/api/incomes/my-payments"),
+  getMyLastPayment: () => request("/api/incomes/my-last-payment"),
+  getMyProfile: () => request("/api/userprofiles/my-profile"),
 };

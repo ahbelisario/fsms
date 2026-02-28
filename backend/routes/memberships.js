@@ -46,6 +46,37 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 /**
+ * GET /api/memberships/my-membership
+ * Obtiene la membresía activa del usuario actual
+ */
+
+router.get('/my-membership', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id; // ID del usuario del token JWT
+
+  fsms_pool.query(`
+    SELECT 
+      m.*,
+      p.name as package_name,
+      p.fee as package_fee
+    FROM memberships m
+    LEFT JOIN packages p ON m.package_id = p.id
+    WHERE m.user_id = ?
+    ORDER BY m.finish_date DESC
+    LIMIT 1
+  `, [userId], (err, rows) => {
+    if (err) {
+      console.error('Error getting user membership:', err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+    res.json({ 
+      status: 'success', 
+      data: rows.length > 0 ? rows[0] : null 
+    });
+  });
+});
+
+/**
  * GET /api/memberships/:id
  */
 router.get('/:id', (req, res) => {
@@ -140,5 +171,8 @@ router.delete('/:id', requireAdmin, (req, res) => {
     res.json({ status: 'success', message: 'User disabled' });
   });
 });
+
+
+
 
 module.exports = { router, requireAdmin };

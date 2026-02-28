@@ -32,13 +32,6 @@ function UserDrawerContent({ pointerEvents, ...props }: any) {
           )}
           onPress={() => router.push(HOME)} 
         />
-        <DrawerItem 
-          label={t("dashboard.title")} 
-          icon={({ size, color }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={color} />
-          )}
-          onPress={() => router.push(DASHBOARD)} 
-        />
       </View>
       
       {/* Logout al final */}

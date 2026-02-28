@@ -46,6 +46,66 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 /**
+ * GET /api/incomes/my-payments
+ * Obtiene los pagos del usuario actual
+ */
+
+router.get('/my-payments', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  fsms_pool.query(`
+    SELECT 
+      id, 
+      income_date, 
+      amount, 
+      currency, 
+      income_method, 
+      status
+    FROM incomes
+    WHERE user_id = ?
+    ORDER BY income_date DESC
+  `, [userId], (err, rows) => {
+    if (err) {
+      console.error('Error getting user payments:', err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+    res.json({ status: 'success', data: rows });
+  });
+});
+
+/**
+ * GET /api/incomes/my-last-payment
+ * Obtiene el último pago del usuario
+ */
+router.get('/my-last-payment', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  fsms_pool.query(`
+    SELECT 
+      id, 
+      income_date, 
+      amount, 
+      currency
+    FROM incomes
+    WHERE user_id = ?
+    ORDER BY income_date DESC
+    LIMIT 1
+  `, [userId], (err, rows) => {
+    if (err) {
+      console.error('Error getting last payment:', err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+    res.json({ 
+      status: 'success', 
+      data: rows.length > 0 ? rows[0] : null 
+    });
+  });
+});
+
+
+/**
  * GET /api/incomes/:id
  */
 router.get('/:id', (req, res) => {
@@ -140,5 +200,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
     res.json({ status: 'success', message: 'User disabled' });
   });
 });
+
+
 
 module.exports = { router, requireAdmin };

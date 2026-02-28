@@ -11,3 +11,4 @@ export const VictoryLine = V.VictoryLine;
 export const VictoryChart = V.VictoryChart;
 export const VictoryAxis = V.VictoryAxis;
 export const VictoryTheme = V.VictoryTheme;
+export const VictoryPie = V.VictoryPie;

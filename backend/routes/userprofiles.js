@@ -47,6 +47,30 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 /**
+ * GET /api/userprofiles/my-profile
+ * Obtiene el perfil del usuario actual
+ */
+router.get('/my-profile', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  fsms_pool.query(
+    'SELECT * FROM user_profiles WHERE user_id = ?',
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error('Error getting user profile:', err);
+        return res.status(500).json({ status: 'error', message: 'DB error' });
+      }
+      res.json({ 
+        status: 'success', 
+        data: rows.length > 0 ? rows[0] : null 
+      });
+    }
+  );
+});
+
+/**
  * GET /api/userprofiles/:id
  */
 router.get('/:id', (req, res) => {
@@ -139,5 +163,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
     res.json({ status: 'success', message: 'User disabled' });
   });
 });
+
+
 
 module.exports = { router, requireAdmin };
