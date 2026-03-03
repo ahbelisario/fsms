@@ -24,7 +24,8 @@ router.get('/', async (req, res) => {
             sc.*,
             u.name as instructor_name,
             u.lastname as instructor_lastname,
-            d.name as discipline_name
+            d.name as discipline_name,
+            (SELECT COUNT(*) FROM class_enrollments WHERE class_id = sc.id AND status = 'enrolled') as current_enrollment
           FROM scheduled_classes sc
           LEFT JOIN users u ON sc.instructor_id = u.id
           LEFT JOIN disciplines d ON sc.discipline_id = d.id

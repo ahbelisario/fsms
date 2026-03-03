@@ -3,7 +3,7 @@ import { Platform, useWindowDimensions, View, Text } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { useRouter, type Href } from "expo-router";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, Octicons} from "@expo/vector-icons";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import { clearAuthSession } from "@/src/storage/authStorage";
 import { t } from "@/src/i18n";
@@ -31,28 +31,42 @@ function CustomDrawerContent({ pointerEvents, ...props }: any) {
       <View style={{ flex: 1 }}>
         <DrawerItem label={t("dashboard.title")} onPress={() => router.push(DASHBOARD)} />
         <View style={ScreenStyles.divider} />
-        <DrawerItem label={t("packages.title")} onPress={() => router.push(PACKAGES)} />
-        <DrawerItem label={t("incometypes.title")} onPress={() => router.push(INCOMETYPES)} />
-        <View style={ScreenStyles.divider} />
-        <DrawerItem label={t("disciplines.title")} onPress={() => router.push(DISCIPLINES)} />
-        <DrawerItem label={t("ranks.title")} onPress={() => router.push(RANKS)} />
-        <View style={ScreenStyles.divider} />
-        <DrawerItem label={t("common.back")} onPress={() => router.replace(MAIN)} />
-      </View>
-
-      {/* Logout al final */}
-      <View style={{ borderTopWidth: 1, borderTopColor: '#ddd', marginTop: 'auto' }}>
         <DrawerItem 
-          label={t("common.logout") || "Cerrar sesión"}
+          label={t("packages.title")}
           icon={({ size, color }) => (
-            <Ionicons name="log-out-outline" size={size} color={color} />
+            <Octicons name="package" size={size} color={color} />
           )}
-          onPress={async () => {
-            await clearAuthSession();
-            router.replace("/(auth)");
-          }}
-          labelStyle={{ color: '#dc2626' }}
-        />
+          onPress={() => router.push(PACKAGES)} />
+
+        <DrawerItem 
+          label={t("incometypes.title")} 
+          icon={({ size, color }) => (
+            <Ionicons name="cash-outline" size={size} color={color} />
+          )}
+          onPress={() => router.push(INCOMETYPES)} />
+        <View style={ScreenStyles.divider} />
+
+        <DrawerItem 
+          label={t("disciplines.title")} 
+          icon={({ size, color }) => (
+            <MaterialIcons name="sports-martial-arts" size={size} color={color} />
+          )}
+          onPress={() => router.push(DISCIPLINES)} />
+
+        <DrawerItem 
+          label={t("ranks.title")} 
+          icon={({ size, color }) => (
+            <MaterialIcons name="military-tech" size={size} color={color} />
+          )}
+          onPress={() => router.push(RANKS)} />
+
+        <View style={ScreenStyles.divider} />
+        <DrawerItem 
+          label={t("common.back")} 
+          icon={({ size, color }) => (
+            <Ionicons name="arrow-back" size={size} color={color} />
+          )}
+          onPress={() => router.replace(MAIN)} />
       </View>
     </DrawerContentScrollView>
   );

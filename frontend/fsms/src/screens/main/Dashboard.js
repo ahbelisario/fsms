@@ -27,7 +27,7 @@ export default function Dashboard({ onAuthExpired }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const MONTHS_SHORT = [t("months_short.jan"), t("months_short.feb"),t("months_short.mar"),t("months_short.apr"),t("months_short.may"),t("months_short.jun"),t("months_short.jul"),t("months_short.ago"),t("months_short.sep"),t("months_short.oct"),t("months_short.nov"),t("months_short.dec")];
 
   function clearMsgs() {
     setError("");
@@ -251,9 +251,9 @@ export default function Dashboard({ onAuthExpired }) {
     <ScrollView style={s.container}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>Dashboard</Text>
+        <Text style={s.headerTitle}>{t("dashboards.title")}</Text>
         <Pressable style={ScreenStyles.btnSecondary} onPress={loadDashboardData}>
-          <Text style={ScreenStyles.btnSecondaryText}>🔄 Actualizar</Text>
+          <Text style={ScreenStyles.btnSecondaryText}>{t("common.refresh")}</Text>
         </Pressable>
       </View>
 
@@ -265,21 +265,21 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Sección: Estadísticas principales */}
       <View style={s.section}>
-        <Text style={s.sectionTitle}>📊 Estadísticas Generales</Text>
+        <Text style={s.sectionTitle}>📊 {t("dashboards.statistics")}</Text>
         
         <View style={s.grid}>
           <View style={s.cell}>
             <ScoreCard 
               title={t("memberships.title")} 
               value={totalMemberships} 
-              subtitle="Total" 
+              subtitle={t("common.total")} 
             />
           </View>
           <View style={s.cell}>
             <ScoreCard 
-              title="Activas" 
+              title={t("memberships.actives")} 
               value={activeMemberships} 
-              subtitle="Vigentes" 
+              subtitle={t("memberships.current")}  
             />
           </View>
         </View>
@@ -289,14 +289,14 @@ export default function Dashboard({ onAuthExpired }) {
             <ScoreCard 
               title={t("users.title")} 
               value={totalUsers} 
-              subtitle="Total" 
+              subtitle={t("common.total")} 
             />
           </View>
           <View style={s.cell}>
             <ScoreCard 
-              title="Clases" 
+              title={t("classes.title")}  
               value={totalScheduledClasses} 
-              subtitle="Programadas" 
+              subtitle={t("classes.scheduled")}  
             />
           </View>
         </View>
@@ -306,31 +306,14 @@ export default function Dashboard({ onAuthExpired }) {
             <ScoreCard 
               title={t("packages.title")} 
               value={totalPackages} 
-              subtitle="Total" 
+              subtitle={t("common.total")} 
             />
           </View>
           <View style={s.cell}>
             <ScoreCard 
-              title="Por Vencer" 
+              title={t("memberships.expiringsoon")} 
               value={expiringSoon} 
-              subtitle="Próximos 30 días" 
-            />
-          </View>
-        </View>
-
-        <View style={s.grid}>
-          <View style={s.cell}>
-            <ScoreCard 
-              title={t("disciplines.title")} 
-              value={totalDisciplines} 
-              subtitle="Total" 
-            />
-          </View>
-          <View style={s.cell}>
-            <ScoreCard 
-              title={t("ranks.title")} 
-              value={totalRanks} 
-              subtitle="Total" 
+              subtitle={t("memberships.next30days")}
             />
           </View>
         </View>
@@ -339,7 +322,7 @@ export default function Dashboard({ onAuthExpired }) {
       {/* Sección: Ingresos mensuales */}
       {monthlyIncomes.length > 0 && (
         <View style={s.section}>
-          <Text style={s.sectionTitle}>💰 Ingresos Últimos 6 Meses</Text>
+          <Text style={s.sectionTitle}>💰 {t("incomes.incomeslast6months")}</Text>
           <View style={s.chartContainer}>
             <VictoryChart 
               theme={VictoryTheme.material} 
@@ -381,12 +364,12 @@ export default function Dashboard({ onAuthExpired }) {
       {/* Sección: Membresías por paquete (lista en lugar de pie chart) */}
       {membershipsByPackage.length > 0 && (
         <View style={s.section}>
-          <Text style={s.sectionTitle}>📦 Membresías por Paquete</Text>
+          <Text style={s.sectionTitle}>📦 {t("memberships.title")} {t("memberships.perpackage")}</Text>
           {membershipsByPackage.map((pkg, index) => (
             <View key={index} style={s.packageCard}>
               <View style={s.packageInfo}>
                 <Text style={s.packageName}>{pkg.name}</Text>
-                <Text style={s.packageCount}>{pkg.count} membresía{pkg.count !== 1 ? 's' : ''}</Text>
+                <Text style={s.packageCount}>{pkg.count} {pkg.count !== 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()}</Text>
               </View>
               <View style={s.packageBar}>
                 <View 
@@ -407,7 +390,7 @@ export default function Dashboard({ onAuthExpired }) {
       {/* Sección: Próximas clases */}
       {upcomingClasses.length > 0 && (
         <View style={s.section}>
-          <Text style={s.sectionTitle}>📅 Próximas Clases</Text>
+          <Text style={s.sectionTitle}>📅 {t("classes.nextclasses")}</Text>
           {upcomingClasses.map((classItem, index) => {
             // Extraer fecha correctamente sin desfase
             const dateStr = toYMD(classItem.scheduled_date);
@@ -448,9 +431,9 @@ export default function Dashboard({ onAuthExpired }) {
       {/* Alertas importantes */}
       {expiringSoon > 0 && (
         <View style={s.alertCard}>
-          <Text style={s.alertTitle}>⚠️ Atención</Text>
+          <Text style={s.alertTitle}>⚠️ {t("dashboards.attention")}</Text>
           <Text style={s.alertText}>
-            Hay {expiringSoon} membresía{expiringSoon > 1 ? 's' : ''} que vence{expiringSoon > 1 ? 'n' : ''} en los próximos 30 días.
+            {expiringSoon} {expiringSoon > 1 ? t("memberships.title".toLowerCase()) : t("memberships.title_single").toLowerCase()} {expiringSoon > 1 ? t("memberships.expiring").toLowerCase() : t("memberships.expiring_single").toLowerCase()} {t("dashboards.inthe")} {t("memberships.next30days").toLowerCase()}.
           </Text>
         </View>
       )}

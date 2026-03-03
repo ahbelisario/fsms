@@ -8,6 +8,8 @@ import { getAuthToken, isSessionExpired, ensureSessionExpiry, clearAuthSession }
 import { useLanguage } from "@/src/i18n/LanguageProvider";
 import { DrawerControlProvider, useDrawerControl } from "@/src/context/DrawerControlContext";
 import { UserProvider, useUser } from "@/src/context/UserContext";
+import ProfileMenu from "@/src/ui/ProfileMenu";
+
 
 function AppShell() {
   const { lang, setLanguage, t, ready } = useLanguage();
@@ -16,6 +18,8 @@ function AppShell() {
   const isInSettings = segments.includes("(settings)");
   const { toggleMainDrawer, toggleSettingsDrawer } = useDrawerControl();
   const { user, setUser, isAdmin } = useUser();
+
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const { width } = useWindowDimensions();
   const isWebDesktop = Platform.OS === "web" && width >= 1024;
@@ -113,7 +117,7 @@ function AppShell() {
               <Text style={{ fontWeight: "500" }}>
                 {user?.name ? `${user.name} ${user.lastname ?? ""}` : "FSMS"}{" "}
               </Text>
-              <Pressable onPress={() => router.push("/(app)/(main)/userprofiles")} style={{ marginRight: 14 }}>
+              <Pressable onPress={() => setProfileMenuOpen(true)} style={{ marginRight: 14 }}>
                 <Ionicons name="settings-outline" size={20} color="#0b1220" />
               </Pressable>
             </View>
@@ -142,6 +146,22 @@ function AppShell() {
         <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
         <Stack.Screen name="(settings)" options={{ title: t("common.settings") }} />
       </Stack>
+
+      <ProfileMenu
+        key={lang}
+        visible={profileMenuOpen}
+        onClose={() => setProfileMenuOpen(false)}
+        onGoProfile={() => {
+          setProfileMenuOpen(false);
+          router.push("/(app)/(main)/userprofiles");
+        }}
+        onLogout={async () => {
+          setProfileMenuOpen(false);
+          await clearAuthSession();
+          router.replace("/(auth)");
+        }}
+      />
+      
     </>
   );
 }

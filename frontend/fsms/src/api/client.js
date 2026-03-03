@@ -110,4 +110,18 @@ export const api = {
   getMyPayments: () => request("/api/incomes/my-payments"),
   getMyLastPayment: () => request("/api/incomes/my-last-payment"),
   getMyProfile: () => request("/api/userprofiles/my-profile"),
+
+  listClassEnrollments: () => request("/api/class-enrollments"), // Solo admin
+  getMyEnrollments: () => request("/api/class-enrollments/my-enrollments"),
+  getClassEnrollments: (classId) => request(`/api/class-enrollments/class/${classId}`),
+  enrollInClass: (payload) => request("/api/class-enrollments/enroll", { method: "POST", body: payload }),
+  createEnrollment: (payload) => request("/api/class-enrollments", { method: "POST", body: payload }), // Solo admin
+  cancelEnrollment: (classId) => request(`/api/class-enrollments/cancel/${classId}`, { method: "DELETE" }),
+  deleteEnrollment: (id) => request(`/api/class-enrollments/${id}`, { method: "DELETE" }), // Solo admin
+  updateEnrollmentStatus: (id, payload) => request(`/api/class-enrollments/${id}/status`, { method: "PUT", body: payload }), // Solo admin
+
+  markAttendance: (payload) => request("/api/class-enrollments/mark-attendance", { method: "POST", body: payload }),
+  getAttendanceStats: (userId) => request(`/api/class-enrollments/attendance-stats/${userId}`),
+  getMyAttendanceStats: () => request("/api/class-enrollments/my-attendance-stats"),
+
 };

@@ -88,6 +88,10 @@ app.use('/api/scheduled-classes', requireAuth, scheduledclassesRoutes);
 const { router: reportsRoutes } = require('./routes/reports');
 app.use('/api/reports', requireAuth, reportsRoutes);
 
+//Class Enrollments
+const classEnrollmentsRoutes = require('./routes/class-enrollments');
+app.use('/api/class-enrollments', requireAuth, classEnrollmentsRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

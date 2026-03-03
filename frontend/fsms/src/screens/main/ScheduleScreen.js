@@ -296,7 +296,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       <Pressable style={ScreenStyles.btnSecondary} onPress={goToToday}>
-        <Text style={ScreenStyles.btnSecondaryText}>Ir a Hoy</Text>
+        <Text style={ScreenStyles.btnSecondaryText}>{t("schedule.today")}</Text>
       </Pressable>
 
       {/* Navegación del mes */}
@@ -480,7 +480,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                       👤 {classItem.instructor_name} {classItem.instructor_lastname}
                     </Text>
                     <Text style={{ color: '#64748b' }}>
-                      👥 Capacidad: {classItem.current_enrollment || 0}/{classItem.max_capacity}
+                      👥 {t("schedule.capacity")}: {classItem.current_enrollment || 0}/{classItem.max_capacity}
                     </Text>
                     {classItem.notes && (
                       <Text style={{ color: '#64748b', marginTop: 4, fontStyle: 'italic' }}>
@@ -504,7 +504,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                 {isEditing ? t("schedule.edit_class") : t("schedule.new_class")}
               </Text>
 
-              <Text style={ScreenStyles.label}>Título</Text>
+              <Text style={ScreenStyles.label}>{t("common.title")}</Text>
               <TextInput 
                 style={ScreenStyles.input} 
                 value={title} 
@@ -536,7 +536,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
               </View>
 
               <DatePickerField
-                label="Fecha *"
+                label={t("schedule.date")}
                 value={scheduledDate}
                 onChange={setScheduledDate}
                 placeholder="YYYY-MM-DD"
@@ -544,7 +544,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.label}>Hora Inicio *</Text>
+                  <Text style={ScreenStyles.label}>{t("schedule.starttime")}</Text>
                   <TextInput 
                     style={ScreenStyles.input} 
                     value={startTime} 
@@ -553,7 +553,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.label}>Hora Fin *</Text>
+                  <Text style={ScreenStyles.label}>{t("schedule.finishtime")}</Text>
                   <TextInput 
                     style={ScreenStyles.input} 
                     value={endTime} 
@@ -563,7 +563,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                 </View>
               </View>
 
-              <Text style={ScreenStyles.label}>Capacidad Máxima</Text>
+              <Text style={ScreenStyles.label}>{t("schedule.maximumcapacity")}</Text>
               <TextInput 
                 style={ScreenStyles.input} 
                 value={maxCapacity} 
@@ -578,7 +578,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                 onChangeText={setNotes}
                 multiline
                 numberOfLines={4}
-                placeholder="Notas adicionales..."
+                placeholder={t("common.additionalnotes")}
               />
 
               <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
