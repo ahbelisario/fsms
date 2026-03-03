@@ -35,6 +35,8 @@ const styles = {
     paddingRight: 22,
   },
   menu: {
+    borderWidth: 1,
+    borderColor: "#cacaca",
     width: 180,
     backgroundColor: "white",
     borderRadius: 6,

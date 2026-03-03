@@ -437,10 +437,10 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
             <Text style={ScreenStyles.label}>{t("enrollments.new_status")}</Text>
             <View style={ScreenStyles.pickerWrapper}>
               <Picker selectedValue={newStatus} onValueChange={setNewStatus}>
-                <Picker.Item label={t("enrollments.enrolled")} value="enrolled" />
-                <Picker.Item label={t("enrollments.attended")} value="attended" />
-                <Picker.Item label={t("enrollments.cancelled")} value="cancelled" />
-                <Picker.Item label={t("enrollments.no_show")} value="no_show" />
+                <Picker.Item label={t("attendance.enrolled")} value="enrolled" />
+                <Picker.Item label={t("attendance.attended")} value="attended" />
+                <Picker.Item label={t("attendance.cancelled")} value="cancelled" />
+                <Picker.Item label={t("attendance.no_show")} value="no_show" />
               </Picker>
             </View>
 

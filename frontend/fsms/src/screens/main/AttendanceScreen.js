@@ -284,7 +284,7 @@ export default function AttendanceScreen({ onAuthExpired }) {
             </View>
           ) : enrollments.length === 0 ? (
             <View style={s.emptyState}>
-              <Text style={s.emptyText}>{t("enrollements.empty")}</Text>
+              <Text style={s.emptyText}>{t("enrollments.empty")}</Text>
             </View>
           ) : (
             <>

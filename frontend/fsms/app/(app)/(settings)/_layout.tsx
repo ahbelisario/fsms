@@ -1,20 +1,65 @@
-import React, { useEffect, useRef } from "react";
-import { Platform, useWindowDimensions, View, Text } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Platform, useWindowDimensions, View, Text, Pressable, StyleSheet } from "react-native";
 import { Drawer } from "expo-router/drawer";
-import { useRouter, type Href } from "expo-router";
-import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { Ionicons, MaterialIcons, Octicons} from "@expo/vector-icons";
+import { useRouter, usePathname, type Href } from "expo-router";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
 import { ScreenStyles } from "@/src/styles/appStyles";
-import { clearAuthSession } from "@/src/storage/authStorage";
 import { t } from "@/src/i18n";
 
 import { DrawerActions } from "@react-navigation/native";
 import { useDrawerControl } from "@/src/context/DrawerControlContext";
 import { useUser } from "@/src/context/UserContext";
 
+// Componente personalizado para items del drawer con hover
+function CustomDrawerItem({ 
+  label, 
+  icon: IconComponent, 
+  onPress, 
+  isActive 
+}: {
+  label: string;
+  icon?: any;
+  onPress: () => void;
+  isActive: boolean;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const iconColor = isActive ? "#007AFF" : isHovered ? "#333" : "#666";
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
+      style={[
+        styles.drawerItem,
+        isActive && styles.drawerItemActive,
+        isHovered && styles.drawerItemHovered,
+      ]}
+    >
+      {IconComponent && (
+        <View style={styles.iconContainer}>
+          {IconComponent({ size: 24, color: iconColor })}
+        </View>
+      )}
+      <Text 
+        style={[
+          styles.label,
+          !IconComponent && styles.labelNoIcon,
+          isActive && styles.labelActive,
+          isHovered && styles.labelHovered,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 function CustomDrawerContent({ pointerEvents, ...props }: any) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const DASHBOARD: Href = "/(app)/(settings)/dashboard";
   const PACKAGES: Href = "/(app)/(settings)/packages";
@@ -23,50 +68,70 @@ function CustomDrawerContent({ pointerEvents, ...props }: any) {
   const INCOMETYPES: Href = "/(app)/(settings)/incometypes";
   const MAIN: Href = "/(app)/(main)/dashboard";
 
+  const isActive = (route: string) => pathname.includes(route);
+
   return (
     <DrawerContentScrollView 
       {...props}
       contentContainerStyle={{ flex: 1 }}
     >
       <View style={{ flex: 1 }}>
-        <DrawerItem label={t("dashboard.title")} onPress={() => router.push(DASHBOARD)} />
+        <CustomDrawerItem 
+          label={t("dashboard.title")} 
+          onPress={() => router.push(DASHBOARD)}
+          isActive={isActive('/settings/dashboard')}
+        />
+
         <View style={ScreenStyles.divider} />
-        <DrawerItem 
+
+        <CustomDrawerItem 
           label={t("packages.title")}
           icon={({ size, color }) => (
             <Octicons name="package" size={size} color={color} />
           )}
-          onPress={() => router.push(PACKAGES)} />
+          onPress={() => router.push(PACKAGES)}
+          isActive={isActive('/packages')}
+        />
 
-        <DrawerItem 
+        <CustomDrawerItem 
           label={t("incometypes.title")} 
           icon={({ size, color }) => (
             <Ionicons name="cash-outline" size={size} color={color} />
           )}
-          onPress={() => router.push(INCOMETYPES)} />
+          onPress={() => router.push(INCOMETYPES)}
+          isActive={isActive('/incometypes')}
+        />
+
         <View style={ScreenStyles.divider} />
 
-        <DrawerItem 
+        <CustomDrawerItem 
           label={t("disciplines.title")} 
           icon={({ size, color }) => (
             <MaterialIcons name="sports-martial-arts" size={size} color={color} />
           )}
-          onPress={() => router.push(DISCIPLINES)} />
+          onPress={() => router.push(DISCIPLINES)}
+          isActive={isActive('/disciplines')}
+        />
 
-        <DrawerItem 
+        <CustomDrawerItem 
           label={t("ranks.title")} 
           icon={({ size, color }) => (
             <MaterialIcons name="military-tech" size={size} color={color} />
           )}
-          onPress={() => router.push(RANKS)} />
+          onPress={() => router.push(RANKS)}
+          isActive={isActive('/ranks')}
+        />
 
         <View style={ScreenStyles.divider} />
-        <DrawerItem 
+
+        <CustomDrawerItem 
           label={t("common.back")} 
           icon={({ size, color }) => (
             <Ionicons name="arrow-back" size={size} color={color} />
           )}
-          onPress={() => router.replace(MAIN)} />
+          onPress={() => router.replace(MAIN)}
+          isActive={false}
+        />
       </View>
     </DrawerContentScrollView>
   );
@@ -76,7 +141,7 @@ export default function SettingsLayout() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
-  const drawerWidth = 220;
+  const drawerWidth = 240;
   const isPermanent = isWeb && isDesktop;
 
   const router = useRouter();
@@ -132,3 +197,43 @@ export default function SettingsLayout() {
     </Drawer>
   );
 }
+
+const styles = StyleSheet.create({
+  drawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 8,
+    marginVertical: 2,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+  },
+  drawerItemActive: {
+    backgroundColor: '#E3F2FD',
+  },
+  drawerItemHovered: {
+    backgroundColor: '#F5F5F5',
+  },
+  iconContainer: {
+    marginRight: 16,
+    width: 24,
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#666',
+  },
+  labelNoIcon: {
+    marginLeft: 0,
+  },
+  labelActive: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  labelHovered: {
+    color: '#333',
+  },
+});
