@@ -21,12 +21,15 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
-    "web": {
+     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png",
       "viewport": {
         "width": "device-width",
         "initialScale": 1,
+        "maximumScale": 1,
+        "minimumScale": 1,
+        "userScalable": "no",
         "viewportFit": "cover"
       }
     },

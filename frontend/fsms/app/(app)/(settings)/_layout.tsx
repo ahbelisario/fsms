@@ -141,7 +141,9 @@ export default function SettingsLayout() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
-  const drawerWidth = 240;
+  const isMobile = width < 768;
+  
+  const drawerWidth = isMobile ? width * 0.75 : 240;
   const isPermanent = isWeb && isDesktop;
 
   const router = useRouter();
@@ -183,7 +185,10 @@ export default function SettingsLayout() {
       screenOptions={{
         headerShown: false,
         drawerType: isPermanent ? "permanent" : "front",
-        drawerStyle: { width: drawerWidth },
+        drawerStyle: { 
+          width: drawerWidth,
+          maxWidth: '100%',
+        },
         overlayColor: isPermanent ? "transparent" : undefined,
         swipeEnabled: !isPermanent,
         sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,

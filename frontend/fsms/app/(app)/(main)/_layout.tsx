@@ -214,7 +214,10 @@ export default function MainLayout() {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
-  const drawerWidth = 240;
+  const isMobile = width < 768;
+  
+  // 👇 SOLO ESTE CAMBIO - Ajustar drawer width según tamaño de pantalla
+  const drawerWidth = isMobile ? width * 0.75 : 240;
   const isPermanent = isWeb && isDesktop;
 
   return (
@@ -232,7 +235,10 @@ export default function MainLayout() {
       screenOptions={{
         headerShown: false,
         drawerType: isPermanent ? "permanent" : "front",
-        drawerStyle: { width: drawerWidth },
+        drawerStyle: { 
+          width: drawerWidth,
+          maxWidth: '100%', // 👈 AGREGA ESTO
+        },
         overlayColor: isPermanent ? "transparent" : undefined,
         swipeEnabled: !isPermanent,
         sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
@@ -253,6 +259,7 @@ export default function MainLayout() {
   );
 }
 
+// 👇 DEJA LOS ESTILOS COMO ESTABAN ORIGINALMENTE
 const styles = StyleSheet.create({
   drawerItem: {
     flexDirection: 'row',
@@ -263,7 +270,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
     borderRadius: 8,
     backgroundColor: 'transparent',
-    cursor: 'pointer', // Solo funciona en web
+    cursor: 'pointer',
   },
   drawerItemActive: {
     backgroundColor: '#E3F2FD',
