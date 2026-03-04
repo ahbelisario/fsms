@@ -14,3 +14,12 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* Mejorar apariencia de inputs */
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}

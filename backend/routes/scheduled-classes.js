@@ -236,6 +236,188 @@ router.delete('/:id', requireAdmin, (req, res) => {
 });
 
 /**
+ * POST /api/scheduled-classes/recurring
+ * Crear múltiples clases basadas en un patrón de recurrencia
+ */
+router.post('/recurring', requireAdmin, (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const { 
+    title, 
+    discipline_id, 
+    instructor_id, 
+    start_time, 
+    end_time, 
+    max_capacity, 
+    notes,
+    start_date,        // Fecha de inicio (YYYY-MM-DD)
+    recurrence_days,   // Array de días: [0,2,4] para Dom,Mar,Jue (0=Domingo)
+    recurrence_end_date // Fecha límite (YYYY-MM-DD)
+  } = req.body;
+
+  // Validación
+  if (!title || !start_date || !recurrence_days || !recurrence_end_date || !start_time || !end_time) {
+    return res.status(400).json({ 
+      status: 'error', 
+      message: 'Missing required fields' 
+    });
+  }
+
+  if (!Array.isArray(recurrence_days) || recurrence_days.length === 0) {
+    return res.status(400).json({ 
+      status: 'error', 
+      message: 'recurrence_days must be a non-empty array' 
+    });
+  }
+
+  // Función para generar fechas según el patrón
+  function generateRecurringDates(startDate, endDate, daysOfWeek) {
+    const dates = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Asegurarse de que las fechas sean válidas
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Invalid dates');
+    }
+
+    let currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      const dayOfWeek = currentDate.getDay(); // 0 = Domingo, 6 = Sábado
+      
+      if (daysOfWeek.includes(dayOfWeek)) {
+        dates.push(new Date(currentDate));
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  }
+
+  try {
+    const dates = generateRecurringDates(start_date, recurrence_end_date, recurrence_days);
+    
+    if (dates.length === 0) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'No valid dates generated with the given pattern' 
+      });
+    }
+
+    if (dates.length > 365) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'Too many classes would be created (max 365). Adjust your date range.' 
+      });
+    }
+
+    // Crear la clase padre primero
+    const parentQuery = `
+      INSERT INTO scheduled_classes 
+      (title, discipline_id, instructor_id, scheduled_date, start_time, end_time, max_capacity, notes, is_recurring, recurrence_pattern, recurrence_days, recurrence_end_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'weekly', ?, ?)
+    `;
+
+    const parentValues = [
+      title,
+      discipline_id || null,
+      instructor_id || null,
+      dates[0].toISOString().split('T')[0],
+      start_time,
+      end_time,
+      max_capacity || 20,
+      notes || null,
+      JSON.stringify(recurrence_days),
+      recurrence_end_date
+    ];
+
+    fsms_pool.query(parentQuery, parentValues, (err, parentResult) => {
+      if (err) {
+        console.error('Error creating parent class:', err);
+        return res.status(500).json({ status: 'error', message: 'DB error' });
+      }
+
+      const parentId = parentResult.insertId;
+
+      // Crear las clases hijas (omitir la primera ya que es la clase padre)
+      const childClasses = dates.slice(1).map(date => {
+        return new Promise((resolve, reject) => {
+          const childQuery = `
+            INSERT INTO scheduled_classes 
+            (title, discipline_id, instructor_id, scheduled_date, start_time, end_time, max_capacity, notes, is_recurring, parent_class_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?)
+          `;
+
+          const childValues = [
+            title,
+            discipline_id || null,
+            instructor_id || null,
+            date.toISOString().split('T')[0],
+            start_time,
+            end_time,
+            max_capacity || 20,
+            notes || null,
+            parentId
+          ];
+
+          fsms_pool.query(childQuery, childValues, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+      });
+
+      Promise.all(childClasses)
+        .then(() => {
+          res.json({ 
+            status: 'success', 
+            message: `Created ${dates.length} classes`,
+            parent_id: parentId,
+            total_classes: dates.length,
+            dates: dates.map(d => d.toISOString().split('T')[0])
+          });
+        })
+        .catch(err => {
+          console.error('Error creating child classes:', err);
+          res.status(500).json({ status: 'error', message: 'Failed to create all recurring classes' });
+        });
+    });
+
+  } catch (error) {
+    console.error('Error generating dates:', error);
+    res.status(400).json({ status: 'error', message: error.message });
+  }
+});
+
+/**
+ * DELETE /api/scheduled-classes/recurring/:parentId
+ * Eliminar toda una serie de clases recurrentes
+ */
+router.delete('/recurring/:parentId', requireAdmin, (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const { parentId } = req.params;
+
+  // Eliminar la clase padre y todas las hijas en cascada
+  const query = `
+    DELETE FROM scheduled_classes 
+    WHERE id = ? OR parent_class_id = ?
+  `;
+
+  fsms_pool.query(query, [parentId, parentId], (err, result) => {
+    if (err) {
+      console.error('Error deleting recurring classes:', err);
+      return res.status(500).json({ status: 'error', message: 'DB error' });
+    }
+
+    res.json({ 
+      status: 'success', 
+      message: `Deleted ${result.affectedRows} classes from the series` 
+    });
+  });
+});
+
+/**
  * GET /api/scheduled-classes/month/:year/:month
  * Obtiene clases de un mes específico
  */

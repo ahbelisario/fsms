@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, ScrollView, Pressable, StyleSheet, View, Text, Modal, TextInput } from "react-native";
+import { ActivityIndicator, ScrollView, Pressable, View, Text, Modal, TextInput } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { ManageEnrollmentsStyles, ScreenStyles } from "@/src/styles/appStyles";
 import { api } from "@/src/api/client";
-import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 
@@ -14,6 +14,10 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
   const [users, setUsers] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [classEnrollments, setClassEnrollments] = useState([]);
+  
+  // Filtros de mes/año
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -28,6 +32,11 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [editingEnrollment, setEditingEnrollment] = useState(null);
   const [newStatus, setNewStatus] = useState('enrolled');
+
+ const MONTHS = [
+     t("months.jan"), t("months.feb"), t("months.mar"), t("months.apr"), t("months.may"), t("months.jun"),
+     t("months.jul"), t("months.aug"), t("months.sep"), t("months.oct"), t("months.nov"), t("months.dec")
+  ];
 
   const STATUS_LABELS = {
     enrolled: t("attendance.enrolled"),
@@ -62,6 +71,32 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
     setSuccess("");
   }
 
+  function previousMonth() {
+    if (selectedMonth === 0) {
+      setSelectedMonth(11);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+    setSelectedClass(null); // Reset class selection
+  }
+
+  function nextMonth() {
+    if (selectedMonth === 11) {
+      setSelectedMonth(0);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+    setSelectedClass(null); // Reset class selection
+  }
+
+  function goToCurrentMonth() {
+    setSelectedMonth(new Date().getMonth());
+    setSelectedYear(new Date().getFullYear());
+    setSelectedClass(null);
+  }
+
   async function loadData() {
     clearMsgs();
     setLoading(true);
@@ -73,28 +108,18 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
 
       const classList = Array.isArray(classesData) ? classesData : classesData?.data || [];
       
-      // Filtrar clases futuras y recientes (últimos 7 días)
-      const today = new Date();
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const relevantClasses = classList.filter(c => {
-        if (!c.scheduled_date) return false;
-        const dateStr = toYMD(c.scheduled_date);
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const classDate = new Date(year, month - 1, day);
-        return classDate >= sevenDaysAgo;
-      }).sort((a, b) => {
+      // Ordenar por fecha descendente (más reciente primero)
+      const sortedClasses = classList.sort((a, b) => {
         const dateA = toYMD(a.scheduled_date);
         const dateB = toYMD(b.scheduled_date);
         return dateB.localeCompare(dateA);
       });
 
-      setClasses(relevantClasses);
+      setClasses(sortedClasses);
 
       const usersList = Array.isArray(usersData) ? usersData : usersData?.data || [];
-      const students = usersList.filter(u => u.role === 'user');
-      setUsers(students);
+      // const students = usersList.filter(u => u.role === 'user');
+      setUsers(usersList);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -128,9 +153,12 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
   }
 
   function selectClass(classId) {
-    setSelectedClass(classId);
-    if (classId) {
-      loadClassEnrollments(classId);
+    console.log('Selected class ID:', classId);
+    // Convertir a número si viene como string
+    const numericId = classId ? Number(classId) : null;
+    setSelectedClass(numericId);
+    if (numericId) {
+      loadClassEnrollments(numericId);
     } else {
       setClassEnrollments([]);
     }
@@ -242,14 +270,26 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
     }, [])
   );
 
+  // Filtrar clases por mes/año seleccionado
+  const filteredClasses = classes.filter(c => {
+    if (!c.scheduled_date) return false;
+    const dateStr = toYMD(c.scheduled_date);
+    const [year, month] = dateStr.split('-').map(Number);
+    return year === selectedYear && month === selectedMonth + 1;
+  });
+
+  // Buscar la clase seleccionada en TODAS las clases (no solo las filtradas)
   const selectedClassData = classes.find(c => c.id === selectedClass);
 
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
+
   return (
-    <ScrollView style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("enrollments.title")}</Text>
-        <Pressable style={ScreenStyles.btnSecondary} onPress={loadData}>
-          <Text style={ScreenStyles.btnSecondaryText}>{t("common.refresh")}</Text>
+    <ScrollView style={ManageEnrollmentsStyles.container}>
+      <View style={ManageEnrollmentsStyles.header}>
+        <Text style={ManageEnrollmentsStyles.headerTitle}>{t("enrollments.title")}</Text>
+        <Pressable style={ScreenStyles.btnPrimary} onPress={loadData}>
+          <Text style={ScreenStyles.btnPrimaryText}>{t("common.refresh")}</Text>
         </Pressable>
       </View>
 
@@ -265,13 +305,45 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
         </View>
       ) : null}
 
+      {/* Navegación de Mes/Año */}
+      <View style={ManageEnrollmentsStyles.monthSection}>
+
+        <Pressable 
+          style={[ScreenStyles.btnSecondary, { marginTop: 8 }]}
+          onPress={goToCurrentMonth}>
+          <Text style={ScreenStyles.btnSecondaryText}>{t("months.current_month")}</Text>
+        </Pressable>
+
+        <View style={ManageEnrollmentsStyles.monthNav}>
+          <Pressable onPress={previousMonth} style={ManageEnrollmentsStyles.navButton}>
+            <Text style={ManageEnrollmentsStyles.navButtonText}>◀</Text>
+          </Pressable>
+          
+          <Text style={ManageEnrollmentsStyles.monthLabelText}>
+            {MONTHS[selectedMonth]} {selectedYear}
+          </Text>
+          
+          <Pressable onPress={nextMonth} style={ManageEnrollmentsStyles.navButton}>
+            <Text style={ManageEnrollmentsStyles.navButtonText}>▶</Text>
+          </Pressable>
+        </View>
+
+        
+      </View>
+
       {/* Selector de clase */}
-      <View style={s.section}>
-        <Text style={ScreenStyles.label}>{t("classes.select_class")}</Text>
+      <View style={ManageEnrollmentsStyles.section}>
+        <Text style={ScreenStyles.label}>
+          {t("classes.select_class")} ({filteredClasses.length} {filteredClasses.length === 1 ? 'clase' : 'clases'})
+        </Text>
         <View style={ScreenStyles.pickerWrapper}>
-          <Picker selectedValue={selectedClass} onValueChange={selectClass}>
+          <Picker 
+            selectedValue={selectedClass} 
+            onValueChange={selectClass}
+            style={{ fontSize: 13 }}
+          >
             <Picker.Item label={"-- " + t("classes.select_class") + " --"} value={null} />
-            {classes.map((c) => {
+            {filteredClasses.map((c) => {
               const dateStr = toYMD(c.scheduled_date);
               const [year, month, day] = dateStr.split('-').map(Number);
               const displayDate = new Date(year, month - 1, day);
@@ -291,20 +363,28 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
             })}
           </Picker>
         </View>
+
+        {filteredClasses.length === 0 && (
+          <View style={ManageEnrollmentsStyles.noClassesBox}>
+            <Text style={ManageEnrollmentsStyles.noClassesText}>
+              📅 {t("classes.no_classes_schedules")} {MONTHS[selectedMonth]} {selectedYear}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Información de la clase seleccionada */}
-      {selectedClassData && (
-        <View style={s.classInfoCard}>
-          <Text style={s.classInfoTitle}>{selectedClassData.title}</Text>
-          <Text style={s.classInfoDetail}>
-            👤 Instructor: {selectedClassData.instructor_name} {selectedClassData.instructor_lastname}
+      {selectedClass && selectedClassData && (
+        <View style={ManageEnrollmentsStyles.classInfoCard}>
+          <Text style={ManageEnrollmentsStyles.classInfoTitle}>{selectedClassData.title}</Text>
+          <Text style={ManageEnrollmentsStyles.classInfoDetail}>
+            👤 {t("users.role_instructor")}: {selectedClassData.instructor_name} {selectedClassData.instructor_lastname}
           </Text>
-          <Text style={s.classInfoDetail}>
-            👥 Inscritos: {classEnrollments.filter(e => e.status === 'enrolled').length} / {selectedClassData.max_capacity}
+          <Text style={ManageEnrollmentsStyles.classInfoDetail}>
+            👥 {t("enrollments.enrolled_plu")}: {classEnrollments.filter(e => e.status === 'enrolled').length} / {selectedClassData.max_capacity}
           </Text>
-          <Text style={s.classInfoDetail}>
-            ✓ Asistieron: {classEnrollments.filter(e => e.status === 'attended').length}
+          <Text style={ManageEnrollmentsStyles.classInfoDetail}>
+            ✓ {t("enrollments.attended")}: {classEnrollments.filter(e => e.status === 'attended').length}
           </Text>
 
           <Pressable 
@@ -316,10 +396,19 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
         </View>
       )}
 
+      {/* Mensaje si no se encuentra la clase */}
+      {selectedClass && !selectedClassData && (
+        <View style={{ backgroundColor: '#fee2e2', padding: 12, borderRadius: 8, marginBottom: 12 }}>
+          <Text style={{ color: '#991b1b', fontSize: 14 }}>
+            ⚠️ {t("classes.load_error")}
+          </Text>
+        </View>
+      )}
+
       {/* Lista de inscritos */}
       {selectedClass && (
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>
+        <View style={ManageEnrollmentsStyles.section}>
+          <Text style={ManageEnrollmentsStyles.sectionTitle}>
             {t("enrollments.students_enrolled")} ({classEnrollments.length})
           </Text>
 
@@ -328,43 +417,43 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
               <ActivityIndicator />
             </View>
           ) : classEnrollments.length === 0 ? (
-            <View style={s.emptyState}>
-              <Text style={s.emptyText}>{t("enrollments.empty")}</Text>
+            <View style={ManageEnrollmentsStyles.emptyState}>
+              <Text style={ManageEnrollmentsStyles.emptyText}>{t("enrollments.empty")}</Text>
             </View>
           ) : (
             classEnrollments.map((enrollment) => (
-              <View key={enrollment.id} style={s.enrollmentCard}>
-                <View style={s.enrollmentHeader}>
+              <View key={enrollment.id} style={ManageEnrollmentsStyles.enrollmentCard}>
+                <View style={ManageEnrollmentsStyles.enrollmentHeader}>
                   <View style={{ flex: 1 }}>
-                    <Text style={s.studentName}>
+                    <Text style={ManageEnrollmentsStyles.studentName}>
                       {enrollment.student_name} {enrollment.student_lastname}
                     </Text>
                     {enrollment.student_email && (
-                      <Text style={s.studentEmail}>{enrollment.student_email}</Text>
+                      <Text style={ManageEnrollmentsStyles.studentEmail}>{enrollment.student_email}</Text>
                     )}
-                    <Text style={s.enrollmentDate}>
+                    <Text style={ManageEnrollmentsStyles.enrollmentDate}>
                       Inscrito: {new Date(enrollment.enrollment_date).toLocaleDateString('es-MX')}
                     </Text>
                   </View>
 
                   <Pressable 
-                    style={[s.statusBadge, { backgroundColor: STATUS_COLORS[enrollment.status] }]}
+                    style={[ManageEnrollmentsStyles.statusBadge, { backgroundColor: STATUS_COLORS[enrollment.status] }]}
                     onPress={() => openStatusModal(enrollment)}
                   >
-                    <Text style={s.statusBadgeText}>
+                    <Text style={ManageEnrollmentsStyles.statusBadgeText}>
                       {STATUS_LABELS[enrollment.status]}
                     </Text>
                   </Pressable>
                 </View>
 
                 {enrollment.notes && (
-                  <View style={s.notesSection}>
-                    <Text style={s.notesLabel}>{t("common.notes")}:</Text>
-                    <Text style={s.notesText}>{enrollment.notes}</Text>
+                  <View style={ManageEnrollmentsStyles.notesSection}>
+                    <Text style={ManageEnrollmentsStyles.notesLabel}>{t("common.notes")}:</Text>
+                    <Text style={ManageEnrollmentsStyles.notesText}>{enrollment.notes}</Text>
                   </View>
                 )}
 
-                <View style={s.enrollmentActions}>
+                <View style={ManageEnrollmentsStyles.enrollmentActions}>
                   <Pressable 
                     style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]}
                     onPress={() => askDelete(enrollment.id)}
@@ -388,7 +477,11 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
 
             <Text style={ScreenStyles.label}>{t("students.student")}</Text>
             <View style={ScreenStyles.pickerWrapper}>
-              <Picker selectedValue={selectedUser} onValueChange={setSelectedUser}>
+              <Picker 
+                selectedValue={selectedUser} 
+                onValueChange={setSelectedUser}
+                style={{ fontSize: 13 }}
+              >
                 {users.map((u) => (
                   <Picker.Item 
                     key={u.id} 
@@ -429,14 +522,18 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
             <Text style={ScreenStyles.modalTitle}>{t("enrollments.change_status")}</Text>
 
             {editingEnrollment && (
-              <Text style={s.enrollmentInfo}>
+              <Text style={ManageEnrollmentsStyles.enrollmentInfo}>
                 {editingEnrollment.student_name} {editingEnrollment.student_lastname}
               </Text>
             )}
 
             <Text style={ScreenStyles.label}>{t("enrollments.new_status")}</Text>
             <View style={ScreenStyles.pickerWrapper}>
-              <Picker selectedValue={newStatus} onValueChange={setNewStatus}>
+              <Picker 
+                selectedValue={newStatus} 
+                onValueChange={setNewStatus}
+                style={{ fontSize: 13 }}
+              >
                 <Picker.Item label={t("attendance.enrolled")} value="enrolled" />
                 <Picker.Item label={t("attendance.attended")} value="attended" />
                 <Picker.Item label={t("attendance.cancelled")} value="cancelled" />
@@ -480,131 +577,3 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
     </ScrollView>
   );
 }
-
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  classInfoCard: {
-    backgroundColor: '#dbeafe',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-  },
-  classInfoTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  classInfoDetail: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 4,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  enrollmentCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  enrollmentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  studentName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  studentEmail: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  enrollmentDate: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
-  statusBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  statusBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  notesSection: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  notesLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  notesText: {
-    fontSize: 14,
-    color: '#1e293b',
-  },
-  enrollmentActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  enrollmentInfo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-});

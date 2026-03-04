@@ -93,7 +93,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     { id: 2, label: t("userprofiles.contacto") },
     { id: 3, label: t("userprofiles.marcial") },
     { id: 4, label: t("userprofiles.medical") },
-    { id: 5, label: "Settings" },
+    { id: 5, label: t("common.settings") },
   ];
 
   function toYMD(value) {
@@ -386,7 +386,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       await api.deleteUser(idtouse);
       setSuccess("Usuario eliminado.");
       // Redirigir a la lista de estudiantes después de eliminar
-      router.push("/(app)/(main)/students");
+      router.push("/(app)/(main)/users");
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
         onAuthExpired?.();

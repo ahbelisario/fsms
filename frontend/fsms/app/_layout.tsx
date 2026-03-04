@@ -70,7 +70,6 @@ export default function RootLayout() {
         input, textarea, select {
           -webkit-user-select: text;
           user-select: text;
-          font-size: 16px !important; /* Previene zoom en iOS al enfocar inputs */
         }
 
         /* Prevenir que los drawers causen scroll horizontal */

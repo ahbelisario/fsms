@@ -1,12 +1,15 @@
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, ScrollView, Pressable, StyleSheet, View, Text, Modal } from "react-native";
+import { ActivityIndicator, ScrollView, Pressable, View, Text, Modal } from "react-native";
+import { AvailableClassesStyles } from "@/src/styles/appStyles";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 
 export default function AvailableClassesScreen({ onAuthExpired }) {
+
+  const s = ScreenStyles; // Al inicio del componente
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [myEnrollments, setMyEnrollments] = useState([]);
@@ -172,9 +175,9 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
   }
 
   return (
-    <ScrollView style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("classes.availables")}</Text>
+    <ScrollView style={AvailableClassesStyles.container}>
+      <View style={AvailableClassesStyles.header}>
+        <Text style={AvailableClassesStyles.headerTitle}>{t("classes.availables")}</Text>
         <Pressable style={ScreenStyles.btnSecondary} onPress={loadData}>
           <Text style={ScreenStyles.btnSecondaryText}>{t("common.refresh")}</Text>
         </Pressable>
@@ -193,8 +196,8 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
       ) : null}
 
       {classes.length === 0 ? (
-        <View style={s.emptyState}>
-          <Text style={s.emptyText}>{t("classes.no_next_classes")}</Text>
+        <View style={AvailableClassesStyles.emptyState}>
+          <Text style={AvailableClassesStyles.emptyText}>{t("classes.no_next_classes")}</Text>
         </View>
       ) : (
         classes.map((classItem) => {
@@ -212,10 +215,10 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
               enrolled && s.enrolledCard,
               full && !enrolled && s.fullCard
             ]}>
-              <View style={s.classHeader}>
+              <View style={AvailableClassesStyles.classHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.classTitle}>{classItem.title}</Text>
-                  <Text style={s.classDate}>
+                  <Text style={AvailableClassesStyles.classTitle}>{classItem.title}</Text>
+                  <Text style={AvailableClassesStyles.classDate}>
                     {displayDate.toLocaleDateString('es-MX', {
                       weekday: 'long',
                       day: 'numeric',
@@ -224,26 +227,26 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                   </Text>
                 </View>
                 {enrolled && (
-                  <View style={s.enrolledBadge}>
-                    <Text style={s.enrolledBadgeText}>{t("enrollments.enrolled")}</Text>
+                  <View style={AvailableClassesStyles.enrolledBadge}>
+                    <Text style={AvailableClassesStyles.enrolledBadgeText}>{t("enrollments.enrolled")}</Text>
                   </View>
                 )}
                 {full && !enrolled && (
-                  <View style={s.fullBadge}>
-                    <Text style={s.fullBadgeText}>{t("enrollments.full")}</Text>
+                  <View style={AvailableClassesStyles.fullBadge}>
+                    <Text style={AvailableClassesStyles.fullBadgeText}>{t("enrollments.full")}</Text>
                   </View>
                 )}
               </View>
 
-              <View style={s.classDetails}>
-                <Text style={s.classDetail}>
+              <View style={AvailableClassesStyles.classDetails}>
+                <Text style={AvailableClassesStyles.classDetail}>
                   🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
                 </Text>
-                <Text style={s.classDetail}>
+                <Text style={AvailableClassesStyles.classDetail}>
                   👤 {classItem.instructor_name} {classItem.instructor_lastname}
                 </Text>
                 {classItem.discipline_name && (
-                  <Text style={s.classDetail}>
+                  <Text style={AvailableClassesStyles.classDetail}>
                     📚 {classItem.discipline_name}
                   </Text>
                 )}
@@ -256,7 +259,7 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                 </Text>
               </View>
 
-              <View style={s.classActions}>
+              <View style={AvailableClassesStyles.classActions}>
                 {enrolled ? (
                   <Pressable 
                     style={[ScreenStyles.btnSecondary, s.actionButton]}
@@ -305,116 +308,3 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
   );
 }
 
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  classCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  enrolledCard: {
-    borderLeftColor: '#10b981',
-    backgroundColor: '#f0fdf4',
-  },
-  fullCard: {
-    borderLeftColor: '#94a3b8',
-    opacity: 0.7,
-  },
-  classHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  classTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  classDate: {
-    fontSize: 14,
-    color: '#3b82f6',
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
-  enrolledBadge: {
-    backgroundColor: '#10b981',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  enrolledBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  fullBadge: {
-    backgroundColor: '#94a3b8',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  fullBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  classDetails: {
-    gap: 6,
-    marginBottom: 12,
-  },
-  classDetail: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  lowSpotsText: {
-    color: '#f59e0b',
-    fontWeight: '600',
-  },
-  fullText: {
-    color: '#ef4444',
-    fontWeight: '600',
-  },
-  classActions: {
-    marginTop: 8,
-  },
-  actionButton: {
-    paddingVertical: 12,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-});

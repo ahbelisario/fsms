@@ -43,17 +43,8 @@ export default function MembershipsScreen({ onAuthExpired }) {
   const sectionListRef = React.useRef(null);
 
   function scrollToLetter(letter) {
+    // Solo toggle - sin scroll automático
     toggleLetter(letter);
-    // Opcional: hacer scroll a esa sección
-    const sections = buildMembershipSections(memberships);
-    const index = sections.findIndex(s => s.title === letter);
-    if (index >= 0 && sectionListRef.current) {
-      sectionListRef.current.scrollToLocation({
-        sectionIndex: index,
-        itemIndex: 0,
-        animated: true,
-      });
-    }
   }
 
   const [expandedLetters, setExpandedLetters] = useState({});
@@ -80,19 +71,19 @@ export default function MembershipsScreen({ onAuthExpired }) {
     return `${usr?.name ?? ""} ${usr?.lastname ?? ""}`.trim();
   }
 
-  function buildMembershipSections(list) {
+  function buildMembershipSections(list, usersList = users) {
     const map = new Map(); // letter -> memberships[]
 
     // ordena por nombre de usuario + fecha fin (opcional)
     const sorted = [...list].sort((a, b) => {
-      const an = userFullNameById(a.user_id).toLowerCase();
-      const bn = userFullNameById(b.user_id).toLowerCase();
+      const an = userFullNameByIdWithList(a.user_id, usersList).toLowerCase();
+      const bn = userFullNameByIdWithList(b.user_id, usersList).toLowerCase();
       if (an !== bn) return an.localeCompare(bn);
       return String(a.finish_date ?? "").localeCompare(String(b.finish_date ?? ""));
     });
 
     for (const m of sorted) {
-      const fullName = userFullNameById(m.user_id);
+      const fullName = userFullNameByIdWithList(m.user_id, usersList);
       const letter = normalizeLetter(fullName || m.user_id);
       if (!map.has(letter)) map.set(letter, []);
       map.get(letter).push(m);
@@ -105,6 +96,12 @@ export default function MembershipsScreen({ onAuthExpired }) {
     });
 
     return letters.map((letter) => ({ title: letter, data: map.get(letter) }));
+  }
+
+  function userFullNameByIdWithList(uId, usersList) {
+    const numericId = Number(uId);
+    const usr = usersList.find((u) => u.id === numericId);
+    return `${usr?.name ?? ""} ${usr?.lastname ?? ""}`.trim();
   }
 
   function clearMsgs() {
@@ -206,15 +203,15 @@ export default function MembershipsScreen({ onAuthExpired }) {
       const list = Array.isArray(data) ? data : data?.response || data?.data || [];
       setMemberships(list);
 
-      const sections = buildMembershipSections(list);
-      const first = sections[0]?.title;
-      if (first) setExpandedLetters({ [first]: true });
-
       const userData = await api.listUsers();
       const userList = Array.isArray(userData) ? userData : userData?.response || userData?.data || [];
-
       setUsers(userList);
       setUserId(userList[0]?.id);
+
+      // Ahora sí construir secciones (users ya tiene datos)
+      const sections = buildMembershipSections(list, userList);
+      const first = sections[0]?.title;
+      if (first) setExpandedLetters({ [first]: true });
 
       const packagesData = await api.listPackages();
       const packagesList = Array.isArray(packagesData) ? packagesData : packagesData?.response || packagesData?.data || [];
@@ -400,9 +397,22 @@ export default function MembershipsScreen({ onAuthExpired }) {
           ref={sectionListRef}
           sections={buildMembershipSections(memberships)}
           keyExtractor={(item) => String(item.id)}
-          stickySectionHeadersEnabled={false}  // Cambia a false
+          stickySectionHeadersEnabled={false}
           refreshing={loading}
           onRefresh={loadMemberships}
+          onScrollToIndexFailed={(info) => {
+            // Esperar un momento y reintentar
+            const wait = new Promise(resolve => setTimeout(resolve, 100));
+            wait.then(() => {
+              if (sectionListRef.current) {
+                sectionListRef.current.scrollToLocation({
+                  sectionIndex: info.index,
+                  itemIndex: 0,
+                  animated: true,
+                });
+              }
+            });
+          }}
           renderSectionHeader={({ section }) => {
             // Retorna null para no mostrar nada
             return null;

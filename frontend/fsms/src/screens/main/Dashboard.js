@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, ScrollView, Pressable, StyleSheet, View, Text } from "react-native";
+import { ActivityIndicator, ScrollView, Pressable, View, Text } from "react-native";
+import { DashboardStyles } from "@/src/styles/appStyles";
 import { ScoreCard } from "@/src/screens/helpers/ScoreCard";
 import { ChartCard } from "@/src/screens/helpers/ChartCard";
 import { api } from "@/src/api/client";
@@ -23,6 +24,8 @@ export default function Dashboard({ onAuthExpired }) {
   const [upcomingClasses, setUpcomingClasses] = useState([]);
   const [activeMemberships, setActiveMemberships] = useState(0);
   const [expiringSoon, setExpiringSoon] = useState(0);
+  const [currentMonthIncome, setCurrentMonthIncome] = useState(0);
+  const [previousMonthIncome, setPreviousMonthIncome] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,6 +63,38 @@ export default function Dashboard({ onAuthExpired }) {
       return m;
     }
     return String(m);
+  }
+
+  // Calcular ingresos del mes actual y anterior
+  function calculateMonthlyIncomes(incomes) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+
+    let currentTotal = 0;
+    let previousTotal = 0;
+
+    incomes.forEach(income => {
+      if (!income.income_date) return;
+      
+      const dateStr = toYMD(income.income_date);
+      const [year, month] = dateStr.split('-').map(Number);
+      
+      // Mes actual
+      if (year === currentYear && month === currentMonth + 1) {
+        currentTotal += Number(income.amount || 0);
+      }
+      
+      // Mes anterior
+      const prevMonth = currentMonth === 0 ? 12 : currentMonth;
+      const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      
+      if (year === prevYear && month === prevMonth) {
+        previousTotal += Number(income.amount || 0);
+      }
+    });
+
+    return { currentTotal, previousTotal };
   }
 
   // Procesar ingresos mensuales
@@ -205,6 +240,12 @@ export default function Dashboard({ onAuthExpired }) {
       setTotalScheduledClasses(Number(dataScheduledClasses?.total_rows ?? 0));
 
       const incomesList = Array.isArray(dataIncomes) ? dataIncomes : dataIncomes?.data || [];
+      
+      // Calcular ingresos del mes actual y anterior
+      const { currentTotal, previousTotal } = calculateMonthlyIncomes(incomesList);
+      setCurrentMonthIncome(currentTotal);
+      setPreviousMonthIncome(previousTotal);
+      
       const monthlyData = processMonthlyIncomes(incomesList);
       setMonthlyIncomes(monthlyData);
 
@@ -247,11 +288,16 @@ export default function Dashboard({ onAuthExpired }) {
     );
   }
 
+  // Obtener nombre del mes actual y anterior
+  const now = new Date();
+  const currentMonthName = MONTHS_SHORT[now.getMonth()];
+  const previousMonthName = MONTHS_SHORT[now.getMonth() === 0 ? 11 : now.getMonth() - 1];
+
   return (
-    <ScrollView style={s.container}>
+    <ScrollView style={DashboardStyles.container}>
       {/* Header */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("dashboards.title")}</Text>
+      <View style={DashboardStyles.header}>
+        <Text style={DashboardStyles.headerTitle}>{t("dashboards.title")}</Text>
         <Pressable style={ScreenStyles.btnSecondary} onPress={loadDashboardData}>
           <Text style={ScreenStyles.btnSecondaryText}>{t("common.refresh")}</Text>
         </Pressable>
@@ -263,19 +309,41 @@ export default function Dashboard({ onAuthExpired }) {
         </View>
       ) : null}
 
-      {/* Sección: Estadísticas principales */}
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>📊 {t("dashboards.statistics")}</Text>
+      {/* Sección: Ingresos mensuales */}
+      <View style={DashboardStyles.section}>
+        <Text style={DashboardStyles.sectionTitle}>💰 {t("incomes.title")}</Text>
         
-        <View style={s.grid}>
-          <View style={s.cell}>
+        <View style={DashboardStyles.grid}>
+          <View style={DashboardStyles.cell}>
+            <ScoreCard 
+              title={`${currentMonthName} ${now.getFullYear()}`}
+              value={`$${currentMonthIncome.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              subtitle={t("incomes.currentmonth")}
+            />
+          </View>
+          <View style={DashboardStyles.cell}>
+            <ScoreCard 
+              title={`${previousMonthName} ${now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()}`}
+              value={`$${previousMonthIncome.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              subtitle={t("incomes.previousmonth")}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Sección: Estadísticas principales */}
+      <View style={DashboardStyles.section}>
+        <Text style={DashboardStyles.sectionTitle}>📊 {t("dashboards.statistics")}</Text>
+        
+        <View style={DashboardStyles.grid}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("memberships.title")} 
               value={totalMemberships} 
               subtitle={t("common.total")} 
             />
           </View>
-          <View style={s.cell}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("memberships.actives")} 
               value={activeMemberships} 
@@ -284,15 +352,15 @@ export default function Dashboard({ onAuthExpired }) {
           </View>
         </View>
 
-        <View style={s.grid}>
-          <View style={s.cell}>
+        <View style={DashboardStyles.grid}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("users.title")} 
               value={totalUsers} 
               subtitle={t("common.total")} 
             />
           </View>
-          <View style={s.cell}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("classes.title")}  
               value={totalScheduledClasses} 
@@ -301,15 +369,15 @@ export default function Dashboard({ onAuthExpired }) {
           </View>
         </View>
 
-        <View style={s.grid}>
-          <View style={s.cell}>
+        <View style={DashboardStyles.grid}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("packages.title")} 
               value={totalPackages} 
               subtitle={t("common.total")} 
             />
           </View>
-          <View style={s.cell}>
+          <View style={DashboardStyles.cell}>
             <ScoreCard 
               title={t("memberships.expiringsoon")} 
               value={expiringSoon} 
@@ -319,15 +387,15 @@ export default function Dashboard({ onAuthExpired }) {
         </View>
       </View>
 
-      {/* Sección: Ingresos mensuales */}
+      {/* Sección: Ingresos mensuales gráfica */}
       {monthlyIncomes.length > 0 && (
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>💰 {t("incomes.incomeslast6months")}</Text>
-          <View style={s.chartContainer}>
+        <View style={DashboardStyles.section}>
+          <Text style={DashboardStyles.sectionTitle}>💰 {t("incomes.incomeslast6months")}</Text>
+          <View style={DashboardStyles.chartContainer}>
             <VictoryChart 
               theme={VictoryTheme.material} 
               height={180} 
-              domainPadding={{ x: 25 }}  // 👈 Agrega espacio entre barras
+              domainPadding={{ x: 25 }}
               padding={{ top: 20, bottom: 40, left: 50, right: 40 }}
             >
               <VictoryAxis
@@ -347,7 +415,7 @@ export default function Dashboard({ onAuthExpired }) {
                 data={monthlyIncomes}
                 x="month"
                 y="total"
-                barWidth={10}  // 👈 Controla el ancho de las barras
+                barWidth={10}
                 style={{
                   data: { fill: "#3b82f6" }
                 }}
@@ -363,18 +431,18 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Sección: Membresías por paquete (lista en lugar de pie chart) */}
       {membershipsByPackage.length > 0 && (
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>📦 {t("memberships.title")} {t("memberships.perpackage")}</Text>
+        <View style={DashboardStyles.section}>
+          <Text style={DashboardStyles.sectionTitle}>📦 {t("memberships.title")} {t("memberships.perpackage")}</Text>
           {membershipsByPackage.map((pkg, index) => (
-            <View key={index} style={s.packageCard}>
-              <View style={s.packageInfo}>
-                <Text style={s.packageName}>{pkg.name}</Text>
-                <Text style={s.packageCount}>{pkg.count} {pkg.count !== 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()}</Text>
+            <View key={index} style={DashboardStyles.packageCard}>
+              <View style={DashboardStyles.packageInfo}>
+                <Text style={DashboardStyles.packageName}>{pkg.name}</Text>
+                <Text style={DashboardStyles.packageCount}>{pkg.count} {pkg.count !== 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()}</Text>
               </View>
-              <View style={s.packageBar}>
+              <View style={DashboardStyles.packageBar}>
                 <View 
                   style={[
-                    s.packageBarFill, 
+                    DashboardStyles.packageBarFill, 
                     { 
                       width: `${(pkg.count / totalMemberships) * 100}%`,
                       backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]
@@ -389,8 +457,8 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Sección: Próximas clases */}
       {upcomingClasses.length > 0 && (
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>📅 {t("classes.nextclasses")}</Text>
+        <View style={DashboardStyles.section}>
+          <Text style={DashboardStyles.sectionTitle}>📅 {t("classes.nextclasses")}</Text>
           {upcomingClasses.map((classItem, index) => {
             // Extraer fecha correctamente sin desfase
             const dateStr = toYMD(classItem.scheduled_date);
@@ -398,10 +466,10 @@ export default function Dashboard({ onAuthExpired }) {
             const displayDate = new Date(year, month - 1, day);
 
             return (
-              <View key={classItem.id || index} style={s.classCard}>
-                <View style={s.classHeader}>
-                  <Text style={s.classTitle}>{classItem.title}</Text>
-                  <Text style={s.classDate}>
+              <View key={classItem.id || index} style={DashboardStyles.classCard}>
+                <View style={DashboardStyles.classHeader}>
+                  <Text style={DashboardStyles.classTitle}>{classItem.title}</Text>
+                  <Text style={DashboardStyles.classDate}>
                     {displayDate.toLocaleDateString('es-MX', {
                       weekday: 'short',
                       day: 'numeric',
@@ -409,15 +477,15 @@ export default function Dashboard({ onAuthExpired }) {
                     })}
                   </Text>
                 </View>
-                <View style={s.classDetails}>
-                  <Text style={s.classDetail}>
+                <View style={DashboardStyles.classDetails}>
+                  <Text style={DashboardStyles.classDetail}>
                     🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
                   </Text>
-                  <Text style={s.classDetail}>
+                  <Text style={DashboardStyles.classDetail}>
                     👤 {classItem.instructor_name} {classItem.instructor_lastname}
                   </Text>
                   {classItem.discipline_name && (
-                    <Text style={s.classDetail}>
+                    <Text style={DashboardStyles.classDetail}>
                       📚 {classItem.discipline_name}
                     </Text>
                   )}
@@ -430,9 +498,9 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Alertas importantes */}
       {expiringSoon > 0 && (
-        <View style={s.alertCard}>
-          <Text style={s.alertTitle}>⚠️ {t("dashboards.attention")}</Text>
-          <Text style={s.alertText}>
+        <View style={DashboardStyles.alertCard}>
+          <Text style={DashboardStyles.alertTitle}>⚠️ {t("dashboards.attention")}</Text>
+          <Text style={DashboardStyles.alertText}>
             {expiringSoon} {expiringSoon > 1 ? t("memberships.title".toLowerCase()) : t("memberships.title_single").toLowerCase()} {expiringSoon > 1 ? t("memberships.expiring").toLowerCase() : t("memberships.expiring_single").toLowerCase()} {t("dashboards.inthe")} {t("memberships.next30days").toLowerCase()}.
           </Text>
         </View>
@@ -442,141 +510,3 @@ export default function Dashboard({ onAuthExpired }) {
     </ScrollView>
   );
 }
-
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  grid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  cell: {
-    flex: 1,
-  },
-  chartContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  packageCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  packageInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  packageName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  packageCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#64748b',
-  },
-  packageBar: {
-    height: 8,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  packageBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  classCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  classHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  classTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    flex: 1,
-  },
-  classDate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3b82f6',
-  },
-  classDetails: {
-    gap: 4,
-  },
-  classDetail: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  alertCard: {
-    backgroundColor: '#fef3c7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
-  },
-  alertTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: 4,
-  },
-  alertText: {
-    fontSize: 14,
-    color: '#78350f',
-  },
-});

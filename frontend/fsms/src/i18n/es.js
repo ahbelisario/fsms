@@ -31,7 +31,8 @@ export const es = {
       update: "Actualizar",
       total: "Total",
       title: "Titulo",
-      additionalnotes: "Notas Adicionales..."
+      additionalnotes: "Notas Adicionales...",
+      days: "Días",
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -175,13 +176,20 @@ export const es = {
       fee: "Tarifa", 
       discounted_fee: "Tarifa descontada",
       notes: "Notas",
+      active: "Activo",
       actives: "Activas",
       current: "Vigentes",
       expiringsoon: "Por Vencer",
       next30days: "Próximos 30 días",
       perpackage: "por Paquete",
       expiring: "que vencen",
-      expiring_single: "que vence"
+      expiring_single: "que vence",
+      remainingdays: "Días Restantes",
+      renewsoon: "Renueva Pronto",
+      start: "Inicio",
+      expiration: "Vencimiento",
+      expiresin: "Tu membresía vence en",
+      contact: "Contacta a tu instructor para más información"
     },
     payments: {
       title: "Pagos",
@@ -230,7 +238,9 @@ export const es = {
       surcharge: "Recargo",
       applied: "Aplicado",
       pending: "Pendiente",
-      incomeslast6months: "Ingresos en los últimos 6 meses"
+      incomeslast6months: "Ingresos en los últimos 6 meses",
+      currentmonth: "Mes Actual",
+      previousmonth: "Mes Anterior",
     },
     incometypes: {
       title: "Tipos de Ingreso",
@@ -274,7 +284,8 @@ export const es = {
       sep: "Septiembre",
       oct: "Octubre",
       nov: "Noviembre",
-      dec: "Diciembre"
+      dec: "Diciembre",
+      current_month: "Mes Actual",
     },
     months_short: {
       jan: "Ene",
@@ -308,19 +319,25 @@ export const es = {
       full: "Clase llena",
       select_user_and_class: "Seleccionar un usuario y una clase",
       scheduled: "Programadas",
-      nextclasses: "Próximas clases"
+      nextclasses: "Próximas clases",
+      no_classes_schedules: "No hay clases programadas en"
     },
     attendance: {
       error_save: "No se puede guardar la asistencia",
       title: "Asistencias",
       attended: "Asistió",
+      assisted: "Asistidas",
       absent:"Ausente",
+      absences: "Ausencias",
       pending: "Pendiente",
       all_attended: "Todos atendieron",
       all_absent: "Todos se ausentaron",
       enrolled: "Inscrito",
       cancelled: "Cancelado",
-      no_show: "No se presentó"
+      cancelled_plu: "Canceladas",
+      no_show: "No se presentó",
+      rate: "Tasa de Asistencias",
+      percentage: "Porcentaje"
     },
     enrollments: {
       title: "Registros de Clase",
@@ -331,6 +348,7 @@ export const es = {
       error_enrolling: "Error registrándose",
       enrollment_canceled: "Registro cancelado",
       enrolled: "Registrado",
+      enrolled_plu: "Registrados",
       enroll: "Registrarse",
       full: "Lleno",
       cancel_enrollment: "Cancelar registro",
@@ -342,12 +360,25 @@ export const es = {
       enroll_student: "Registrar estudiante",
       change_status: "Cambiar estado",
       new_status: "Nuevo estado",
-      students_enrolled: "Estudiantes registrados"
+      students_enrolled: "Estudiantes registrados",
+      attended: "Asistieron"
     },
     dashboards: {
       title: "Panel",
       statistics: "Estadísticas",
       attention: "Atención",
       inthe: "en el",
+      hi: "Hola",
+      unknown: "Desconocido",
+      welcome_back: "Bienvenido de vuelta",
+      my_membership: "Mi Membresía",
+      no_membership: "No tienes una membresía activa",
+      my_attendance: "Mi Asistencia",
+      classes_attended: "Clases Tomadas",
+      payment_history: "Historial de Pagos",
+      last_payment: "Último Pago",
+      no_payments: "Sin pagos",
+      my_enrolled_classes: "Mis Registros a Clases",
+      next_classes: "Próximas Clases"
     }
-}
+};

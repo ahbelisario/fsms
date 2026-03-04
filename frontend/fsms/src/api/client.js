@@ -1,4 +1,4 @@
-import { getAuthToken, clearAuthSession } from "@/src/storage/authStorage";
+import { getAuthToken, clearAuthSession, extendSession } from "@/src/storage/authStorage";
 import { API_BASE_URL } from '@/src/config/api.config';
 
 // Callback global para manejar sesión expirada
@@ -39,6 +39,12 @@ async function request(path, { method = "GET", body } = {}) {
 
   if (!res.ok) {
     throw new Error((data && (data.message || data.error)) || `Error HTTP ${res.status}`);
+  }
+
+  // ✅ Si la petición fue exitosa, extender la sesión
+  // Esto mantiene la sesión activa mientras el usuario usa la app
+  if (res.ok && token) {
+    await extendSession();
   }
 
   return data;
@@ -102,6 +108,9 @@ export const api = {
   updateScheduledClass: (id, payload) => request(`/api/scheduled-classes/${id}`, { method: "PUT", body: payload }),
   deleteScheduledClass: (id) => request(`/api/scheduled-classes/${id}`, { method: "DELETE" }),
   getClassesByMonth: (year, month) => request(`/api/scheduled-classes/month/${year}/${month}`),
+
+  createRecurringClasses: (payload) => request("/api/scheduled-classes/recurring", { method: "POST", body: payload }),
+  deleteRecurringSeries: (parentId) => request(`/api/scheduled-classes/recurring/${parentId}`, { method: "DELETE" }),
 
   reportsPaymentsMonthlySummary: () => request("/api/reports/payments/monthly-summary"),
   reportsLastPaymentbyUser: (id) => request(`/api/reports/payments/lastpayment/${id}`),

@@ -3,7 +3,7 @@ import { View, Text, Pressable, ActivityIndicator, ScrollView, Modal, TextInput 
 import { Picker } from "@react-native-picker/picker";
 import { useFocusEffect } from "@react-navigation/native";
 import { api } from "@/src/api/client";
-import { ScreenStyles } from '@/src/styles/appStyles';
+import { ScreenStyles, ScheduleStyles, ManageEnrollmentsStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import DatePickerField from "@/src/ui/DatePickerField";
 import { t } from "@/src/i18n";
@@ -23,6 +23,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Campos del formulario
   const [title, setTitle] = useState("");
   const [disciplineId, setDisciplineId] = useState(null);
   const [instructorId, setInstructorId] = useState(null);
@@ -32,8 +33,14 @@ export default function ScheduleScreen({ onAuthExpired }) {
   const [maxCapacity, setMaxCapacity] = useState("20");
   const [notes, setNotes] = useState("");
 
+  // Campos de recurrencia
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDays, setRecurringDays] = useState([]);
+  const [recurringEndDate, setRecurringEndDate] = useState("");
+
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
+  const [isRecurringSeries, setIsRecurringSeries] = useState(false);
 
   const isEditing = editingId !== null;
 
@@ -41,6 +48,17 @@ export default function ScheduleScreen({ onAuthExpired }) {
   const MONTHS = [
     t("months.jan"), t("months.feb"), t("months.mar"), t("months.apr"), t("months.may"), t("months.jun"),
     t("months.jul"), t("months.aug"), t("months.sep"), t("months.oct"), t("months.nov"), t("months.dec")
+  ];
+
+  // Días de la semana para recurrencia
+  const DAYS_OF_WEEK = [
+    { value: 0, label: 'Dom', name: 'Domingo' },
+    { value: 1, label: 'Lun', name: 'Lunes' },
+    { value: 2, label: 'Mar', name: 'Martes' },
+    { value: 3, label: 'Mié', name: 'Miércoles' },
+    { value: 4, label: 'Jue', name: 'Jueves' },
+    { value: 5, label: 'Vie', name: 'Viernes' },
+    { value: 6, label: 'Sáb', name: 'Sábado' },
   ];
 
   function clearMsgs() {
@@ -58,6 +76,9 @@ export default function ScheduleScreen({ onAuthExpired }) {
     setEndTime("10:00");
     setMaxCapacity("20");
     setNotes("");
+    setIsRecurring(false);
+    setRecurringDays([]);
+    setRecurringEndDate("");
   }
 
   function openCreate(date = null) {
@@ -80,39 +101,38 @@ export default function ScheduleScreen({ onAuthExpired }) {
     setEndTime(classItem.end_time || "10:00");
     setMaxCapacity(String(classItem.max_capacity || 20));
     setNotes(classItem.notes || "");
+    setIsRecurring(false); // No editar recurrencia en clases existentes
     setModalVisible(true);
   }
 
-  function askDelete(id) {
-    setToDeleteId(id);
+  function askDelete(classItem) {
+    setToDeleteId(classItem.id);
+    setIsRecurringSeries(classItem.is_recurring || false);
     setConfirmVisible(true);
   }
 
   function cancelDelete() {
     setConfirmVisible(false);
     setToDeleteId(null);
+    setIsRecurringSeries(false);
   }
 
   async function confirmDelete() {
     setConfirmVisible(false);
-    await remove(toDeleteId);
+    if (isRecurringSeries) {
+      await removeSeries(toDeleteId);
+    } else {
+      await remove(toDeleteId);
+    }
     setToDeleteId(null);
+    setIsRecurringSeries(false);
   }
 
   function toYMD(value) {
     if (!value) return "";
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    if (typeof value === "string" && value.includes('T')) return value.slice(0, 10);
     
-    // Si ya es YYYY-MM-DD, devuélvelo tal cual
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      return value;
-    }
-    
-    // Si viene con timestamp ISO (2025-01-15T00:00:00.000Z)
-    if (typeof value === "string" && value.includes('T')) {
-      return value.slice(0, 10);
-    }
-
-    // Si es Date object, usa las partes locales para evitar offset de timezone
     const d = new Date(value);
     if (isNaN(d.getTime())) return "";
     
@@ -121,6 +141,35 @@ export default function ScheduleScreen({ onAuthExpired }) {
     const day = String(d.getDate()).padStart(2, "0");
     
     return `${y}-${m}-${day}`;
+  }
+
+  function toggleRecurringDay(dayValue) {
+    if (recurringDays.includes(dayValue)) {
+      setRecurringDays(recurringDays.filter(d => d !== dayValue));
+    } else {
+      setRecurringDays([...recurringDays, dayValue].sort((a, b) => a - b));
+    }
+  }
+
+  function calculateEstimatedClasses(startDate, endDate, daysOfWeek) {
+    if (!startDate || !endDate || daysOfWeek.length === 0) return 0;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
+    
+    let count = 0;
+    let currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      if (daysOfWeek.includes(currentDate.getDay())) {
+        count++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return count;
   }
 
   async function loadData() {
@@ -175,6 +224,14 @@ export default function ScheduleScreen({ onAuthExpired }) {
     if (!startTime) return "Hora de inicio requerida.";
     if (!endTime) return "Hora de fin requerida.";
     if (startTime >= endTime) return "La hora de inicio debe ser antes que la hora de fin.";
+    
+    if (isRecurring && recurringDays.length === 0) {
+      return "Selecciona al menos un día para la recurrencia.";
+    }
+    if (isRecurring && !recurringEndDate) {
+      return "Selecciona la fecha límite para las clases recurrentes.";
+    }
+    
     return "";
   }
 
@@ -185,21 +242,53 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
     setSaving(true);
     try {
-      const payload = {
-        title: title.trim(),
-        discipline_id: disciplineId,
-        instructor_id: instructorId,
-        scheduled_date: scheduledDate,
-        start_time: startTime,
-        end_time: endTime,
-        max_capacity: Number(maxCapacity),
-        notes: notes.trim()
-      };
-
       if (isEditing) {
+        // Editar clase existente
+        const payload = {
+          title: title.trim(),
+          discipline_id: disciplineId,
+          instructor_id: instructorId,
+          scheduled_date: scheduledDate,
+          start_time: startTime,
+          end_time: endTime,
+          max_capacity: Number(maxCapacity),
+          notes: notes.trim()
+        };
+
         await api.updateScheduledClass(editingId, payload);
         setSuccess("Clase actualizada.");
+
+      } else if (isRecurring) {
+        // Crear clases recurrentes
+        const payload = {
+          title: title.trim(),
+          discipline_id: disciplineId,
+          instructor_id: instructorId,
+          start_time: startTime,
+          end_time: endTime,
+          max_capacity: Number(maxCapacity),
+          notes: notes.trim() || null,
+          start_date: scheduledDate,
+          recurrence_days: recurringDays,
+          recurrence_end_date: recurringEndDate,
+        };
+
+        const result = await api.createRecurringClasses(payload);
+        setSuccess(`${result.total_classes} clases creadas exitosamente`);
+
       } else {
+        // Crear clase única
+        const payload = {
+          title: title.trim(),
+          discipline_id: disciplineId,
+          instructor_id: instructorId,
+          scheduled_date: scheduledDate,
+          start_time: startTime,
+          end_time: endTime,
+          max_capacity: Number(maxCapacity),
+          notes: notes.trim()
+        };
+
         await api.createScheduledClass(payload);
         setSuccess("Clase creada.");
       }
@@ -233,6 +322,25 @@ export default function ScheduleScreen({ onAuthExpired }) {
         return;
       }
       setError(e.message || "No se pudo eliminar.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeSeries(parentId) {
+    clearMsgs();
+    setLoading(true);
+    try {
+      await api.deleteRecurringSeries(parentId);
+      setSuccess("Serie de clases eliminada.");
+      await loadData();
+    } catch (e) {
+      if (e.code === "AUTH_EXPIRED") {
+        onAuthExpired?.();
+        setError(e.message);
+        return;
+      }
+      setError(e.message || "No se pudo eliminar la serie.");
     } finally {
       setLoading(false);
     }
@@ -286,7 +394,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
   return (
     <View style={ScreenStyles.page}>
       <View style={ScreenStyles.header}>
-        <Text style={ScreenStyles.title}>{t("schedule.title")}</Text>
+        <Text style={ScheduleStyles.headerTitle}>{t("schedule.title")}</Text>
         <Pressable style={ScreenStyles.btnPrimary} onPress={() => openCreate()}>
           <Text style={ScreenStyles.btnPrimaryText}>{t("schedule.new_class")}</Text>
         </Pressable>
@@ -295,46 +403,33 @@ export default function ScheduleScreen({ onAuthExpired }) {
       {error ? <View style={ScreenStyles.alertError}><Text style={ScreenStyles.alertErrorText}>{error}</Text></View> : null}
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
-      <Pressable style={ScreenStyles.btnSecondary} onPress={goToToday}>
+      <Pressable 
+        style={[ScreenStyles.btnSecondary, { marginTop: 8 }]} 
+        onPress={goToToday}>
         <Text style={ScreenStyles.btnSecondaryText}>{t("schedule.today")}</Text>
       </Pressable>
 
       {/* Navegación del mes */}
-      <View style={{ 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#f8fafc',
-        borderRadius: 8,
-        marginBottom: 16,
-        marginTop: 8
-      }}>
-        <Pressable onPress={previousMonth} style={{ padding: 8 }}>
-          <Text style={{ fontSize: 24, color: '#3b82f6' }}>◀</Text>
+      <View style={ScheduleStyles.monthNav}>
+        <Pressable onPress={previousMonth} style={ManageEnrollmentsStyles.navButton}>
+          <Text style={{ fontSize: 20, color: '#3b82f6' }}>◀</Text>
         </Pressable>
         
-        <Text style={{ fontSize: 18, fontWeight: '600', color: '#1e293b' }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: '#1e293b' }}>
           {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Text>
         
-        <Pressable onPress={nextMonth} style={{ padding: 8 }}>
-          <Text style={{ fontSize: 24, color: '#3b82f6' }}>▶</Text>
+        <Pressable onPress={nextMonth} style={ManageEnrollmentsStyles.navButton}>
+          <Text style={{ fontSize: 20, color: '#3b82f6' }}>▶</Text>
         </Pressable>
       </View>
 
       {loading ? (
         <View style={ScreenStyles.center}><ActivityIndicator /></View>
       ) : (
-        <ScrollView>
+        <ScrollView style={{ marginTop: 12}}>
           {/* Encabezado días de la semana */}
-          <View style={{ 
-            flexDirection: 'row', 
-            backgroundColor: '#e2e8f0',
-            borderRadius: 8,
-            padding: 8,
-            marginBottom: 8
-          }}>
+          <View style={ScheduleStyles.weekHeader}>
             {DAYS.map((day, i) => (
               <View key={i} style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={{ fontWeight: '600', color: '#475569', fontSize: 12 }}>{day}</Text>
@@ -346,58 +441,42 @@ export default function ScheduleScreen({ onAuthExpired }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             {days.map((date, index) => {
               const classesForDay = date ? getClassesForDate(date) : [];
-              const isToday = date && 
-                date.toDateString() === new Date().toDateString();
+              const isToday = date && date.toDateString() === new Date().toDateString();
               const hasClasses = classesForDay.length > 0;
-              const isSelected = selectedDate && date && 
-                date.toDateString() === selectedDate.toDateString();
+              const isSelected = selectedDate && date && date.toDateString() === selectedDate.toDateString();
 
               return (
                 <Pressable
                   key={index}
                   onPress={() => date && setSelectedDate(date)}
-                  style={{
-                    width: `${100/7}%`,
-                    aspectRatio: 1,
-                    padding: 2,
-                  }}
+                  style={ScheduleStyles.dayCell}
                 >
-                  <View style={{
-                    flex: 1,
-                    backgroundColor: date ? (isSelected ? '#dbeafe' : '#ffffff') : 'transparent',
-                    borderRadius: 8,
-                    borderWidth: isToday ? 2 : 1,
-                    borderColor: isToday ? '#3b82f6' : '#e2e8f0',
-                    padding: 4,
-                    justifyContent: 'space-between'
-                  }}>
+                  <View style={[
+                    ScheduleStyles.dayInner,
+                    !date && { backgroundColor: 'transparent' },
+                    isSelected && { backgroundColor: '#dbeafe' },
+                    isToday && { borderWidth: 2, borderColor: '#3b82f6' }
+                  ]}>
                     {date && (
                       <>
-                        <Text style={{ 
-                          fontSize: 12, 
-                          fontWeight: isToday ? '700' : '500',
-                          color: isToday ? '#3b82f6' : '#1e293b',
-                          textAlign: 'center'
-                        }}>
+                        <Text style={[
+                          ScheduleStyles.dayNumber,
+                          isToday && { fontWeight: '700', color: '#3b82f6' }
+                        ]}>
                           {date.getDate()}
                         </Text>
                         
                         {hasClasses && (
-                          <View style={{
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 10,
-                            paddingHorizontal: 4,
-                            paddingVertical: 2,
-                            alignSelf: 'center'
-                          }}>
-                            <Text style={{ 
-                              color: '#ffffff', 
-                              fontSize: 9,
-                              fontWeight: '600'
-                            }}>
+                          <>
+                          <View></View>
+                          <View style={ScheduleStyles.classBadge}>
+                            <Text style={ScheduleStyles.classBadgeText}>
                               {classesForDay.length}
                             </Text>
                           </View>
+                          <View></View>
+                          <View></View>
+                          </>
                         )}
                       </>
                     )}
@@ -409,24 +488,10 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
           {/* Detalle del día seleccionado */}
           {selectedDate && (
-            <View style={{
-              marginTop: 16,
-              backgroundColor: '#f8fafc',
-              borderRadius: 8,
-              padding: 16
-            }}>
-              <View style={{ 
-                flexDirection: 'row', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: 12 
-              }}>
-                <Text style={{ 
-                  fontSize: 18, 
-                  fontWeight: '700', 
-                  color: '#1e293b'
-                }}>
-                {MONTHS[selectedDate.getMonth()]} {selectedDate.getDate()}
+            <View style={ScheduleStyles.selectedDateDetails}>
+              <View style={ScheduleStyles.selectedDateHeader}>
+                <Text style={ScheduleStyles.selectedDateTitle}>
+                  {MONTHS[selectedDate.getMonth()]} {selectedDate.getDate()}
                 </Text>
                 <Pressable 
                   style={[ScreenStyles.btnPrimary, { paddingHorizontal: 12, paddingVertical: 8 }]}
@@ -440,18 +505,18 @@ export default function ScheduleScreen({ onAuthExpired }) {
                 <Text style={{ color: '#64748b' }}>{t("schedule.no_classes")}</Text>
               ) : (
                 getClassesForDate(selectedDate).map((classItem) => (
-                  <View key={classItem.id} style={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: 8,
-                    padding: 12,
-                    marginBottom: 8,
-                    borderLeftWidth: 4,
-                    borderLeftColor: '#3b82f6'
-                  }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <Text style={{ fontWeight: '700', fontSize: 16, flex: 1 }}>
-                        {classItem.title}
-                      </Text>
+                  <View key={classItem.id} style={ScheduleStyles.classCard}>
+                    <View style={ScheduleStyles.classCardHeader}>
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={ScheduleStyles.classCardTitle}>
+                          {classItem.title}
+                        </Text>
+                        {classItem.is_recurring && (
+                          <View style={ScheduleStyles.recurringBadge}>
+                            <Text style={ScheduleStyles.recurringBadgeText}>🔁</Text>
+                          </View>
+                        )}
+                      </View>
                       <View style={{ flexDirection: 'row', gap: 8 }}>
                         <Pressable 
                           style={ScreenStyles.smallBtn} 
@@ -461,7 +526,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
                         </Pressable>
                         <Pressable 
                           style={[ScreenStyles.smallBtn, ScreenStyles.dangerBtn]} 
-                          onPress={() => askDelete(classItem.id)}
+                          onPress={() => askDelete(classItem)}
                         >
                           <Text style={ScreenStyles.smallBtnText}>{t("common.delete")}</Text>
                         </Pressable>
@@ -469,21 +534,19 @@ export default function ScheduleScreen({ onAuthExpired }) {
                     </View>
                     
                     {classItem.discipline_name && (
-                      <Text style={{ color: '#64748b', marginBottom: 4 }}>
-                        📚 {classItem.discipline_name}
-                      </Text>
+                      <Text style={ScheduleStyles.classDetail}>📚 {classItem.discipline_name}</Text>
                     )}
-                    <Text style={{ color: '#64748b', marginBottom: 4 }}>
+                    <Text style={ScheduleStyles.classDetail}>
                       🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
                     </Text>
-                    <Text style={{ color: '#64748b', marginBottom: 4 }}>
+                    <Text style={ScheduleStyles.classDetail}>
                       👤 {classItem.instructor_name} {classItem.instructor_lastname}
                     </Text>
-                    <Text style={{ color: '#64748b' }}>
+                    <Text style={ScheduleStyles.classDetail}>
                       👥 {t("schedule.capacity")}: {classItem.current_enrollment || 0}/{classItem.max_capacity}
                     </Text>
                     {classItem.notes && (
-                      <Text style={{ color: '#64748b', marginTop: 4, fontStyle: 'italic' }}>
+                      <Text style={[ScheduleStyles.classDetail, { fontStyle: 'italic', marginTop: 4 }]}>
                         📝 {classItem.notes}
                       </Text>
                     )}
@@ -514,7 +577,11 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
               <Text style={ScreenStyles.label}>{t("disciplines.title")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
-                <Picker selectedValue={disciplineId} onValueChange={setDisciplineId}>
+                <Picker 
+                  selectedValue={disciplineId} 
+                  onValueChange={setDisciplineId}
+                  style={{ fontSize: 13 }}
+                >
                   <Picker.Item label="Sin disciplina" value={null} />
                   {disciplines.map((d) => (
                     <Picker.Item key={d.id} label={d.name} value={d.id} />
@@ -524,7 +591,11 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
               <Text style={ScreenStyles.label}>{t("schedule.instructor")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
-                <Picker selectedValue={instructorId} onValueChange={setInstructorId}>
+                <Picker 
+                  selectedValue={instructorId} 
+                  onValueChange={setInstructorId}
+                  style={{ fontSize: 13 }}
+                >
                   {instructors.map((instructor) => (
                     <Picker.Item 
                       key={instructor.id} 
@@ -541,6 +612,87 @@ export default function ScheduleScreen({ onAuthExpired }) {
                 onChange={setScheduledDate}
                 placeholder="YYYY-MM-DD"
               />
+
+              {/* Toggle de Recurrencia (solo al crear) */}
+              {!isEditing && (
+                <View style={{ marginTop: 16, marginBottom: 8 }}>
+                  <Pressable 
+                    style={[
+                      ScheduleStyles.recurringToggle,
+                      isRecurring && ScheduleStyles.recurringToggleActive
+                    ]}
+                    onPress={() => setIsRecurring(!isRecurring)}
+                  >
+                    <View style={[
+                      ScheduleStyles.checkbox,
+                      isRecurring && ScheduleStyles.checkboxActive
+                    ]}>
+                      {isRecurring && <Text style={{ color: '#fff', fontSize: 16 }}>✓</Text>}
+                    </View>
+                    <Text style={[
+                      ScheduleStyles.recurringToggleText,
+                      isRecurring && ScheduleStyles.recurringToggleTextActive
+                    ]}>
+                      Clase Recurrente
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Opciones de Recurrencia */}
+              {isRecurring && !isEditing && (
+                <View style={ScheduleStyles.recurringSection}>
+                  <Text style={[ScreenStyles.label, { marginBottom: 8 }]}>
+                    Repetir cada:
+                  </Text>
+                  <View style={ScheduleStyles.daysContainer}>
+                    {DAYS_OF_WEEK.map(day => (
+                      <Pressable
+                        key={day.value}
+                        onPress={() => toggleRecurringDay(day.value)}
+                        style={[
+                          ScheduleStyles.dayButton,
+                          recurringDays.includes(day.value) && ScheduleStyles.dayButtonActive
+                        ]}
+                      >
+                        <Text style={[
+                          ScheduleStyles.dayButtonText,
+                          recurringDays.includes(day.value) && ScheduleStyles.dayButtonTextActive
+                        ]}>
+                          {day.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {recurringDays.length > 0 && (
+                    <View style={ScheduleStyles.daysSummary}>
+                      <Text style={{ fontSize: 13, color: '#1e40af' }}>
+                        Se repetirá los: {recurringDays.map(d => 
+                          DAYS_OF_WEEK.find(day => day.value === d)?.name
+                        ).join(', ')}
+                      </Text>
+                    </View>
+                  )}
+
+                  <Text style={ScreenStyles.label}>Fecha Límite *</Text>
+                  <DatePickerField 
+                    value={recurringEndDate} 
+                    onChange={setRecurringEndDate}
+                    placeholder="YYYY-MM-DD"
+                  />
+
+                  {recurringDays.length > 0 && recurringEndDate && scheduledDate && (
+                    <View style={ScheduleStyles.estimationBox}>
+                      <Text style={{ fontSize: 12, color: '#065f46', fontWeight: '500' }}>
+                        ℹ️ Se crearán aproximadamente {
+                          calculateEstimatedClasses(scheduledDate, recurringEndDate, recurringDays)
+                        } clases
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}>
@@ -573,7 +725,7 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
               <Text style={ScreenStyles.label}>{t("schedule.notes")}</Text>
               <TextInput 
-                style={[ScreenStyles.input, { height: 80, textAlignVertical: "top" }]} 
+                style={ScreenStyles.textArea} 
                 value={notes} 
                 onChangeText={setNotes}
                 multiline
@@ -607,8 +759,11 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title="Eliminar Clase"
-        message="¿Estás seguro de eliminar esta clase programada?"
+        title={isRecurringSeries ? "Eliminar Serie de Clases" : "Eliminar Clase"}
+        message={isRecurringSeries 
+          ? "¿Estás seguro de eliminar esta serie completa de clases recurrentes?"
+          : "¿Estás seguro de eliminar esta clase programada?"
+        }
         confirmText="Eliminar"
         cancelText="Cancelar"
         danger

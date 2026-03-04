@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, ScrollView, Pressable, StyleSheet, View, Text } from "react-native";
+import { ActivityIndicator, ScrollView, Pressable, View, Text } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { AttendanceStyles } from "@/src/styles/appStyles";
 import { api } from "@/src/api/client";
 import { ScreenStyles } from '@/src/styles/appStyles';
 import { t } from "@/src/i18n";
@@ -185,9 +186,9 @@ export default function AttendanceScreen({ onAuthExpired }) {
   }, { attended: 0, absent: 0, pending: 0 });
 
   return (
-    <ScrollView style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>{t("attendance.title")}</Text>
+    <ScrollView style={AttendanceStyles.container}>
+      <View style={AttendanceStyles.header}>
+        <Text style={AttendanceStyles.headerTitle}>{t("attendance.title")}</Text>
         <Pressable style={ScreenStyles.btnSecondary} onPress={loadClasses}>
           <Text style={ScreenStyles.btnSecondaryText}>{t("common.refresh")}</Text>
         </Pressable>
@@ -206,7 +207,7 @@ export default function AttendanceScreen({ onAuthExpired }) {
       ) : null}
 
       {/* Selector de clase */}
-      <View style={s.section}>
+      <View style={AttendanceStyles.section}>
         <Text style={ScreenStyles.label}>{t("classes.select_class")}</Text>
         <View style={ScreenStyles.pickerWrapper}>
           <Picker selectedValue={selectedClass} onValueChange={selectClass}>
@@ -235,29 +236,29 @@ export default function AttendanceScreen({ onAuthExpired }) {
 
       {/* Información de la clase */}
       {selectedClassData && (
-        <View style={s.classInfoCard}>
-          <Text style={s.classInfoTitle}>{selectedClassData.title}</Text>
-          <Text style={s.classInfoDetail}>
+        <View style={AttendanceStyles.classInfoCard}>
+          <Text style={AttendanceStyles.classInfoTitle}>{selectedClassData.title}</Text>
+          <Text style={AttendanceStyles.classInfoDetail}>
             👤 {t("users.role_instructor")} {selectedClassData.instructor_name} {selectedClassData.instructor_lastname}
           </Text>
           
-          <View style={s.statsRow}>
-            <View style={s.statBox}>
-              <Text style={s.statNumber}>{stats.attended}</Text>
-              <Text style={s.statLabel}>{t("attendance.attended")}</Text>
+          <View style={AttendanceStyles.statsRow}>
+            <View style={AttendanceStyles.statBox}>
+              <Text style={AttendanceStyles.statNumber}>{stats.attended}</Text>
+              <Text style={AttendanceStyles.statLabel}>{t("attendance.attended")}</Text>
             </View>
-            <View style={s.statBox}>
-              <Text style={[s.statNumber, { color: '#ef4444' }]}>{stats.absent}</Text>
-              <Text style={s.statLabel}>{t("attendance.absent")}</Text>
+            <View style={AttendanceStyles.statBox}>
+              <Text style={[AttendanceStyles.statNumber, { color: '#ef4444' }]}>{stats.absent}</Text>
+              <Text style={AttendanceStyles.statLabel}>{t("attendance.absent")}</Text>
             </View>
-            <View style={s.statBox}>
-              <Text style={[s.statNumber, { color: '#94a3b8' }]}>{stats.pending}</Text>
-              <Text style={s.statLabel}>{t("attendance.pending")}</Text>
+            <View style={AttendanceStyles.statBox}>
+              <Text style={[AttendanceStyles.statNumber, { color: '#94a3b8' }]}>{stats.pending}</Text>
+              <Text style={AttendanceStyles.statLabel}>{t("attendance.pending")}</Text>
             </View>
           </View>
 
           {enrollments.length > 0 && (
-            <View style={s.quickActions}>
+            <View style={AttendanceStyles.quickActions}>
               <Pressable 
                 style={[ScreenStyles.btnSecondary, { flex: 1 }]}
                 onPress={markAllPresent}
@@ -277,14 +278,14 @@ export default function AttendanceScreen({ onAuthExpired }) {
 
       {/* Lista de alumnos */}
       {selectedClass && (
-        <View style={s.section}>
+        <View style={AttendanceStyles.section}>
           {loading ? (
             <View style={ScreenStyles.center}>
               <ActivityIndicator />
             </View>
           ) : enrollments.length === 0 ? (
-            <View style={s.emptyState}>
-              <Text style={s.emptyText}>{t("enrollments.empty")}</Text>
+            <View style={AttendanceStyles.emptyState}>
+              <Text style={AttendanceStyles.emptyText}>{t("enrollments.empty")}</Text>
             </View>
           ) : (
             <>
@@ -296,36 +297,36 @@ export default function AttendanceScreen({ onAuthExpired }) {
                   <Pressable 
                     key={enrollment.id} 
                     style={[
-                      s.studentCard,
-                      displayStatus === 'attended' && s.attendedCard,
-                      displayStatus === 'no_show' && s.absentCard,
-                      hasChanged && s.changedCard
+                      AttendanceStyles.studentCard,
+                      displayStatus === 'attended' && AttendanceStyles.attendedCard,
+                      displayStatus === 'no_show' && AttendanceStyles.absentCard,
+                      hasChanged && AttendanceStyles.changedCard
                     ]}
                     onPress={() => toggleAttendance(enrollment.id, displayStatus)}
                   >
-                    <View style={s.studentInfo}>
-                      <Text style={s.studentName}>
+                    <View style={AttendanceStyles.studentInfo}>
+                      <Text style={AttendanceStyles.studentName}>
                         {enrollment.student_name} {enrollment.student_lastname}
                       </Text>
                       {hasChanged && (
-                        <Text style={s.changedBadge}>{t("enrollments.modified")}</Text>
+                        <Text style={AttendanceStyles.changedBadge}>{t("enrollments.modified")}</Text>
                       )}
                     </View>
 
-                    <View style={s.statusIndicator}>
+                    <View style={AttendanceStyles.statusIndicator}>
                       {displayStatus === 'attended' && (
-                        <View style={s.presentBadge}>
-                          <Text style={s.badgeText}>{t("attendance.attended")}</Text>
+                        <View style={AttendanceStyles.presentBadge}>
+                          <Text style={AttendanceStyles.badgeText}>{t("attendance.attended")}</Text>
                         </View>
                       )}
                       {displayStatus === 'no_show' && (
-                        <View style={s.absentBadge}>
-                          <Text style={s.badgeText}>{t("attendance.absent")}</Text>
+                        <View style={AttendanceStyles.absentBadge}>
+                          <Text style={AttendanceStyles.badgeText}>{t("attendance.absent")}</Text>
                         </View>
                       )}
                       {displayStatus === 'enrolled' && (
-                        <View style={s.pendingBadge}>
-                          <Text style={s.badgeText}>{t("attendance.pending")}</Text>
+                        <View style={AttendanceStyles.pendingBadge}>
+                          <Text style={AttendanceStyles.badgeText}>{t("attendance.pending")}</Text>
                         </View>
                       )}
                     </View>
@@ -339,7 +340,7 @@ export default function AttendanceScreen({ onAuthExpired }) {
 
       {/* Botón guardar */}
       {hasChanges && (
-        <View style={s.saveSection}>
+        <View style={AttendanceStyles.saveSection}>
           <Pressable 
             style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]}
             onPress={saveAttendance}
@@ -357,149 +358,3 @@ export default function AttendanceScreen({ onAuthExpired }) {
   );
 }
 
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  classInfoCard: {
-    backgroundColor: '#dbeafe',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-  },
-  classInfoTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  classInfoDetail: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#10b981',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  studentCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#cbd5e1',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  attendedCard: {
-    borderLeftColor: '#10b981',
-    backgroundColor: '#f0fdf4',
-  },
-  absentCard: {
-    borderLeftColor: '#ef4444',
-    backgroundColor: '#fef2f2',
-  },
-  changedCard: {
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-  },
-  studentInfo: {
-    flex: 1,
-  },
-  studentName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  changedBadge: {
-    fontSize: 12,
-    color: '#f59e0b',
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  statusIndicator: {
-    marginLeft: 12,
-  },
-  presentBadge: {
-    backgroundColor: '#10b981',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  absentBadge: {
-    backgroundColor: '#ef4444',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pendingBadge: {
-    backgroundColor: '#94a3b8',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  saveSection: {
-    marginBottom: 20,
-  },
-});

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View} from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, View} from "react-native";
+import { SettingsDashboardStyles } from "@/src/styles/appStyles";
 import { ScoreCard } from "@/src/screens/helpers/ScoreCard";
 import { ChartCard } from "@/src/screens/helpers/ChartCard";
 import { api } from "@/src/api/client";
@@ -98,36 +99,31 @@ export default function Dashboard({ onAuthExpired }) {
     );
 
   return (
-    <View style={s.container}>
-      <View style={s.grid}>
-        <View style={s.cell}>
+    <View style={SettingsDashboardStyles.container}>
+      <View style={SettingsDashboardStyles.grid}>
+        <View style={SettingsDashboardStyles.cell}>
           <ScoreCard title={t("memberships.title")} value={totalmemberships ? totalmemberships : "0"} subtitle="Total" />
         </View>
       </View>
-      <View style={s.grid}>
-        <View style={s.cell}>
+      <View style={SettingsDashboardStyles.grid}>
+        <View style={SettingsDashboardStyles.cell}>
           <ScoreCard title={t("users.title")} value={totalusers ? totalusers : "0"} subtitle="Total" />
         </View>
-        <View style={s.cell}>
+        <View style={SettingsDashboardStyles.cell}>
           <ScoreCard title={t("packages.title")} value={totalpackages ? totalpackages : "0"} subtitle="Total" />
         </View>
       </View>
-      <View style={s.grid}>        
-        <View style={s.cell}>
+      <View style={SettingsDashboardStyles.grid}>        
+        <View style={SettingsDashboardStyles.cell}>
           <ScoreCard title={t("disciplines.title")} value={totaldisciplines ? totaldisciplines : "0"} subtitle="Total" />
         </View>
-        <View style={s.cell}>
+        <View style={SettingsDashboardStyles.cell}>
           <ScoreCard title={t("ranks.title")} value={totalranks ? totalranks : "0"} subtitle="Total" />
         </View>
       </View>
-      <View style={s.grid}>
+      <View style={SettingsDashboardStyles.grid}>
       </View>  
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container: { padding: 16, gap: 12 },
-  grid: { flexDirection: "row", gap: 12 },
-  cell: { flex: 1 },
-});

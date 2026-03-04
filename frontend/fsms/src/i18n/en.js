@@ -31,7 +31,9 @@ export const en = {
       update: "Update",
       total: "Total",
       title: "Title",
-      additionalnotes: "Additional notes..."
+      additionalnotes: "Additional notes...",
+      days: "Days",
+      percentage: "Percentage"
     },
     messages: {
       password_dont_match: "Passwords don't match",
@@ -175,13 +177,20 @@ export const en = {
       fee: "Fee", 
       discounted_fee: "Discounted fee",
       notes: "Notes",
+      active: "Active",
       actives: "Actives",
       current: "Current",
       expiringsoon: "Expiring Soon",
       next30days: "Next 30 days",
       perpackage: "per Package",
       expiring: "Expiring",
-      expiring_single: "Expiring"
+      expiring_single: "Expiring",
+      remainingdays: "Remaining Dates",
+      renewsoon: "Renew soon",
+      start: "Start",
+      expiration: "Expiration",
+      expiresin: "Your membership expires in",
+      contact: "Contact your instructor for more information"
     },
     payments:{
       title: "Payments",
@@ -230,7 +239,9 @@ export const en = {
       surcharge: "Surcharge",
       applied: "Applied",
       pending: "Pending",
-      incomeslast6months: "Incomes in the last 6 Months"
+      incomeslast6months: "Incomes in the last 6 Months",
+      currentmonth: "Current Month",
+      previousmonth: "Last Month",
     },
     incometypes:{
       title: "Income Types",
@@ -274,7 +285,8 @@ export const en = {
       sep: "September",
       oct: "Octuber",
       nov: "November",
-      dec: "December"
+      dec: "December",
+      current_month: "Current Month",
     },
     months_short: {
       jan: "Jan",
@@ -308,19 +320,24 @@ export const en = {
       full: "Class full",
       select_user_and_class: "Select a user and a class",
       scheduled: "Scheduled",
-      nextclasses: "Next Classes"
+      nextclasses: "Next Classes",
+      no_classes_schedules: "No classes scheduled in"
     },
     attendance: {
       error_save: "Can't save attendance",
       title: "Attendance",
       attended: "Attended",
-      absent:"Absent",
+      assisted: "Assisted",
+      absent: "Absent",
+      absences: "Absences",
       pending: "Pending",
       all_attended: "All attended",
       all_absent: "All absent",
       enrolled: "Enrolled",
       cancelled: "Canceled",
-      no_show: "No show"
+      cancelled_plu: "Canceled",
+      no_show: "No show",
+      rate: "Attendance Rate"
     },
     enrollments: {
       title: "Enrollments",
@@ -331,6 +348,7 @@ export const en = {
       error_enrolling: "Error enrolling",
       enrollment_canceled: "Enrollment canceled",
       enrolled: "Enrolled",
+      enrolled_plu: "Enrolled",
       enroll: "Enroll",
       full: "Full",
       cancel_enrollment: "Cancel enrollment",
@@ -342,12 +360,25 @@ export const en = {
       enroll_student: "Enroll Student",
       change_status: "Change status",
       new_status: "New status",
-      students_enrolled: "Students enrolled"
+      students_enrolled: "Students enrolled",
+      attended: "Attended"
     },
     dashboards: {
       title: "Dashboard",
       statistics: "Statistics",
       attention: "Attention",
       inthe: "in the",
+      hi: "Hi",
+      unknown: "Unknown",
+      welcome_back: "Welcome back",
+      my_membership: "My Membership",
+      no_membership: "You don't have an active membership",
+      my_attendance: "My Attendance",
+      classes_attended: "Classes Attended",
+      payment_history: "Payment History",
+      last_payment: "Last Payment",
+      no_payments: "No payments",
+      my_enrolled_classes: "My Enrolled Classes",
+      next_classes: "Next Classes"
     }
 };
