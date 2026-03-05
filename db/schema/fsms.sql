@@ -23,7 +23,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '87230b43-012b-11f1-b58d-02792b7880a2:1-588';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '87230b43-012b-11f1-b58d-02792b7880a2:1-593';
 
 --
 -- Table structure for table `class_enrollments`
@@ -84,6 +84,54 @@ LOCK TABLES `disciplines` WRITE;
 /*!40000 ALTER TABLE `disciplines` DISABLE KEYS */;
 INSERT INTO `disciplines` VALUES (1,'Aikido','El Aikido Tendoryu, es un estilo que se identifica por su naturalidad y fluidez de movimientos. No es sólo un deporte o arte marcial, es un modo de vivir, por lo que en la práctica ponemos atención en las técnicas pero también en los valores y etiqueta del Budo (camino del guerrero).'),(2,'Karate Do','El karate o kárate (del japonés 空手, literalmente, Mano Vacía) o, por su nombre completo, karatedo (空手道), es un arte marcial tradicional moderna (budo)[1]​ basada en algunos estilos de las artes marciales chinas (wushu), y en otras disciplinas provenientes de Okinawa (isla perteneciente a Japón) como el Tegumi (手組? lit. mano de agarre) y el Kobudō (古武道? lit. el arte marcial ancestral). El nombre japonés se compone de los Kanjis \"空\" (Kara, \'vacío\'), \"手\" (Te, \'mano\') y \"道\" (Do, \'camino\'). A la persona que lo practica se la llama karateca.');
 /*!40000 ALTER TABLE `disciplines` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dojo_settings`
+--
+
+DROP TABLE IF EXISTS `dojo_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `dojo_settings` (
+  `id` int NOT NULL,
+  `dojo_name` varchar(255) NOT NULL,
+  `short_name` varchar(50) DEFAULT NULL,
+  `logo_url` varchar(500) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `website` varchar(255) DEFAULT NULL,
+  `address_line1` varchar(255) DEFAULT NULL,
+  `address_line2` varchar(255) DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `state` varchar(100) DEFAULT NULL,
+  `postal_code` varchar(20) DEFAULT NULL,
+  `country` varchar(100) DEFAULT 'México',
+  `tax_id` varchar(50) DEFAULT NULL,
+  `legal_name` varchar(255) DEFAULT NULL,
+  `facebook_url` varchar(255) DEFAULT NULL,
+  `instagram_url` varchar(255) DEFAULT NULL,
+  `twitter_url` varchar(255) DEFAULT NULL,
+  `currency` varchar(10) DEFAULT 'MXN',
+  `timezone` varchar(50) DEFAULT 'America/Mexico_City',
+  `language` varchar(10) DEFAULT 'es',
+  `privacy_policy` text,
+  `terms_conditions` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `single_row` CHECK ((`id` = 1))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dojo_settings`
+--
+
+LOCK TABLES `dojo_settings` WRITE;
+/*!40000 ALTER TABLE `dojo_settings` DISABLE KEYS */;
+INSERT INTO `dojo_settings` VALUES (1,'Tendoryu Aikido - Seikoukan','Seikoukan',NULL,NULL,'info@tendoryu-aikido.mx','https://tendoryu-aikido.mx',NULL,NULL,NULL,NULL,NULL,'México',NULL,NULL,NULL,NULL,NULL,'MXN','America/Mexico_City','es',NULL,NULL,'2026-03-05 16:33:36','2026-03-05 17:56:22');
+/*!40000 ALTER TABLE `dojo_settings` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -460,4 +508,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-04 15:17:10
+-- Dump completed on 2026-03-05 12:30:29

@@ -33,7 +33,10 @@ export const en = {
       title: "Title",
       additionalnotes: "Additional notes...",
       days: "Days",
-      percentage: "Percentage"
+      percentage: "Percentage",
+      contact: "Contact",
+      phone: "Phone",
+      email: "Email"
     },
     messages: {
       password_dont_match: "Passwords don't match",
@@ -380,5 +383,36 @@ export const en = {
       no_payments: "No payments",
       my_enrolled_classes: "My Enrolled Classes",
       next_classes: "Next Classes"
-    }
+    },
+    dojo: {
+      settings: "Dojo Settings",
+      general: "General",
+      location: "Location",
+      legal: "Legal",
+      social: "Social Media",
+      policies: "Policies",
+      
+      name: "Dojo Name",
+      shortname: "Short Name",
+      slogan: "Slogan",
+      logourl: "Logo URL",
+      website: "Website",
+      
+      address1: "Address Line 1",
+      address2: "Address Line 2",
+      city: "City",
+      state: "State",
+      postalcode: "Postal Code",
+      country: "Country",
+      
+      taxid: "Tax ID",
+      legalname: "Legal Name",
+      
+      config: "Regional Settings",
+      language: "Language",
+      
+      aboutus: "About Us",
+      privacypolicy: "Privacy Policy",
+      terms: "Terms and Conditions",
+    },
 };

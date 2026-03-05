@@ -33,6 +33,10 @@ export const es = {
       title: "Titulo",
       additionalnotes: "Notas Adicionales...",
       days: "Días",
+      percentage: "Porcentaje",
+      contact: "Contacto",
+      phone: "Télefono",
+      email: "Correo electrónico"
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -380,5 +384,36 @@ export const es = {
       no_payments: "Sin pagos",
       my_enrolled_classes: "Mis Registros a Clases",
       next_classes: "Próximas Clases"
-    }
+    },
+    dojo: {
+      settings: "Configuración del Dojo",
+      general: "General",
+      location: "Ubicación",
+      legal: "Legal",
+      social: "Redes Sociales",
+      policies: "Políticas",
+      
+      name: "Nombre del Dojo",
+      shortname: "Nombre Corto",
+      slogan: "Slogan",
+      logourl: "URL del Logo",
+      website: "Sitio Web",
+      
+      address1: "Dirección Línea 1",
+      address2: "Dirección Línea 2",
+      city: "Ciudad",
+      state: "Estado",
+      postalcode: "Código Postal",
+      country: "País",
+      
+      taxid: "RFC / Tax ID",
+      legalname: "Razón Social",
+      
+      config: "Configuración Regional",
+      language: "Idioma",
+      
+      aboutus: "Acerca de Nosotros",
+      privacypolicy: "Política de Privacidad",
+      terms: "Términos y Condiciones",
+    },
 };

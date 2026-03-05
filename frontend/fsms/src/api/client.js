@@ -132,5 +132,9 @@ export const api = {
   markAttendance: (payload) => request("/api/class-enrollments/mark-attendance", { method: "POST", body: payload }),
   getAttendanceStats: (userId) => request(`/api/class-enrollments/attendance-stats/${userId}`),
   getMyAttendanceStats: () => request("/api/class-enrollments/my-attendance-stats"),
+  
+  getDojoSettings: () => request("/api/dojo-settings"),
+  getDojoSettingsPublic: () => request("/api/dojo-settings/public"),
+  updateDojoSettings: (payload) => request("/api/dojo-settings", { method: "PUT", body: payload }),
 
 };

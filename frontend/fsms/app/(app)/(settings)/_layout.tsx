@@ -62,6 +62,7 @@ function CustomDrawerContent({ pointerEvents, ...props }: any) {
   const pathname = usePathname();
 
   const DASHBOARD: Href = "/(app)/(settings)/dashboard";
+  const SETTINGS: Href = "/(app)/(settings)/dojosettings";
   const PACKAGES: Href = "/(app)/(settings)/packages";
   const DISCIPLINES: Href = "/(app)/(settings)/disciplines";
   const RANKS: Href = "/(app)/(settings)/ranks";
@@ -78,6 +79,9 @@ function CustomDrawerContent({ pointerEvents, ...props }: any) {
       <View style={{ flex: 1 }}>
         <CustomDrawerItem 
           label={t("dashboard.title")} 
+          icon={({ size, color }) => (
+            <Ionicons name="grid-outline" size={size} color={color} />
+          )}
           onPress={() => router.push(DASHBOARD)}
           isActive={isActive('/settings/dashboard')}
         />
@@ -123,6 +127,17 @@ function CustomDrawerContent({ pointerEvents, ...props }: any) {
         />
 
         <View style={ScreenStyles.divider} />
+
+        <CustomDrawerItem 
+          label={t("dojo.settings")} 
+          icon={({ size, color }) => (
+            <MaterialIcons name="miscellaneous-services" size={size} color={color} />
+          )}
+          onPress={() => router.push(SETTINGS)}
+          isActive={isActive('/settings/dojosettings')}
+        />
+
+         <View style={ScreenStyles.divider} />
 
         <CustomDrawerItem 
           label={t("common.back")} 

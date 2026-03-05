@@ -18,6 +18,7 @@ function AppShell() {
   const isInSettings = segments.includes("(settings)");
   const { toggleMainDrawer, toggleSettingsDrawer } = useDrawerControl();
   const { user, setUser, isAdmin } = useUser();
+  const [dojoName, setDojoName] = useState('FSMS');
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
@@ -55,6 +56,11 @@ function AppShell() {
           setUser(null);
           return;
         }
+
+        const dojo = await api.getDojoSettings();
+        const dojoSettings = dojo?.data ?? dojo;
+        setDojoName(dojoSettings.dojo_name);
+        console.log(dojoName);
 
         const meResp = await api.me();
         const me = meResp?.data ?? meResp;
@@ -143,7 +149,7 @@ function AppShell() {
           },
         }}
       >
-        <Stack.Screen name="(main)" options={{ title: "FSMS" }} />
+        <Stack.Screen name="(main)" options={{ title: dojoName }} />
         <Stack.Screen name="(settings)" options={{ title: t("common.settings") }} />
       </Stack>
 

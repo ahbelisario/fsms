@@ -118,7 +118,7 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
         <CustomDrawerItem
           label={t("dashboard.title")}
           icon={({ size, color }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={color} />
+            <Ionicons name="grid-outline" size={size} color={color} />
           )}
           onPress={() => router.push(DASHBOARD)}
           isActive={isActive('/dashboard')}

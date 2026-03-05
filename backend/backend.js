@@ -92,6 +92,10 @@ app.use('/api/reports', requireAuth, reportsRoutes);
 const classEnrollmentsRoutes = require('./routes/class-enrollments');
 app.use('/api/class-enrollments', requireAuth, classEnrollmentsRoutes);
 
+//Dojo Settings
+const dojoSettingsRoutes = require('./routes/dojo-settings');
+app.use('/api/dojo-settings', requireAuth, dojoSettingsRoutes); 
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

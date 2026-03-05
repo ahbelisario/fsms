@@ -407,7 +407,19 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             {myrole === "admin" ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12, paddingBottom: 16 }}>
                 <Text>{t("users.active")}</Text>
-                <Switch disabled={username === "admin"} value={active} onValueChange={setActive} />
+                <Pressable 
+                  onPress={() => !username !== "admin" && setActive(!active)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={{ padding: 4 }}
+                >
+                  <Switch 
+                    disabled={username === "admin"} 
+                    value={active} 
+                    onValueChange={setActive}
+                    trackColor={{ false: '#767577', true: '#81b0ff' }}
+                    thumbColor={active ? '#3b82f6' : '#f4f3f4'}
+                  />
+                </Pressable>
               </View>
             ) : null}
             
