@@ -53,7 +53,8 @@ async function request(path, { method = "GET", body } = {}) {
 export const api = {
 
   me: () => request("/api/auth/me"),
-
+  logout: () => request("/api/auth/logout", { method: "POST" }),
+  
   listUsers: () => request("/api/users"),
   getUser: (id) => request(`/api/users/${id}`),
   createUser: (payload) => request("/api/users", { method: "POST", body: payload }),

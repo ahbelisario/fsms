@@ -60,8 +60,7 @@ function AppShell() {
         const dojo = await api.getDojoSettings();
         const dojoSettings = dojo?.data ?? dojo;
         setDojoName(dojoSettings.dojo_name);
-        console.log(dojoName);
-
+        
         const meResp = await api.me();
         const me = meResp?.data ?? meResp;
 
@@ -163,6 +162,7 @@ function AppShell() {
         }}
         onLogout={async () => {
           setProfileMenuOpen(false);
+          await api.logout(); 
           await clearAuthSession();
           router.replace("/(auth)");
         }}

@@ -81,7 +81,9 @@ export const en = {
       members: "Members",
       member: "Member",
       students: "Students",
-      student: "Student"
+      student: "Student",
+      active_online: "Active Online",
+      connected: "Connected"
     },
     students: {
       title: "Students",

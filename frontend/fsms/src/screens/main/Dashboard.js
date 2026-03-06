@@ -26,6 +26,7 @@ export default function Dashboard({ onAuthExpired }) {
   const [expiringSoon, setExpiringSoon] = useState(0);
   const [currentMonthIncome, setCurrentMonthIncome] = useState(0);
   const [previousMonthIncome, setPreviousMonthIncome] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -239,6 +240,11 @@ export default function Dashboard({ onAuthExpired }) {
       setTotalMemberships(Number(dataMemberships?.total_rows ?? 0));
       setTotalScheduledClasses(Number(dataScheduledClasses?.total_rows ?? 0));
 
+      // Calcular usuarios activos (is_online = true)
+      const usersList = Array.isArray(dataUsers) ? dataUsers : dataUsers?.data || [];
+      const activeCount = usersList.filter(u => u.is_online === true || u.is_online === 1).length;
+      setActiveUsers(activeCount);
+
       const incomesList = Array.isArray(dataIncomes) ? dataIncomes : dataIncomes?.data || [];
       
       // Calcular ingresos del mes actual y anterior
@@ -362,9 +368,9 @@ export default function Dashboard({ onAuthExpired }) {
           </View>
           <View style={DashboardStyles.cell}>
             <ScoreCard 
-              title={t("classes.title")}  
-              value={totalScheduledClasses} 
-              subtitle={t("classes.scheduled")}  
+              title={t("users.active_online")}  
+              value={activeUsers} 
+              subtitle={t("users.connected")}  
             />
           </View>
         </View>
@@ -372,9 +378,9 @@ export default function Dashboard({ onAuthExpired }) {
         <View style={DashboardStyles.grid}>
           <View style={DashboardStyles.cell}>
             <ScoreCard 
-              title={t("packages.title")} 
-              value={totalPackages} 
-              subtitle={t("common.total")} 
+              title={t("classes.title")}  
+              value={totalScheduledClasses} 
+              subtitle={t("classes.scheduled")}  
             />
           </View>
           <View style={DashboardStyles.cell}>
@@ -385,6 +391,7 @@ export default function Dashboard({ onAuthExpired }) {
             />
           </View>
         </View>
+
       </View>
 
       {/* Sección: Ingresos mensuales gráfica */}

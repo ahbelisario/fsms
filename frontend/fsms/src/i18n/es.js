@@ -81,7 +81,9 @@ export const es = {
       members: "Miembros",
       member: "Miembro",
       students: "Alumnos",
-      student: "Alumno"
+      student: "Alumno",
+      active_online: "Activos en Linea",
+      connected: "Conectados"
     },
     students: {
       title: "Alumnos",

@@ -26,7 +26,7 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, created_at FROM users WHERE (active = 1 and username != "admin") ORDER BY name ASC', (err, rows) => {
+        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, is_online, created_at FROM users WHERE (active = 1 and username != "admin") ORDER BY name ASC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -50,6 +50,18 @@ router.get('/', requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/users/active
+router.get('/active', requireAdmin, async (req, res) => {
+  const [rows] = await pool.query(
+    `SELECT id, username, name, lastname, last_login_at, is_online
+     FROM users 
+     WHERE is_online = TRUE
+     ORDER BY last_login_at DESC`
+  );
+  
+  res.json({ status: 'success', data: rows });
+});
+
 /**
  * GET /api/users/:id
  */
@@ -66,6 +78,22 @@ router.get('/:id', (req, res) => {
       res.json({ status: 'success', data: rows[0] });
     }
   );
+});
+
+// GET /api/users/:id/login-history
+router.get('/:id/login-history', async (req, res) => {
+  const { id } = req.params;
+  const limit = req.query.limit || 10; // Default últimos 10
+  
+  const [rows] = await pool.query(
+    `SELECT * FROM login_history 
+     WHERE user_id = ? 
+     ORDER BY login_at DESC 
+     LIMIT ?`,
+    [id, parseInt(limit)]
+  );
+  
+  res.json({ status: 'success', data: rows });
 });
 
 /**

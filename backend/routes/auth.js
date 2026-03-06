@@ -4,13 +4,20 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-/**
- * Recomendación: define JWT_SECRET en variables de entorno.
- * Ej: export JWT_SECRET="supersecret"
- */
 const EXPIRATION_MINUTES = 30;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const JWT_EXPIRES_IN = EXPIRATION_MINUTES.toString() + 'm';
+
+function getClientIP(req) {
+  return (
+    req.headers['x-real-ip'] ||
+    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    req.ip ||
+    'unknown'
+  );
+}
 
 function base64Decode(value) {
   return Buffer.from(value, 'base64').toString('utf8');
@@ -40,6 +47,19 @@ function requireAuth(req, res, next) {
       }
 
       req.user = payload;
+
+      // ✅ Actualizar última actividad (sin esperar respuesta)
+      fsms_pool.query(
+        'UPDATE users SET last_login_at = NOW() WHERE id = ?',
+        [payload.id],
+        (updateErr) => {
+          if (updateErr) {
+            console.error('Error updating last_login_at:', updateErr);
+            // No fallar la petición si esto falla
+          }
+        }
+      );
+
       next();
     });
   } catch (err) {
@@ -51,8 +71,11 @@ function requireAuth(req, res, next) {
  * POST /api/auth/login
  * Body: { username, password }  (si te llega en base64, decodifica antes de comparar)
  */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
+  const promisePool = fsms_pool.promise(); // ← Si usas mysql2
+
+  const clientIP = getClientIP(req);
 
   const username = base64Decode(req.body.username);
   const password = base64Decode(req.body.password);
@@ -61,18 +84,15 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ status: 'error', message: 'username and password are required' });
   }
 
-  const sql = `
-    SELECT id, username, password, name, lastname, email, role, active
-    FROM users
-    WHERE username = ?
-    LIMIT 1
-  `;
+  try {
+    const sql = `
+      SELECT id, username, password, name, lastname, email, role, active
+      FROM users
+      WHERE username = ?
+      LIMIT 1
+    `;
 
-  fsms_pool.query(sql, [username], async (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ status: 'error', message: 'DB error' });
-    }
+    const [rows] = await promisePool.query(sql, [username]);
 
     if (!rows || rows.length === 0) {
       return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
@@ -84,39 +104,45 @@ router.post('/login', (req, res) => {
       return res.status(403).json({ status: 'error', message: 'User is disabled' });
     }
 
-    try {
-      
-      const ok = await bcrypt.compare(password, user.password);
-      if (!ok) return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
 
-      const token = jwt.sign(
-        { 
-          id: user.id,
-          username: user.username, 
-          name: user.name, 
-          lastname: user.lastname,
-          email: user.email,
-          role: user.role
-        },
-        JWT_SECRET,
-          { expiresIn: JWT_EXPIRES_IN }
-      );
+    const token = jwt.sign(
+      { 
+        id: user.id,
+        username: user.username, 
+        name: user.name, 
+        lastname: user.lastname,
+        email: user.email,
+        role: user.role
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
 
-      const currentDate = new Date(); // Original date
-      const futureDate = new Date(currentDate.getTime() + EXPIRATION_MINUTES * 60 * 1000); // New date + EXPIRATION_MINUTES
+    // Registrar login en historial (en paralelo, sin esperar)
+    promisePool.query(
+      'INSERT INTO login_history (user_id, ip_address, user_agent) VALUES (?, ?, ?)',
+      [user.id, clientIP, req.headers['user-agent']]
+    ).catch(err => console.error('Error logging login history:', err));
 
-      return res.status(200).json({
-        status: 'success',
-        data: {
-          "token": { "token": token, "expiresin": JWT_EXPIRES_IN },
-          user: { username: user.username, name: user.name, lastname: user.lastname, role: user.role }
-        }
-      });
-    } catch (e) {
-      console.error(e);
-      return res.status(500).json({ status: 'error', message: 'Auth failed' });
-    }
-  });
+    // Actualizar último login
+    await promisePool.query(
+      'UPDATE users SET last_login_at = NOW(), is_online = TRUE WHERE id = ?',
+      [user.id]
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        token: { token: token, expiresin: JWT_EXPIRES_IN },
+        user: { username: user.username, name: user.name, lastname: user.lastname, role: user.role }
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ status: 'error', message: 'Auth failed' });
+  }
 });
 
 /**
@@ -135,16 +161,30 @@ router.post('/logout', requireAuth, (req, res) => {
 
   const decoded = jwt.decode(token);
   const expiresAt = new Date(decoded.exp * 1000);
+  const userId = req.user.id; // ← Ya lo tienes de requireAuth
 
-  const sql = 'INSERT INTO revoked_tokens (token, expires_at) VALUES (?, ?)';
-  fsms_pool.query(sql, [token, expiresAt], (err) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ status: 'error', message: 'Logout failed' });
+  // 1. Marcar usuario como offline
+  fsms_pool.query(
+    'UPDATE users SET is_online = FALSE WHERE id = ?',
+    [userId],
+    (updateErr) => {
+      if (updateErr) {
+        console.error('Error updating online status:', updateErr);
+        // Continuar con logout aunque falle el update
+      }
+
+      // 2. Revocar token
+      const sql = 'INSERT INTO revoked_tokens (token, expires_at) VALUES (?, ?)';
+      fsms_pool.query(sql, [token, expiresAt], (err) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ status: 'error', message: 'Logout failed' });
+        }
+
+        return res.status(200).json({ status: 'success', message: 'Logged out' });
+      });
     }
-
-    return res.status(200).json({ status: 'success', message: 'Logged out' });
-  });
+  );
 });
 
 /**
