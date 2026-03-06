@@ -1,10 +1,44 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configurar multer para subida de logos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = './uploads/logos/';
+    // Crear directorio si no existe
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `logo-${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB máximo
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp|svg/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Solo se permiten imágenes (jpg, png, gif, webp, svg)'));
+  }
+});
 
 // El requireAuth se pasa desde backend.js
 // Lo recibimos como parámetro opcional por si viene del app.use global
 
-function requireAdmin(req, res, next) {
+function requireAdmin(req, res, next) {  
   if (req.user?.role !== 'admin') {
     return res.status(403).json({ status: 'error', message: 'Forbidden' });
   }
@@ -46,48 +80,6 @@ router.get('/', (req, res) => {
         }
       );
       return;
-    }
-
-    res.json({ status: 'success', data: rows[0] });
-  });
-});
-
-/**
- * GET /api/dojo-settings/public
- * Obtener solo información pública del dojo (sin políticas completas)
- * No requiere autenticación
- */
-router.get('/public', (req, res) => {
-  const fsms_pool = req.app.locals.fsms_pool;
-
-  fsms_pool.query(`
-    SELECT 
-      dojo_name, 
-      short_name, 
-      logo_url,
-      phone, 
-      email, 
-      website,
-      address_line1,
-      address_line2,
-      city,
-      state,
-      postal_code,
-      country,
-      facebook_url,
-      instagram_url,
-      twitter_url,
-      currency
-    FROM dojo_settings 
-    WHERE id = 1
-  `, (err, rows) => {
-    if (err) {
-      console.error('Error getting public dojo settings:', err);
-      return res.status(500).json({ status: 'error', message: 'DB error' });
-    }
-
-    if (rows.length === 0) {
-      return res.json({ status: 'success', data: { dojo_name: 'FSMS' } });
     }
 
     res.json({ status: 'success', data: rows[0] });
@@ -175,23 +167,18 @@ router.put('/', requireAdmin, (req, res) => {
     (err, result) => {
       
       if (err) {
-        console.error('❌ Error updating dojo settings:', err);
         return res.status(500).json({ status: 'error', message: 'Update failed' });
       }
 
       if (result.affectedRows === 0) {
-        console.log('❌ No rows affected');
         return res.status(404).json({ status: 'error', message: 'Dojo settings not found' });
       }
 
       // Obtener registro actualizado
       fsms_pool.query('SELECT * FROM dojo_settings WHERE id = 1', (selectErr, rows) => {
         if (selectErr) {
-          console.error('❌ Error getting updated dojo settings:', selectErr);
           return res.status(500).json({ status: 'error', message: 'DB error' });
         }
-
-        console.log('✅ Sending success response');
         res.json({ 
           status: 'success', 
           message: 'Configuración actualizada exitosamente',
@@ -200,6 +187,28 @@ router.put('/', requireAdmin, (req, res) => {
       });
     }
   );
+});
+
+/**
+ * POST /api/dojo-settings/upload-logo
+ * Subir logo del dojo (solo admin)
+ */
+router.post('/upload-logo', requireAdmin, upload.single('logo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ status: 'error', message: 'No se subió ningún archivo' });
+  }
+  
+  // Construir URL completa del logo
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.get('host');
+  const logoUrl = `${protocol}://${host}/uploads/logos/${req.file.filename}`;
+  
+  res.json({ 
+    status: 'success', 
+    message: 'Logo subido exitosamente',
+    url: logoUrl,
+    filename: req.file.filename
+  });
 });
 
 module.exports = router;

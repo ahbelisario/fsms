@@ -10,6 +10,7 @@ const JWT_EXPIRES_IN = EXPIRATION_MINUTES.toString() + 'm';
 
 function getClientIP(req) {
   return (
+    req.headers['cf-connecting-ip'] ||  
     req.headers['x-real-ip'] ||
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.connection.remoteAddress ||

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Alert, ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { encode as b64encode } from "base-64";
 import { notify } from "@/src/ui/notify";
@@ -10,9 +10,9 @@ import { API_BASE_URL } from '@/src/config/api.config';
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dojoLogo, setDojoLogo] = useState(null);
 
   const [, force] = useState(0);
 
@@ -20,6 +20,26 @@ export default function LoginScreen({ onLoginSuccess }) {
     await setLang(lang);
     force((v) => v + 1);
   }
+
+  // Cargar logo del dojo al montar el componente
+  useEffect(() => {
+    async function loadDojoLogo() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/dojo-settings-public`);
+        if (res.ok) {
+          const data = await res.json();
+          const logoUrl = data?.data?.logo_url || data?.logo_url;
+          if (logoUrl) {
+            setDojoLogo(logoUrl);
+          }
+        }
+      } catch (error) {
+        console.log('Error loading dojo logo:', error);
+        // No hacer nada si falla, simplemente no mostrar logo
+      }
+    }
+    loadDojoLogo();
+  }, []);
 
   const canSubmit = useMemo(() => {
     return username.trim().length > 0 && password.length > 0 && !loading;
@@ -61,8 +81,6 @@ export default function LoginScreen({ onLoginSuccess }) {
         return;
       }
 
-      // ✅ Eliminado el Alert.alert de debug con el token
-
       onLoginSuccess?.({ token, role: data?.data.user.role });
 
     } catch (e) {
@@ -74,7 +92,8 @@ export default function LoginScreen({ onLoginSuccess }) {
 
   return (
     <View style={appStyles.page}>
-       <View style={{position: "absolute", top: 16, right: 16, flexDirection: "row", gap: 6,}}>
+      {/* Selector de idioma */}
+      <View style={{position: "absolute", top: 16, right: 16, flexDirection: "row", gap: 6}}>
         <Pressable onPress={() => changeLang("es")}>
           <Text style={{ fontWeight: i18n.locale === "es" ? "800" : "400" }}>ES</Text>
         </Pressable>
@@ -83,46 +102,67 @@ export default function LoginScreen({ onLoginSuccess }) {
           <Text style={{ fontWeight: i18n.locale === "en" ? "800" : "400" }}>EN</Text>
         </Pressable>
       </View>
-      <View style={appStyles.card}>
-        <Text style={appStyles.title}>{t("login.title")}</Text>
-        <Text style={appStyles.subtitle}>{t("login.subtitle")}</Text>
 
-        <Text style={appStyles.label}>{t("login.username")}</Text>
-        <TextInput
-          style={appStyles.input}
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder={t("login.username")}
-          textContentType="username"
-          returnKeyType="next"
-        />
+      {/* Contenedor centrado para logo + card */}
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        paddingHorizontal: 16
+      }}>
+      
+        {/* Card de login */}
+        <View style={appStyles.card}>
 
-        <Text style={appStyles.label}>{t("login.password")}</Text>
-        <View style={appStyles.passwordRow}>
+          {/* Logo del dojo */}
+          {dojoLogo && (
+              <img 
+                src={dojoLogo} 
+                alt="Logo"
+                style={{ marginBottom: 40 }}
+              />
+          )}
+
+          <Text style={appStyles.title}>{t("login.title")}</Text>
+          <Text style={appStyles.subtitle}>{t("login.subtitle")}</Text>
+
+          <Text style={appStyles.label}>{t("login.username")}</Text>
           <TextInput
-            style={[appStyles.input, { flex: 1, marginBottom: 0 }]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            placeholder="••••••••"
-            textContentType="password"
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
+            style={appStyles.input}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder={t("login.username")}
+            textContentType="username"
+            returnKeyType="next"
           />
-          <Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
-            <Text style={appStyles.toggleBtnText}>{showPassword ? t("common.hide") : t("common.show")}</Text>
+
+          <Text style={appStyles.label}>{t("login.password")}</Text>
+          <View style={appStyles.passwordRow}>
+            <TextInput
+              style={[appStyles.input, { flex: 1, marginBottom: 0 }]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              placeholder="••••••••"
+              textContentType="password"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+            />
+            <Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
+              <Text style={appStyles.toggleBtnText}>{showPassword ? t("common.hide") : t("common.show")}</Text>
+            </Pressable>
+          </View>
+
+          <Pressable
+            style={[appStyles.submitBtn, { opacity: canSubmit ? 1 : 0.6 }]}
+            disabled={!canSubmit}
+            onPress={handleLogin}
+          >
+            {loading ? <ActivityIndicator /> : <Text style={appStyles.submitBtnText}>{t("login.signIn")}</Text>}
           </Pressable>
         </View>
-
-        <Pressable
-          style={[appStyles.submitBtn, { opacity: canSubmit ? 1 : 0.6 }]}
-          disabled={!canSubmit}
-          onPress={handleLogin}
-        >
-          {loading ? <ActivityIndicator /> : <Text style={appStyles.submitBtnText}>{t("login.signIn")}</Text>}
-        </Pressable>
       </View>
     </View>
   );

@@ -54,7 +54,7 @@ export const api = {
 
   me: () => request("/api/auth/me"),
   logout: () => request("/api/auth/logout", { method: "POST" }),
-  
+
   listUsers: () => request("/api/users"),
   getUser: (id) => request(`/api/users/${id}`),
   createUser: (payload) => request("/api/users", { method: "POST", body: payload }),
@@ -133,9 +133,51 @@ export const api = {
   markAttendance: (payload) => request("/api/class-enrollments/mark-attendance", { method: "POST", body: payload }),
   getAttendanceStats: (userId) => request(`/api/class-enrollments/attendance-stats/${userId}`),
   getMyAttendanceStats: () => request("/api/class-enrollments/my-attendance-stats"),
-  
+
+  // Dojo Settings
   getDojoSettings: () => request("/api/dojo-settings"),
   getDojoSettingsPublic: () => request("/api/dojo-settings/public"),
   updateDojoSettings: (payload) => request("/api/dojo-settings", { method: "PUT", body: payload }),
+  
+  uploadDojoLogo: async (file) => {
+    const token = await getAuthToken();
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    const res = await fetch(`${API_BASE_URL}/api/dojo-settings/upload-logo`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // NO incluir Content-Type - FormData lo establece automáticamente
+      },
+      body: formData,
+    });
+    
+    const data = await res.json().catch(() => null);
+    
+    // Manejar errores de auth (igual que request())
+    if (res.status === 401) {
+      await clearAuthSession();
+      onAuthExpiredCallback?.();
+      const err = new Error((data && (data.message || data.error)) || "Sesión expirada.");
+      err.code = "AUTH_EXPIRED";
+      throw err;
+    }
+    
+    if (res.status === 403) {
+      throw new Error((data && (data.message || data.error)) || "No tienes permisos para realizar esta acción.");
+    }
+    
+    if (!res.ok) {
+      throw new Error((data && (data.message || data.error)) || `Error HTTP ${res.status}`);
+    }
+    
+    // Extender sesión si fue exitoso (igual que request())
+    if (res.ok && token) {
+      await extendSession();
+    }
+    
+    return data;
+  },
 
 };

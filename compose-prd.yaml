@@ -1,4 +1,4 @@
-name: fitnessstudio-management-system
+name: fsms
 
 services:
   gateway:

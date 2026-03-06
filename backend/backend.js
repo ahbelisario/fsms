@@ -11,6 +11,7 @@ app.use(cors({
 }));
 
 app.options(/.*/, cors());
+app.use('/uploads', express.static('uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -95,6 +96,9 @@ app.use('/api/class-enrollments', requireAuth, classEnrollmentsRoutes);
 //Dojo Settings
 const dojoSettingsRoutes = require('./routes/dojo-settings');
 app.use('/api/dojo-settings', requireAuth, dojoSettingsRoutes); 
+
+const dojoSettingsPublicRoutes = require('./routes/dojo-settings-public');
+app.use('/api/dojo-settings-public', dojoSettingsPublicRoutes); 
 
 // Servidor
 

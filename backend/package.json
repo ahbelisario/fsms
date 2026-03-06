@@ -1,5 +1,5 @@
 {
-    "name": "fitnessstudio-management-system",
+    "name": "fsms",
     "version": "0.1.0",
     "author": "Arturo Hernandez <arthur@hdez.mx>",
     "main": "index.js",
@@ -9,7 +9,8 @@
         "mysql2": "*",
         "bcrypt": "*",
         "jsonwebtoken":"*",
-        "cors":"*"
+        "cors":"*",
+        "multer": "*"
     }
 }
       

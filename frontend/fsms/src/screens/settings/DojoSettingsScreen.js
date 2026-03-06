@@ -9,6 +9,7 @@ import { t } from "@/src/i18n";
 export default function DojoSettingsScreen({ onAuthExpired }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   
@@ -117,6 +118,42 @@ export default function DojoSettingsScreen({ onAuthExpired }) {
       return "Email inválido.";
     }
     return "";
+  }
+
+  async function handleLogoUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Solo se permiten imágenes (JPG, PNG, GIF, WebP, SVG)');
+      return;
+    }
+
+    // Validar tamaño (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('El logo no puede ser mayor a 2MB');
+      return;
+    }
+
+    clearMsgs();
+    setUploading(true);
+
+    try {
+      const response = await api.uploadDojoLogo(file);
+      setLogoUrl(response.url);
+      setSuccess('Logo subido exitosamente');
+    } catch (e) {
+      if (e.code === "AUTH_EXPIRED") {
+        onAuthExpired?.();
+        setError(e.message);
+        return;
+      }
+      setError(e.message || 'Error al subir el logo');
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function save() {
@@ -250,13 +287,57 @@ export default function DojoSettingsScreen({ onAuthExpired }) {
             />
 
             <Text style={ScreenStyles.label}>{t("dojo.logourl")}</Text>
-            <TextInput
-              style={ScreenStyles.input}
-              value={logoUrl}
-              onChangeText={setLogoUrl}
-              placeholder="https://ejemplo.com/logo.png"
-              placeholderTextColor="#94a3b8"
-            />
+            
+            {/* Vista previa del logo */}
+            {logoUrl && (
+              <View style={{ marginBottom: 12 }}>
+                <img 
+                  src={logoUrl} 
+                  alt="Logo preview" 
+                  style={{ 
+                    maxWidth: '200px', 
+                    maxHeight: '100px', 
+                    objectFit: 'contain',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1'
+                  }} 
+                />
+              </View>
+            )}
+
+            {/* Input de URL manual */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                    <TextInput
+                    style={ScreenStyles.input}
+                    value={logoUrl}
+                    onChangeText={setLogoUrl}
+                    placeholder="https://ejemplo.com/logo.png"
+                    placeholderTextColor="#94a3b8"
+                    />
+            </View>
+                {/* Input file oculto */}
+                <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                style={{ display: 'none' }}
+                id="logo-upload-input"
+                />
+            
+                {/* Botón de subir archivo */}
+                <View style={{ maxWidth: 150, alignItems: 'flex-end' }}>
+                    <Pressable
+                        style={[ScreenStyles.btnSecondary, { opacity: uploading ? 0.7 : 1 }]}
+                        onPress={() => document.getElementById('logo-upload-input').click()}
+                        disabled={uploading}
+                    >
+                    <Text style={ScreenStyles.btnSecondaryText}>
+                    {uploading ? 'Subiendo...' : 'Subir Logo'}
+                    </Text>
+                    </Pressable>
+                </View>
+            </View>
 
             <Text style={ScreenStyles.label}>{t("common.phone")}</Text>
             <TextInput
