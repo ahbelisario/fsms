@@ -29,12 +29,13 @@ services:
   backend:
     build:
       context: backend
+    environment:
+      - NODE_ENV=production  
     expose:
       - "3000"
-    #ports:
-    #  - "3000:3000"
     networks:
       - fsms-server
+      - internet  
     depends_on:
       - fsms-db
 
@@ -44,8 +45,7 @@ services:
     ports:
       - "3307:3306"
     networks:
-      - fsms-client
-      - fsms-server
+      - fsms-server  
 
 volumes:
   frontend_node_modules: {}
@@ -53,6 +53,10 @@ volumes:
 networks:
   fsms-client:
     driver: bridge
+  
   fsms-server:
     driver: bridge
     internal: true
+  
+  internet:
+    driver: bridge  
