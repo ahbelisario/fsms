@@ -36,7 +36,24 @@ export const en = {
       percentage: "Percentage",
       contact: "Contact",
       phone: "Phone",
-      email: "Email"
+      email: "Email",
+      register: "Register",
+      strength: {
+        very_weak: "Very weak",
+        weak: "Weak",
+        medium: "Medium",
+        strong: "Strong"
+      },
+      buttons: {
+        delete: "Delete",
+        cancel: "Cancel",
+        change: "Change"
+      },
+    },
+    labels:{
+      emergency_contact: "Emergency Contact",
+      rights_reserved: "All rights reserved.",
+      hi: "Hi",
     },
     messages: {
       password_dont_match: "Passwords don't match",
@@ -50,12 +67,43 @@ export const en = {
       sure_to_enroll_to: "Do you confirm your enrollment to",
       sure_to_cancel_enrollment_to: "Are you sure to cancel your enrollment to",
       data_could_not_be_loaded: "Data could not be loaded",
+      dont_have_an_account: "Don't have an account?",
+      invalid_credentials: "Invalid credentials",
+      error_starting_session: "Error starting session (HTTP ",
+      success: {
+        email_success: "We've sent you a verification email. Please check your inbox.",
+      },
+      error: {
+        passwords_dont_match: "The passwords do not match",
+        error_registering_user: "Error registering user",
+        missing_fields: "Please fill all the fields",
+        week_password: "Weak password. Must meet at least 3 requirments.",
+        error_connecting_server: "Unable to connect to the server",
+      },
+      questions: {
+        do_you_have_an_account: "Do you already have an account?"
+      },
+      assistance: {
+        excellent_assistance: "Excellent Assistance",
+        good_assistance: "Good Assistance",
+        try_come_more: "Try to come more"
+      }
     },
     dialogs:{
-      delete_user: "Delete user",
       user_settings: "User Settings",
-      delete_discipline: "Delete discipline",
       delete_rank: "Delete grade",
+      delete:
+        {
+          delete_class_series: "Delete the class serie",
+          delete_class: "Delete class",
+          delete_user: "Delete user",
+          delete_discipline: "Delete discipline",
+        },
+      confirmation:
+        {
+          delete_class_series: "Are you sure you want to delete the class serie?",
+          delete_class: "Are you sure you want to delete this class?",
+        }
     },
     login: {
       title: "Sign in",
@@ -74,7 +122,6 @@ export const en = {
       role_admin: "Admin",
       role_user: "Student",
       role_instructor: "Instructor",
-      changePass: "Change password",
       active: "Active",
       createuser: "Create user",
       edituser: "Edit user",
@@ -342,7 +389,8 @@ export const en = {
       cancelled: "Canceled",
       cancelled_plu: "Canceled",
       no_show: "No show",
-      rate: "Attendance Rate"
+      rate: "Attendance Rate",
+      percentage: "Percentage"
     },
     enrollments: {
       title: "Enrollments",
@@ -373,7 +421,6 @@ export const en = {
       statistics: "Statistics",
       attention: "Attention",
       inthe: "in the",
-      hi: "Hi",
       unknown: "Unknown",
       welcome_back: "Welcome back",
       my_membership: "My Membership",
@@ -417,4 +464,25 @@ export const en = {
       privacypolicy: "Privacy Policy",
       terms: "Terms and Conditions",
     },
+    register: {
+      create_account: "Create account",
+      to_begin: "Register to begin",
+      min_8: "Minimum 8 characters",
+      one_cap: "One upper case (A-Z)",
+      one_nocap: "One lower case (a-z)",
+      one_num: "One number (0-9)",
+      one_char: "One special character (!@#$%...)",
+      strength: "Strength"
+    },
+    emails: {
+      welcome: "Welcome to",
+      automated_email: "This is an automated email, please do not reply to this message.",
+      verification_email: {
+        message: "Thank you for registering on our platform. To complete your registration and activate your account, please verify your email address by clicking the button below:",
+        button: "Verify my email",
+        copy_and_paste: "Or copy and paste this link into your browser:",
+        link_expiration: "This link will expire in 24 hours.",
+        disregard: "If you didn't create this account, you can ignore this email."
+      }
+    }
 };

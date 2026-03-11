@@ -759,13 +759,13 @@ export default function ScheduleScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={isRecurringSeries ? "Eliminar Serie de Clases" : "Eliminar Clase"}
+        title={isRecurringSeries ? t("dialogs.delete.delete_class_series") : t("dialogs.delete.delete_class")}
         message={isRecurringSeries 
-          ? "¿Estás seguro de eliminar esta serie completa de clases recurrentes?"
-          : "¿Estás seguro de eliminar esta clase programada?"
+          ? t("dialogs.confirmation.delete_class_series")
+          : t("dialogs.confirmation.delete_class")
         }
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        confirmText={t("common.buttons.delete")}
+        cancelText={t("common.buttons.cancel")}
         danger
         onConfirm={confirmDelete}
         onCancel={cancelDelete}

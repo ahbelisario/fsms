@@ -137,7 +137,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   function askDelete() {
     setConfirm({
       visible: true,
-      title: t("dialogs.delete_user"),
+      title: t("dialogs.delete.delete_user"),
       message: t("messages.sure_delete_user"),
       confirmText: t("common.delete"),
       danger: true,
@@ -441,7 +441,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <View style={{ maxWidth: 150, alignItems: 'flex-end' }}>
                 <Pressable style={ScreenStyles.btnPrimary} onPress={() => setChangePwdVisible(true)}>
                   <Text style={ScreenStyles.btnPrimaryText}>
-                    {t("users.changePass")}
+                    {t("common.buttons.change")}
                   </Text>
                 </Pressable>
               </View>
@@ -570,7 +570,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             </View>
 
             <Text style={[ScreenStyles.label, { marginTop: 12, fontSize: 16, fontWeight: '600' }]}>
-              Contacto de Emergencia
+              {t("labels.emergency_contact")}
             </Text>
 
             <View style={{ flexDirection: "row", gap: 10 }}>

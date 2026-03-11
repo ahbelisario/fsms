@@ -55,6 +55,8 @@ export const api = {
   me: () => request("/api/auth/me"),
   logout: () => request("/api/auth/logout", { method: "POST" }),
 
+  register: (payload) => request("/api/register", { method: "POST", body: payload }),
+
   listUsers: () => request("/api/users"),
   getUser: (id) => request(`/api/users/${id}`),
   createUser: (payload) => request("/api/users", { method: "POST", body: payload }),

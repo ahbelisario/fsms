@@ -207,7 +207,7 @@ export default function Home({ onAuthExpired }) {
       {/* Saludo personalizado */}
       <View style={HomeStyles.welcomeCard}>
         <Text style={HomeStyles.welcomeGreeting}>
-          ¡{t("dashboards.hi")}, {user?.name || t("dashboards.unknown")}! 👋
+          ¡{t("labels.hi")}, {user?.name || t("dashboards.unknown")}! 👋
         </Text>
         <Text style={HomeStyles.welcomeSubtext}>
           {t("dashboards.welcome_back")}
@@ -345,9 +345,9 @@ export default function Home({ onAuthExpired }) {
                   />
                 </View>
                 <Text style={HomeStyles.progressText}>
-                  {attendanceStats.attendance_rate >= 80 ? '¡Excelente asistencia! 🎉' :
-                   attendanceStats.attendance_rate >= 60 ? 'Buena asistencia 👍' :
-                   'Intenta asistir más seguido 💪'}
+                  {attendanceStats.attendance_rate >= 80 ? '¡'+t("messages.assistance.excellent_assistance")+'! 🎉' :
+                   attendanceStats.attendance_rate >= 60 ? t("messages.assistance.good_assistance")+' 👍' :
+                   t("messages.assistance.try_come_more")+' 💪'}
                 </Text>
               </View>
             )}

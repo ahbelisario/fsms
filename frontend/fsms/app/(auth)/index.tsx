@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Redirect } from "expo-router";
 import { Text, View } from "react-native";
-import LoginScreen from "@/src/screens/LoginScreen";
+import LoginScreen from "@/src/screens/auth/LoginScreen";
 import { getAuthToken, setAuthSession, isSessionExpired, clearAuthSession } from "@/src/storage/authStorage";
 import { api } from "@/src/api/client";
 

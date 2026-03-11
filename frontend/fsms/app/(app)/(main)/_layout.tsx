@@ -9,6 +9,7 @@ import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import { t } from "@/src/i18n";
+import { api } from "@/src/api/client";
 
 // Componente personalizado para items del drawer con hover
 function CustomDrawerItem({ 
@@ -81,7 +82,7 @@ function UserDrawerContent({ pointerEvents, ...props }: any) {
         <View style={ScreenStyles.divider} />
 
         <CustomDrawerItem
-          label="Classes"
+          label={t("classes.title")}
           icon={({ size, color }) => (
             <MaterialIcons name="schedule" size={size} color={color} />
           )}
@@ -204,6 +205,7 @@ export default function MainLayout() {
   const { isAdmin } = useUser();
 
   useEffect(() => {
+
     setToggleMainDrawer(() => () => {
       drawerNavRef.current?.dispatch(DrawerActions.toggleDrawer());
     });

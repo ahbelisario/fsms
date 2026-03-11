@@ -35,6 +35,7 @@
     "expo-system-ui": "*",
     "expo-web-browser": "*",
     "i18n-js": "*",
+    "nodemailer": "^8.0.2",
     "react": "*",
     "react-dom": "*",
     "react-native": "*",

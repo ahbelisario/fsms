@@ -26,7 +26,8 @@ router.get('/', (req, res) => {
       facebook_url,
       instagram_url,
       twitter_url,
-      currency
+      currency,
+      language
     FROM dojo_settings 
     WHERE id = 1
   `, (err, rows) => {

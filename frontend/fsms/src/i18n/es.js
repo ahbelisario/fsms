@@ -36,7 +36,24 @@ export const es = {
       percentage: "Porcentaje",
       contact: "Contacto",
       phone: "Télefono",
-      email: "Correo electrónico"
+      email: "Correo electrónico",
+      register: "Regístrate",
+      strength: {
+        very_weak: "Muy débil",
+        weak: "Dévil",
+        medium: "Media",
+        strong: "Fuerte"
+      },
+      buttons: {
+        delete: "Eliminar",
+        cancel: "Cancelar",
+        change: "Cambiar"
+      }
+    },
+    labels:{
+      emergency_contact: "Contacto de Emergencia",
+      rights_reserved: "Todos los derechos reservados.",
+      hi: "Hola",
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -50,12 +67,43 @@ export const es = {
       sure_to_enroll_to: "Seguro quiere inscribirse a",
       sure_to_cancel_enrollment_to: "Seguro quiere cancelar su inscripción a",
       data_could_not_be_loaded: "Los datos no pueden ser cargados",
+      dont_have_an_account: "¿No tienes cuenta?",
+      invalid_credentials: "Credenciales Inválidas",
+      error_starting_session: "Error al iniciar sesión (HTTP",
+      success: {
+        email_success: "Te hemos enviado un email de verificación. Revisa tu bandeja de entrada.",
+      },
+      error: {
+        passwords_dont_match: "The passwords do not match",
+        error_registering_user: "Error al registrar el usuario",
+        missing_fields: "Por favor completa todos los campos",
+        weak_password: "La contraseña es demasiado débil. Debe cumplir al menos 3 requisitos.",
+        connecting_server: "No se pudo conectar con el servidor",
+      },
+      questions: {
+        do_you_have_an_account: "¿Ya tienes cuenta?"
+      },
+      assistance: {
+        excellent_assistance: "Excelente asistencia",
+        good_assistance: "Buena asistencia",
+        try_come_more: "Intenta asistir más seguido"
+      }
     },
     dialogs: {
-      delete_user: "Eliminar usuario",
       user_settings: "Preferencias del Usuario",
-      delete_discipline: "Eliminar disciplina",
       delete_rank: "Eliminar grado",
+      delete:
+        {
+          delete_class_series: "Eliminar la seria de la clase",
+          delete_class: "Eliminar Clase",
+          delete_user: "Eliminar usuario",
+          delete_discipline: "Eliminar disciplina",
+        },
+      confirmation:
+        {
+          delete_class_series: "¿Esta seguro que quiere eliminar la seria de la clase?",
+          delete_class: "¿Esta seguro que quiere eliminar esta clase?",
+        }
     },
     login: {
       title: "Iniciar sesión",
@@ -74,7 +122,6 @@ export const es = {
       role_admin: "Administrador",
       role_user: "Alumno",
       role_instructor: "Instructor",
-      changePass: "Cambiar contraseña",
       active: "Activo",
       createuser: "Crear usuario",
       edituser: "Editar usuario",
@@ -374,7 +421,6 @@ export const es = {
       statistics: "Estadísticas",
       attention: "Atención",
       inthe: "en el",
-      hi: "Hola",
       unknown: "Desconocido",
       welcome_back: "Bienvenido de vuelta",
       my_membership: "Mi Membresía",
@@ -418,4 +464,25 @@ export const es = {
       privacypolicy: "Política de Privacidad",
       terms: "Términos y Condiciones",
     },
+    register: {
+      create_account: "Crear cuenta", 
+      to_begin: "Regístrate para comenzar",
+      min_8: "Mínimo 8 caracteres",
+      one_cap: "Una mayúscula (A-Z)",
+      one_nocap: "Una minúscula (a-z)",
+      one_num: "Un número (0-9)",
+      one_char: "Un carácter especial (!@#$%...)",
+      strength: "Fortaleza"
+    },
+    emails:{
+      welcome: "Bienvenido a",
+      automated_email: "Este es un email automático, por favor no respondas a este mensaje.",
+      verification_email: {
+        message: "Gracias por registrarte en nuestra plataforma. Para completar tu registro y activar tu cuenta, por favor verifica tu dirección de email haciendo click en el botón de abajo:",
+        button: "Verificar mi email",
+        copy_and_paste: "O copia y pega este enlace en tu navegador:",
+        link_expiration: "Este enlace expirará en 24 horas.",
+        disregard: "Si no creaste esta cuenta, puedes ignorar este email."
+      }
+    }
 };

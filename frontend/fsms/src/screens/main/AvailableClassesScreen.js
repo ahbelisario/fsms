@@ -3,18 +3,22 @@ import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator, ScrollView, Pressable, View, Text, Modal } from "react-native";
 import { AvailableClassesStyles } from "@/src/styles/appStyles";
 import { api } from "@/src/api/client";
-import { ScreenStyles } from '@/src/styles/appStyles';
+import { ScreenStyles, HomeStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { t } from "@/src/i18n";
 
 export default function AvailableClassesScreen({ onAuthExpired }) {
 
   const s = ScreenStyles; // Al inicio del componente
+
+  let hasmembership = false;
+
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [myEnrollments, setMyEnrollments] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeMembership, setActiveMembership] = useState(false);
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
@@ -55,10 +59,15 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
     clearMsgs();
     setLoading(true);
     try {
-      const [classesData, enrollmentsData] = await Promise.all([
+      const [classesData, enrollmentsData, membershipData] = await Promise.all([
         api.listScheduledClasses(),
-        api.getMyEnrollments()
+        api.getMyEnrollments(),
+        api.getMyMembership()
       ]);
+
+      const membership = membershipData.data;
+      hasmembership = membership!== null ? true : false;
+      setActiveMembership(hasmembership);
 
       const classList = Array.isArray(classesData) ? classesData : classesData?.data || [];
       
@@ -183,6 +192,18 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
         </Pressable>
       </View>
 
+      {activeMembership ? (
+        <></>
+        ) : (
+          <>
+            <View style={[HomeStyles.noMembershipCard, { marginBottom: 28 } ]}>
+              <Text style={HomeStyles.noMembershipText}>
+                {t("dashboards.no_membership")}. {t("memberships.contact")}.
+              </Text>
+            </View>
+          </>
+        )}
+
       {error ? (
         <View style={ScreenStyles.alertError}>
           <Text style={ScreenStyles.alertErrorText}>{error}</Text>
@@ -237,7 +258,9 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                   </View>
                 )}
               </View>
-
+              
+              <View style={{ flex: 1 }}>
+              
               <View style={AvailableClassesStyles.classDetails}>
                 <Text style={AvailableClassesStyles.classDetail}>
                   🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
@@ -275,7 +298,7 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                       full && s.disabledButton
                     ]}
                     onPress={() => askEnroll(classItem)}
-                    disabled={full}
+                    disabled={full || !activeMembership}
                   >
                     <Text style={ScreenStyles.btnPrimaryText}>
                       {full ? t("classes.full") : t("enrollments.enroll_me")}
@@ -283,6 +306,10 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                   </Pressable>
                 )}
               </View>
+              </View>
+
+              <View style={ScreenStyles.divider} />
+
             </View>
           );
         })

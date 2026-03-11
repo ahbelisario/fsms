@@ -175,16 +175,15 @@ export default function IncomesScreen({ onAuthExpired }) {
     setToDeleteId(null);
   }
 
-  const MONTHS_ES = [
-    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
-  ];
-
   const MONTHS_SHORT = [
-    "Ene","Feb","Mar","Abr","May","Jun",
-    "Jul","Ago","Sep","Oct","Nov","Dic"
+     t("months_short.jan"), t("months_short.feb"), t("months_short.mar"), t("months_short.apr"), t("months_short.may"), t("months_short.jun"),
+      t("months_short.jul"), t("months_short.aug"), t("months_short.sep"), t("months_short.oct"), t("months_short.nov"), t("months_short.dec")
   ];
-
+    const MONTHS_ES = [
+      t("months.jan"), t("months.feb"), t("months.mar"), t("months.apr"), t("months.may"), t("months.jun"),
+      t("months.jul"), t("months.aug"), t("months.sep"), t("months.oct"), t("months.nov"), t("months.dec")
+    ];
+  
   function ymdFromApi(v) {
     if (!v) return "";
     return String(v).slice(0, 10);

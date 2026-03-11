@@ -225,7 +225,7 @@ export default function DisciplinesScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={t("disciplines.delete_discipline")}
+        title={t("dialogs.delete.delete_discipline")}
         message={t("messages.sure_delete_discipline")}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}

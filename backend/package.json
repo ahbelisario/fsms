@@ -10,7 +10,8 @@
         "bcrypt": "*",
         "jsonwebtoken":"*",
         "cors":"*",
-        "multer": "*"
+        "multer": "*",
+        "nodemailer": "*"
     }
 }
       

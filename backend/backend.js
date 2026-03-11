@@ -100,6 +100,11 @@ app.use('/api/dojo-settings', requireAuth, dojoSettingsRoutes);
 const dojoSettingsPublicRoutes = require('./routes/dojo-settings-public');
 app.use('/api/dojo-settings-public', dojoSettingsPublicRoutes); 
 
+//Register
+
+const registerRoutes = require('./routes/register');
+app.use('/api/register', registerRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

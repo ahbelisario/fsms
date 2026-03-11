@@ -87,9 +87,10 @@ router.post('/login', async (req, res) => {
 
   try {
     const sql = `
-      SELECT id, username, password, name, lastname, email, role, active
+      SELECT id, username, password, name, lastname, email, role, active, deleted
       FROM users
-      WHERE username = ?
+      WHERE username = ? AND
+            deleted = 0
       LIMIT 1
     `;
 

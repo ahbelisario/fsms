@@ -26,8 +26,6 @@ export default function Dashboard({ onAuthExpired }) {
   const [editingId, setEditingId] = useState(null);
 
   const isEditing = useMemo(() => editingId !== null, [editingId]);
-  const ROLE_LABELS = { admin: "Administrador", user: "Usuario" };
-
 
   function formatMonthTick(m) {
   // Caso Date

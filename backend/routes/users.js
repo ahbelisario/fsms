@@ -26,13 +26,13 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, is_online, created_at FROM users WHERE (active = 1 and username != "admin") ORDER BY name ASC', (err, rows) => {
+        fsms_pool.query('SELECT id, username, name, lastname, email, role, active, is_online, created_at FROM users WHERE (deleted = 0 and username != "admin") ORDER BY name ASC', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM users WHERE (active = 1 and username != "admin")', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM users WHERE (deleted = 0 and username != "admin")', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
@@ -319,7 +319,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
 
   // Soft delete recomendado:
-  fsms_pool.query('UPDATE users SET active = 0 WHERE id = ?', [id], (err, result) => {
+  fsms_pool.query('UPDATE users SET deleted = 1 WHERE id = ?', [id], (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
     if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
     res.json({ status: 'success', message: 'User disabled' });

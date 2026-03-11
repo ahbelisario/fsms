@@ -6,6 +6,7 @@ import { ScreenStyles } from '@/src/styles/appStyles';
 import ConfirmDialog from '@/src/ui/ConfirmDialog';
 import { useRouter } from "expo-router";
 import { t } from "@/src/i18n";
+import { loadLang } from "@/src/i18n/lang";
 import { Ionicons } from "@expo/vector-icons";
 
 
@@ -237,6 +238,29 @@ export default function UsersScreen({ onAuthExpired }) {
       const user_data = await api.createUser(payload);
       setSuccess("User created.")
 
+      const payload_up = {
+          user_id: user_data.data.id,
+          name: name.trim(),
+          lastname: lastname.trim(),
+          email: email.trim()
+        };
+
+      await api.createUserProfiles(payload_up);
+      setSuccess("Perfil creado.");
+
+      const dojodata = await api.getDojoSettings();
+      const dojolist = Array.isArray(dojodata) ? dojodata : dojodata?.response || dojodata?.data || [];
+      const dojolang= dojolist.language;
+
+      const payload_us = {
+          user_id: user_data.data.id,
+          language: dojolang
+        };
+
+      await api.createUserSettings(payload_us);
+      setSuccess("Preferencias del usuario creadas.");
+      
+
       }
 
       setModalVisible(false);
@@ -451,7 +475,7 @@ export default function UsersScreen({ onAuthExpired }) {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title={t("dialogs.delete_user")}
+        title={t("dialogs.delete.delete_user")}
         message={t("messages.sure_delete_user")}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}
