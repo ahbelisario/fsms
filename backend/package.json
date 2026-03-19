@@ -1,6 +1,6 @@
 {
-    "name": "fsms",
-    "version": "0.1.0",
+    "name": "budodesk",
+    "version": "0.8.0",
     "author": "Arturo Hernandez <arthur@hdez.mx>",
     "main": "index.js",
     "dependencies": {
