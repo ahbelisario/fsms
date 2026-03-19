@@ -10,6 +10,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ScreenStyles } from "@/src/styles/appStyles";
 import { t } from "@/src/i18n";
 import { api } from "@/src/api/client";
+import BottomTabBar from "@/src/components/BottomTabBar";
 
 // Componente personalizado para items del drawer con hover
 function CustomDrawerItem({ 
@@ -188,7 +189,7 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
           isActive={isActive('/rankpromotion')}
         />
 
-         <View style={ScreenStyles.divider} />
+        <View style={ScreenStyles.divider} />
 
         <CustomDrawerItem
           label={t("memberships.title")}
@@ -230,11 +231,9 @@ export default function MainLayout() {
   const { isAdmin } = useUser();
 
   useEffect(() => {
-
     setToggleMainDrawer(() => () => {
       drawerNavRef.current?.dispatch(DrawerActions.toggleDrawer());
     });
-
     return () => setToggleMainDrawer(undefined);
   }, [navigation, setToggleMainDrawer]);
 
@@ -242,51 +241,55 @@ export default function MainLayout() {
   const isWeb = Platform.OS === "web";
   const isDesktop = width >= 1024;
   const isMobile = width < 768;
-  
-  // 👇 SOLO ESTE CAMBIO - Ajustar drawer width según tamaño de pantalla
+
   const drawerWidth = isMobile ? width * 0.75 : 240;
   const isPermanent = isWeb && isDesktop;
 
   return (
-    <Drawer
-      id="mainDrawer"
-      drawerContent={(props) => {
-        drawerNavRef.current = props.navigation;
-        return isAdmin ? (
-          <AdminDrawerContent {...props} />
-        ) : (
-          <UserDrawerContent {...props} />
-        );
-      }}
+    <View style={{ flex: 1 }}>
 
-      screenOptions={{
-        headerShown: false,
-        drawerType: isPermanent ? "permanent" : "front",
-        drawerStyle: { 
-          width: drawerWidth,
-          maxWidth: '100%', // 👈 AGREGA ESTO
-        },
-        overlayColor: isPermanent ? "transparent" : undefined,
-        swipeEnabled: !isPermanent,
-        sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
-      }}
-    >
-      <Drawer.Screen name="home" options={{ title: "Home" }} />
-      <Drawer.Screen name="availableclasses" options={{ title: "Classes" }} />
-      <Drawer.Screen name="dashboard" options={{ title: t("dashboard.title") }} />
-      <Drawer.Screen name="schedule" options={{ title: t("schedule.title") }} />
-      <Drawer.Screen name="attendance" options={{ title: t("attendance.title") }} />
-      <Drawer.Screen name="managementenrollments" options={{ title: t("enrollments.title") }} />
-      <Drawer.Screen name="users" options={{ title: t("users.title") }} />
-      <Drawer.Screen name="memberships" options={{ title: t("memberships.title") }} />
-      <Drawer.Screen name="incomes" options={{ title: t("incomes.title") }} />
-      <Drawer.Screen name="userprofiles/index" options={{ title: t("userprofiles.title") }} />
-      <Drawer.Screen name="userprofiles/[userId]" options={{ title: t("userprofiles.title") }} />
-    </Drawer>
+      <Drawer
+        id="mainDrawer"
+        drawerContent={(props) => {
+          drawerNavRef.current = props.navigation;
+          return isAdmin ? (
+            <AdminDrawerContent {...props} />
+          ) : (
+            <UserDrawerContent {...props} />
+          );
+        }}
+        screenOptions={{
+          headerShown: false,
+          drawerType: isPermanent ? "permanent" : "front",
+          drawerStyle: { 
+            width: drawerWidth,
+            maxWidth: '100%',
+          },
+          overlayColor: isPermanent ? "transparent" : undefined,
+          swipeEnabled: !isPermanent,
+          sceneContainerStyle: isPermanent ? { marginLeft: drawerWidth } : undefined,
+        }}
+      >
+        <Drawer.Screen name="home"                    options={{ title: "Home" }} />
+        <Drawer.Screen name="availableclasses"        options={{ title: "Classes" }} />
+        <Drawer.Screen name="dashboard"               options={{ title: t("dashboard.title") }} />
+        <Drawer.Screen name="schedule"                options={{ title: t("schedule.title") }} />
+        <Drawer.Screen name="attendance"              options={{ title: t("attendance.title") }} />
+        <Drawer.Screen name="managementenrollments"   options={{ title: t("enrollments.title") }} />
+        <Drawer.Screen name="users"                   options={{ title: t("users.title") }} />
+        <Drawer.Screen name="memberships"             options={{ title: t("memberships.title") }} />
+        <Drawer.Screen name="incomes"                 options={{ title: t("incomes.title") }} />
+        <Drawer.Screen name="userprofiles/index"      options={{ title: t("userprofiles.title") }} />
+        <Drawer.Screen name="userprofiles/[userId]"   options={{ title: t("userprofiles.title") }} />
+      </Drawer>
+
+      {/* Bottom Tab Bar: solo estudiantes, solo móvil */}
+      <BottomTabBar />
+
+    </View>
   );
 }
 
-// 👇 DEJA LOS ESTILOS COMO ESTABAN ORIGINALMENTE
 const styles = StyleSheet.create({
   drawerItem: {
     flexDirection: 'row',
