@@ -23,6 +23,12 @@ export default function RanksScreen({ onAuthExpired }) {
   const [name, setName] = useState("");
   const [discipline, setDiscipline] = useState("");
   const [disciplineId, setDisciplineId] = useState(null);
+  
+  // Nuevos campos
+  const [order, setOrder] = useState("");
+  const [color, setColor] = useState("");
+  const [requirementsMonths, setRequirementsMonths] = useState("");
+  const [requirementsClasses, setRequirementsClasses] = useState("");
 
   const [disciplines, setDisciplines] = useState([]);
 
@@ -35,12 +41,35 @@ export default function RanksScreen({ onAuthExpired }) {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [toDeleteId, setToDeleteId] = useState(null);
 
+  // Colores predefinidos para cinturones
+  const BELT_COLORS = [
+    { label: t("common.colors.white"), value: '#FFFFFF' },
+    { label: t("common.colors.yellow"), value: '#FCD34D' },
+    { label: t("common.colors.orange"), value: '#FB923C' },
+    { label: t("common.colors.green"), value: '#10B981' },
+    { label: t("common.colors.blue"), value: '#3B82F6' },
+    { label: t("common.colors.purple"), value: '#8B5CF6' },
+    { label: t("common.colors.brown"), value: '#7C2D12' },
+    { label: t("common.colors.black"), value: '#000000' },
+    { label: t("common.colors.red"), value: '#EF4444' },
+  ];
+
   function toggleSection(title) {
-    setExpanded((prev) => ({ ...prev, [title]: !prev[title] }));
+    setExpanded((prev) => {
+      // Si la sección clickeada ya está expandida, colapsarla
+      if (prev[title]) {
+        return {};
+      }
+      // Si no, expandir solo esta sección (colapsar todas las demás)
+      return { [title]: true };
+    });
   }
 
   function scrollToSection(title) {
-    toggleSection(title);
+    // Primero expandir la sección (colapsará las demás automáticamente)
+    setExpanded({ [title]: true });
+    
+    // Luego hacer scroll
     const index = sections.findIndex(s => s.title === title);
     if (index >= 0 && sectionListRef.current) {
       sectionListRef.current.scrollToLocation({
@@ -67,9 +96,11 @@ export default function RanksScreen({ onAuthExpired }) {
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(r);
     }
+    
+    // Ordenar ranks dentro de cada disciplina por 'order'
     return Array.from(map.entries()).map(([title, data]) => ({
       title,
-      data,
+      data: data.sort((a, b) => (a.order || 0) - (b.order || 0))
     }));
   }
 
@@ -82,6 +113,10 @@ export default function RanksScreen({ onAuthExpired }) {
     setEditingId(null);
     setName("");
     setDiscipline("");
+    setOrder("");
+    setColor("");
+    setRequirementsMonths("");
+    setRequirementsClasses("");
   }
 
   function openCreate() {
@@ -97,6 +132,10 @@ export default function RanksScreen({ onAuthExpired }) {
     setDiscipline(u.discipline ?? "");
     const disciplineId = findDisciplineIdByName(disciplines, u.discipline);
     setDisciplineId(disciplineId);
+    setOrder(u.order?.toString() ?? "");
+    setColor(u.color ?? "");
+    setRequirementsMonths(u.requirements_months?.toString() ?? "");
+    setRequirementsClasses(u.requirements_classes?.toString() ?? "");
     setModalVisible(true);
   }
 
@@ -151,6 +190,7 @@ export default function RanksScreen({ onAuthExpired }) {
   function validate() {
     if (!name.trim()) return "Nombre requerido.";
     if (disciplineId == null) return "Disciplina requerida.";
+    if (!order.trim() || isNaN(parseInt(order))) return "Orden requerido (número).";
     return "";
   }
 
@@ -165,6 +205,10 @@ export default function RanksScreen({ onAuthExpired }) {
       const payload = {
         name: name.trim(),
         discipline: disciplineId,
+        order: parseInt(order),
+        color: color || null,
+        requirements_months: requirementsMonths ? parseInt(requirementsMonths) : null,
+        requirements_classes: requirementsClasses ? parseInt(requirementsClasses) : null,
       };
 
       if (isEditing) {   
@@ -267,7 +311,7 @@ export default function RanksScreen({ onAuthExpired }) {
                 fontSize: 11,
                 marginTop: 2
               }}>
-                {section.data.length}
+                {section.data.length} {t("ranks.title").toLowerCase()}
               </Text>
             </Pressable>
           ))}
@@ -287,8 +331,28 @@ export default function RanksScreen({ onAuthExpired }) {
             if (!expanded[section.title]) return null;
             return (
               <View style={ScreenStyles.row}>
+                {/* Indicador de color del cinturón */}
+                {item.color && (
+                  <View style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: item.color,
+                    marginRight: 8,
+                    borderWidth: 1,
+                    borderColor: '#cbd5e1'
+                  }} />
+                )}
+
                 <View style={{ flex: 1 }}>
-                  <Text style={ScreenStyles.rowTitle}>{item.name ?? "(sin nombre)"}</Text>
+                  <Text style={ScreenStyles.rowTitle}>
+                    {item.order ? `${item.order}. ` : ''}{item.name ?? "(sin nombre)"}
+                  </Text>
+                  <Text style={ScreenStyles.rowMeta}>
+                    {item.requirements_months ? `${item.requirements_months} ${t("labels.months").toLowerCase()}` : ''
+                    }{item.requirements_months && item.requirements_classes ? ' • ' : ''
+                    }{item.requirements_classes ? `${item.requirements_classes} ${t("labels.classes").toLowerCase()}` : ''}
+                  </Text>
                 </View>
 
                 <Pressable style={ScreenStyles.smallBtn} onPress={() => openEdit(item)}>
@@ -311,22 +375,94 @@ export default function RanksScreen({ onAuthExpired }) {
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={ScreenStyles.modalBackdrop}>
-          <View style={ScreenStyles.modalCard}>
+          <View style={[ScreenStyles.modalCard, { maxHeight: '90%' }]}>
             <Text style={ScreenStyles.modalTitle}>{isEditing ? t("ranks.edit_rank") : t("ranks.add_rank")}</Text>
 
-            <Text style={ScreenStyles.label}>{t("common.name")}</Text>
-            <TextInput style={ScreenStyles.input} value={name} onChangeText={setName} />
+            {/* Nombre */}
+            <Text style={ScreenStyles.label}>{t("common.name")} *</Text>
+            <TextInput 
+              style={ScreenStyles.input} 
+              value={name} 
+              onChangeText={setName}
+              placeholder="ej: 3er Kyu, 1er Dan"
+              placeholderTextColor="#94a3b8"
+            />
 
+            {/* Disciplina */}
             <View style={{ marginBottom: 12 }}>
-                <Text style={ScreenStyles.label}>{t("disciplines.title_single")}</Text>
-                <View style={ScreenStyles.pickerWrapper}>
-                    <Picker selectedValue={disciplineId} onValueChange={(value) => setDisciplineId(value)}>
-                      {disciplines.map((r) => (
-                        <Picker.Item key={r.id} label={r.name} value={r.id} />
-                        ))}
-                    </Picker>
-                </View>
+              <Text style={ScreenStyles.label}>{t("disciplines.title_single")} *</Text>
+              <View style={ScreenStyles.pickerWrapper}>
+                <Picker selectedValue={disciplineId} onValueChange={(value) => setDisciplineId(value)}>
+                  <Picker.Item label="Seleccionar..." value={null} />
+                  {disciplines.map((r) => (
+                    <Picker.Item key={r.id} label={r.name} value={r.id} />
+                  ))}
+                </Picker>
+              </View>
             </View>
+
+            {/* Orden */}
+            <Text style={ScreenStyles.label}>{t("ranks.order")}</Text>
+            <TextInput 
+              style={ScreenStyles.input} 
+              value={order} 
+              onChangeText={setOrder}
+              placeholder="1, 2, 3..."
+              keyboardType="numeric"
+              placeholderTextColor="#94a3b8"
+            />
+
+            {/* Color del cinturón */}
+            <View style={{ marginBottom: 12 }}>
+              <Text style={ScreenStyles.label}>{t("ranks.belt_color")}</Text>
+              <View style={ScreenStyles.pickerWrapper}>
+                <Picker selectedValue={color} onValueChange={(value) => setColor(value)}>
+                  <Picker.Item label={t("ranks.no_color")} value="" />
+                  {BELT_COLORS.map((c) => (
+                    <Picker.Item key={c.value} label={c.label} value={c.value} />
+                  ))}
+                </Picker>
+              </View>
+              {color && (
+                <View style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  marginTop: 8,
+                  gap: 8
+                }}>
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: color,
+                    borderWidth: 1,
+                    borderColor: '#cbd5e1'
+                  }} />
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>{t("labels.preview")}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Requisitos */}
+            <Text style={ScreenStyles.label}>{t("ranks.required_months")}</Text>
+            <TextInput 
+              style={ScreenStyles.input} 
+              value={requirementsMonths} 
+              onChangeText={setRequirementsMonths}
+              placeholder="3, 6, 12"
+              keyboardType="numeric"
+              placeholderTextColor="#94a3b8"
+            />
+
+            <Text style={ScreenStyles.label}>{t("ranks.required_classes")}</Text>
+            <TextInput 
+              style={ScreenStyles.input} 
+              value={requirementsClasses} 
+              onChangeText={setRequirementsClasses}
+              placeholder="30, 50, 100"
+              keyboardType="numeric"
+              placeholderTextColor="#94a3b8"
+            />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable style={[ScreenStyles.btnSecondary, { flex: 1 }]} onPress={() => setModalVisible(false)} disabled={saving}>

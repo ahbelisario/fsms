@@ -60,6 +60,7 @@ function UserDrawerContent({ pointerEvents, ...props }: any) {
   const pathname = usePathname();
 
   const HOME: Href = "/(app)/(main)/home";
+  const PAYMENTHISTORY: Href = "/(app)/(main)/paymenthistory";
   const AVAILABLECLASSES: Href = "/(app)/(main)/availableclasses";
 
   const isActive = (route: string) => pathname.includes(route);
@@ -89,6 +90,18 @@ function UserDrawerContent({ pointerEvents, ...props }: any) {
           onPress={() => router.push(AVAILABLECLASSES)}
           isActive={isActive('/availableclasses')}
         />
+
+        <View style={ScreenStyles.divider} />
+
+        <CustomDrawerItem
+          label={t("payments.payments_history")}
+          icon={({ size, color }) => (
+            <MaterialIcons name="payments" size={size} color={color} />
+          )}
+          onPress={() => router.push(PAYMENTHISTORY)}
+          isActive={isActive('/paymenthistory')}
+        />
+
       </View>
     </DrawerContentScrollView>
   );
@@ -106,6 +119,7 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
   const ENROLLMENTS: Href = "/(app)/(main)/managementenrollments";
   const SCHEDULE: Href = "/(app)/(main)/schedule";
   const INCOMES: Href = "/(app)/(main)/incomes";
+  const RANKPROMOTION: Href = "/(app)/(main)/rankpromotion";
   const SETTINGS: Href = "/(app)/(settings)";
 
   const isActive = (route: string) => pathname.includes(route);
@@ -164,6 +178,17 @@ function AdminDrawerContent({ pointerEvents, ...props }: any) {
           onPress={() => router.push(USERS)}
           isActive={isActive('/users')}
         />
+
+        <CustomDrawerItem
+          label="Rank Promotion"
+          icon={({ size, color }) => (
+            <MaterialIcons name="military-tech" size={size} color={color} />
+          )}
+          onPress={() => router.push(RANKPROMOTION)}
+          isActive={isActive('/rankpromotion')}
+        />
+
+         <View style={ScreenStyles.divider} />
 
         <CustomDrawerItem
           label={t("memberships.title")}

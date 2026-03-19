@@ -38,6 +38,7 @@ export const es = {
       phone: "Télefono",
       email: "Correo electrónico",
       register: "Regístrate",
+      verifying: "Verificando",
       strength: {
         very_weak: "Muy débil",
         weak: "Dévil",
@@ -47,13 +48,29 @@ export const es = {
       buttons: {
         delete: "Eliminar",
         cancel: "Cancelar",
-        change: "Cambiar"
+        change: "Cambiar",
+        load_more: "Cargar más"
+      },
+      colors:{
+        white: "Blanco",
+        yellow: "Amarillo",
+        orange: "Naranja",
+        green: "Verde",
+        blue: "Azul",
+        purple: "Morado",
+        brown: "Marrón / Café",
+        black: "Negro",
+        red: "Rojo"
       }
     },
     labels:{
       emergency_contact: "Contacto de Emergencia",
       rights_reserved: "Todos los derechos reservados.",
       hi: "Hola",
+      preview: "Vista previa",
+      months: "Meses",
+      classes: "Clases",
+      my_progress: "Mi Progreso"
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -79,6 +96,12 @@ export const es = {
         missing_fields: "Por favor completa todos los campos",
         weak_password: "La contraseña es demasiado débil. Debe cumplir al menos 3 requisitos.",
         connecting_server: "No se pudo conectar con el servidor",
+        email_required: "El email es requerido",
+        invalid_email: "Email inválido",
+        invalid_token: "Token inválido",
+        token_expired: "El enlace ha expirado. Solicita uno nuevo.",
+        weak_password: "La contraseña es muy débil. Debe cumplir los requisitos mínimos.",
+        password_change_failed: "No se pudo cambiar la contraseña",
       },
       questions: {
         do_you_have_an_account: "¿Ya tienes cuenta?"
@@ -87,7 +110,11 @@ export const es = {
         excellent_assistance: "Excelente asistencia",
         good_assistance: "Buena asistencia",
         try_come_more: "Intenta asistir más seguido"
-      }
+      },
+      success: {
+        password_reset_sent: "Email enviado. Revisa tu bandeja de entrada.",
+        password_changed: "✅ Contraseña actualizada exitosamente. Ya puedes iniciar sesión.",
+      },
     },
     dialogs: {
       user_settings: "Preferencias del Usuario",
@@ -194,6 +221,18 @@ export const es = {
       edit_rank: "Editar Grado",
       delete_rank: "Eliminar Grado",
       empty: "No hay grados.",
+      order: "Orden de los Grados",
+      belt_color: "Color de la cinta (opcional)",
+      no_color: "Sin Color",
+      required_months: "Meses requeridos (opcional)",
+      required_classes: "Clases requeridas (opcional)",
+      actual: "Actual",
+      next: "Siguiente",
+      next_exam: "Próximo examen",
+      requirements_for: "Requisitos para",
+      minimal_time: "Tiempo mínimo",
+      general_progress: "Progreso general",
+      maximal_rank: "Has alcanzado el grado máximo en"
     },
     packages: {
       title: "Planes",
@@ -265,7 +304,13 @@ export const es = {
       pending: "Pendiente",
       payment: "Pago",
       adjustment: "Ajuste",
-      surcharge: "Recargo" 
+      surcharge: "Recargo" ,
+      payments_history: "Historial de Pagos",
+      last_payments_registered: "Últimos pagos registrados",
+      total_paid: "Total Pagado",
+      payments_made: "Pagos Realizados",
+      last_payment: "Último pago",
+      last_pl: "Últimos"
     }, 
     incomes: {
       title: "Ingresos",
@@ -472,7 +517,8 @@ export const es = {
       one_nocap: "Una minúscula (a-z)",
       one_num: "Un número (0-9)",
       one_char: "Un carácter especial (!@#$%...)",
-      strength: "Fortaleza"
+      strength: "Fortaleza",
+      username_hint: "Solo letras, números, puntos, guiones y @",
     },
     emails:{
       welcome: "Bienvenido a",
@@ -484,5 +530,17 @@ export const es = {
         link_expiration: "Este enlace expirará en 24 horas.",
         disregard: "Si no creaste esta cuenta, puedes ignorar este email."
       }
-    }
+    },
+    forgot_password: {
+      title: "¿Olvidaste tu contraseña?",
+      subtitle: "Ingresa tu email y te enviaremos un enlace para recuperarla",
+      send_link: "Enviar enlace de recuperación",
+      remember_password: "¿Recordaste tu contraseña?",
+    },
+    reset_password: {
+      title: "Restablecer contraseña",
+      subtitle: "Ingresa tu nueva contraseña",
+      new_password: "Nueva contraseña",
+      reset_button: "Restablecer contraseña",
+    },
 };

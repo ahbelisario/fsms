@@ -38,6 +38,7 @@ export const en = {
       phone: "Phone",
       email: "Email",
       register: "Register",
+      verifying: "Verifying",
       strength: {
         very_weak: "Very weak",
         weak: "Weak",
@@ -47,13 +48,29 @@ export const en = {
       buttons: {
         delete: "Delete",
         cancel: "Cancel",
-        change: "Change"
+        change: "Change",
+        load_more: "Load more"
       },
+      colors:{
+        white: "White",
+        yellow: "Yellow",
+        orange: "Orange",
+        green: "Green",
+        blue: "Blue",
+        purple: "Purple",
+        brown: "Brown",
+        black: "Black",
+        red: "Red"
+      }
     },
     labels:{
       emergency_contact: "Emergency Contact",
       rights_reserved: "All rights reserved.",
       hi: "Hi",
+      preview: "Preview",
+      months: "Months",
+      classes: "Classes",
+      my_progress: "My Progress"
     },
     messages: {
       password_dont_match: "Passwords don't match",
@@ -79,6 +96,12 @@ export const en = {
         missing_fields: "Please fill all the fields",
         week_password: "Weak password. Must meet at least 3 requirments.",
         error_connecting_server: "Unable to connect to the server",
+        email_required: "Email is required",
+        invalid_email: "Invalid email",
+        invalid_token: "Invalid token",
+        token_expired: "The link has expired. Request a new one.",
+        weak_password: "Password is too weak. It must meet the minimum requirements.",
+        password_change_failed: "Could not change password",
       },
       questions: {
         do_you_have_an_account: "Do you already have an account?"
@@ -87,7 +110,11 @@ export const en = {
         excellent_assistance: "Excellent Assistance",
         good_assistance: "Good Assistance",
         try_come_more: "Try to come more"
-      }
+      },
+      success: {
+        password_reset_sent: "Email sent. Check your inbox.",
+        password_changed: "✅ Password updated successfully. You can now log in.",
+      },
     },
     dialogs:{
       user_settings: "User Settings",
@@ -194,6 +221,18 @@ export const en = {
       edit_rank: "Edit grade",
       delete_rank: "Delete grade",
       empty: "No grades.",
+      order: "Grades Order",
+      belt_color: "Belt color (optional)",
+      no_color: "w/o Color",
+      required_months: "Required months (optional)",
+      required_classes: "Required classes (optional)",
+      actual: "Actual",
+      next: "Next",
+      next_exam: "Next Exam",
+      requirements_for: "Requirement for",
+      minimal_time: "Minimal time",
+      general_progress: "General progress",
+      maximal_rank: "You reach the maximum grade in"
     },
     packages: {
       title: "Packages",
@@ -265,7 +304,13 @@ export const en = {
       pending: "Pending",
       payment: "Payment",
       adjustment: "Adjustment",
-      surcharge: "Surcharge" 
+      surcharge: "Surcharge",
+      payments_history: "Payments History",
+      last_payments_registered: "Last payments registered",
+      total_paid: "Total Paid",
+      payments_made: "Payments",
+      last_payment: "Last payment",
+      last_pl: "Last"
     },
     incomes:{
       title: "Incomes",
@@ -472,7 +517,8 @@ export const en = {
       one_nocap: "One lower case (a-z)",
       one_num: "One number (0-9)",
       one_char: "One special character (!@#$%...)",
-      strength: "Strength"
+      strength: "Strength",
+      username_hint: "Only letters, numbers, dots, dashes and @",
     },
     emails: {
       welcome: "Welcome to",
@@ -484,5 +530,17 @@ export const en = {
         link_expiration: "This link will expire in 24 hours.",
         disregard: "If you didn't create this account, you can ignore this email."
       }
-    }
+    },
+    forgot_password: {
+      title: "Forgot your password?",
+      subtitle: "Enter your email and we'll send you a recovery link",
+      send_link: "Send recovery link",
+      remember_password: "Remember your password?",
+    },
+    reset_password: {
+      title: "Reset Password",
+      subtitle: "Enter your new password",
+      new_password: "New password",
+      reset_button: "Reset Password",
+    },
 };

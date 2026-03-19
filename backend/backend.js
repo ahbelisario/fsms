@@ -100,10 +100,17 @@ app.use('/api/dojo-settings', requireAuth, dojoSettingsRoutes);
 const dojoSettingsPublicRoutes = require('./routes/dojo-settings-public');
 app.use('/api/dojo-settings-public', dojoSettingsPublicRoutes); 
 
-//Register
+//Register+Forgot Password
 
 const registerRoutes = require('./routes/register');
 app.use('/api/register', registerRoutes);
+
+app.use('/api/password-reset', require('./routes/password-reset'));  // ← NUEVO
+
+//Rank Progress
+
+const rankProgressRoutes = require('./routes/rank-progress');
+app.use('/api/rank-progress', requireAuth, rankProgressRoutes);
 
 // Servidor
 

@@ -3,7 +3,7 @@ import { Alert, ActivityIndicator, Pressable, Text, TextInput, View } from "reac
 import { useRouter } from "expo-router";
 import { encode as b64encode } from "base-64";
 import { notifyError } from "@/src/ui/notify";
-import { appStyles } from '@/src/styles/appStyles';
+import { appStyles, ScreenStyles } from '@/src/styles/appStyles';
 import { i18n, t } from "@/src/i18n";
 import { setLang } from "@/src/i18n/lang";
 import { API_BASE_URL } from '@/src/config/api.config';
@@ -145,10 +145,11 @@ export default function LoginScreen({ onLoginSuccess }) {
             placeholder={t("login.username")}
             textContentType="username"
             returnKeyType="next"
+            placeholderTextColor="#94a3b8"
           />
 
           <Text style={appStyles.label}>{t("login.password")}</Text>
-          <View style={appStyles.passwordRow}>
+          <View style={[appStyles.passwordRow, { marginBottom: 4 }]}>
             <TextInput
               style={[appStyles.input, { flex: 1, marginBottom: 0 }]}
               value={password}
@@ -158,10 +159,21 @@ export default function LoginScreen({ onLoginSuccess }) {
               textContentType="password"
               returnKeyType="done"
               onSubmitEditing={handleLogin}
+              placeholderTextColor="#94a3b8"
             />
-            <Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
+            {/*<Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
               <Text style={appStyles.toggleBtnText}>{showPassword ? t("common.hide") : t("common.show")}</Text>
-            </Pressable>
+            </Pressable>*/}
+          </View>
+          
+          <View style={{marginBottom: 4, justifyContent: "right" }}>
+          <Pressable 
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            <Text style={[appStyles.label, {marginBottom: 28, textAlign: "right"}]}>
+              {t("forgot_password.title")}
+            </Text>
+          </Pressable>
           </View>
 
           <Pressable
@@ -173,10 +185,13 @@ export default function LoginScreen({ onLoginSuccess }) {
           </Pressable>
 
           {/* Link de registro */}
-          <View style={{ marginTop: 20, flexDirection: "row", justifyContent: "center", gap: 4 }}>
-            <Text style={{ color: "#64748b" }}>{t("messages.dont_have_an_account")}</Text>
-            <Pressable onPress={() => router.push("/(auth)/register")}>
-              <Text style={{ color: "#3b82f6", fontWeight: "600" }}>{t("common.register")}</Text>
+          <View style={{ marginTop: 20, justifyContent: "center"}}>
+          {/*<View style={{ marginTop: 20, flexDirection: "row", justifyContent: "center", gap: 4 }}> */}  
+            <Text style={[appStyles.label, { fontSize: 14, textAlign: "center"}]}>{t("messages.dont_have_an_account")}</Text>
+            <Pressable 
+            style={[ScreenStyles.btnSecondary, { opacity: canSubmit ? 1 : 0.6, marginBottom: 2} ]}
+            onPress={() => router.push("/(auth)/register")}>
+              <Text style={ ScreenStyles.btnPrimaryText }>{t("common.register")}</Text>
             </Pressable>
           </View>
         </View>

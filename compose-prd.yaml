@@ -42,6 +42,8 @@ services:
   fsms-db:
     build:
       context: db
+    expose:
+      - "3307"
     ports:
       - "3307:3306"
     networks:
@@ -59,4 +61,4 @@ networks:
     internal: true
   
   internet:
-    driver: bridge  
+    driver: bridge

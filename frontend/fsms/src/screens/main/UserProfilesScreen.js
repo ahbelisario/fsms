@@ -68,6 +68,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [discipline_id, setDisciplineId] = useState(null);
   const [rank_id, setRankId] = useState(null);
   const [start_date, setStartDate] = useState(null);
+  const [current_rank_start_date, setCurrentRankStartDate] = useState(null);
+  const [next_exam_date, setNextExamDate] = useState(null);
   const [blood_type, setBloodType] = useState("");
   const [medical_notes, setMedicalNotes] = useState("");
   const [notes, setNotes] = useState("");
@@ -77,6 +79,14 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
   
+  // Filtrar ranks por disciplina seleccionada
+  const filteredRanks = useMemo(() => {
+    if (!discipline_id) return [];
+    return ranks
+      .filter(r => r.discipline === discipline_id)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [ranks, discipline_id]);
+
   const [confirm, setConfirm] = useState({
     visible: false,
     title: "",
@@ -183,6 +193,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setDisciplineId(null);
     setRankId(null);
     setStartDate(null);
+    setCurrentRankStartDate(null);
+    setNextExamDate(null);
     setBloodType("");
     setMedicalNotes("");
     setNotes("");
@@ -219,6 +231,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       setDisciplineId(profileData.discipline_id ?? null);
       setRankId(profileData.rank_id ?? null);
       setStartDate(toYMD(profileData.start_date ?? null));
+      setCurrentRankStartDate(toYMD(profileData.current_rank_start_date ?? null));
+      setNextExamDate(toYMD(profileData.next_exam_date ?? null));
       setBloodType(profileData.blood_type ?? "");
       setMedicalNotes(profileData.medical_notes ?? "");
       setNotes(profileData.notes ?? "");
@@ -242,6 +256,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       setDisciplineId(null);
       setRankId(null);
       setStartDate(null);
+      setCurrentRankStartDate(null);
+      setNextExamDate(null);
       setBloodType("");
       setMedicalNotes("");
       setNotes("");
@@ -340,6 +356,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
         discipline_id: discipline_id,
         rank_id: rank_id,
         start_date: start_date || null,
+        current_rank_start_date: current_rank_start_date || null,
+        next_exam_date: next_exam_date || null,
         blood_type: blood_type.trim(),
         medical_notes: medical_notes.trim(),
         notes: notes.trim(),
@@ -603,7 +621,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <View style={ScreenStyles.pickerWrapper}>
                 <Picker
                   selectedValue={discipline_id}
-                  onValueChange={(v) => setDisciplineId(v)}
+                  onValueChange={(v) => {
+                    setDisciplineId(v);
+                    // Resetear rank si cambió la disciplina
+                    if (v !== discipline_id) {
+                      setRankId(null);
+                    }
+                  }}
                 >
                   <Picker.Item label={t("userprofiles.discipline")} value={null} />
                   {disciplines.map((d) => (
@@ -616,13 +640,25 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.rank")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
-                <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)}>
-                  <Picker.Item label={t("userprofiles.rank")} value={null} />
-                  {ranks.map((r) => (
+                <Picker 
+                  selectedValue={rank_id} 
+                  onValueChange={(v) => setRankId(v)}
+                  enabled={discipline_id !== null}
+                >
+                  <Picker.Item 
+                    label={discipline_id ? t("userprofiles.rank") : "Selecciona disciplina primero"} 
+                    value={null} 
+                  />
+                  {filteredRanks.map((r) => (
                     <Picker.Item key={r.id} label={r.name} value={r.id} />
                   ))}
                 </Picker>
               </View>
+              {filteredRanks.length === 0 && discipline_id && (
+                <Text style={{ fontSize: 12, color: '#f59e0b', marginTop: 4 }}>
+                  ⚠️ No hay grados configurados para esta disciplina
+                </Text>
+              )}
             </View>
 
             <View>
@@ -631,6 +667,61 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 value={start_date}
                 onChange={setStartDate}
               />
+            </View>
+
+            {/* Sección de Progreso de Grado */}
+            <View style={{ 
+              marginTop: 16, 
+              paddingTop: 16, 
+              borderTopWidth: 1, 
+              borderTopColor: '#e2e8f0' 
+            }}>
+              <Text style={[ScreenStyles.label, { fontSize: 16, fontWeight: '600', marginBottom: 12 }]}>
+                📊 Progreso de Grado
+              </Text>
+
+              <View>
+                <DatePickerField
+                  label="Fecha de obtención del grado actual"
+                  value={current_rank_start_date}
+                  onChange={setCurrentRankStartDate}
+                />
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Fecha en que obtuvo el grado seleccionado arriba
+                </Text>
+              </View>
+
+              <View style={{ marginTop: 12 }}>
+                <DatePickerField
+                  label="Fecha del próximo examen"
+                  value={next_exam_date}
+                  onChange={setNextExamDate}
+                />
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  Fecha programada para el próximo examen de grado
+                </Text>
+              </View>
+
+              {rank_id && current_rank_start_date && (
+                <View style={{
+                  backgroundColor: '#dbeafe',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 12,
+                  borderLeftWidth: 4,
+                  borderLeftColor: '#3b82f6'
+                }}>
+                  <Text style={{ fontSize: 12, color: '#1e40af' }}>
+                    ℹ️ El progreso del estudiante se calculará automáticamente basado en:
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#1e40af', marginTop: 4 }}>
+                    • Tiempo desde la fecha de obtención del grado actual
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#1e40af' }}>
+                    • Asistencias registradas desde esa fecha
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         );

@@ -1,10 +1,7 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
-
 const router = express.Router();
-const SALT_ROUNDS = 12;
 
-// Middleware simple para admin (ejemplo)
+// Middleware simple para admin
 function requireAdmin(req, res, next) {
   if (req.user?.role !== 'admin') {
     return res.status(403).json({ status: 'error', message: 'Forbidden' });
@@ -12,8 +9,179 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// =====================================================
+// RUTAS PARA USUARIOS (historial de sus propios pagos)
+// =====================================================
+
 /**
- * GET /api/payments id, membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by
+ * GET /api/payments/my-history
+ * Obtener historial de pagos del usuario autenticado
+ */
+router.get('/my-history', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = parseInt(req.query.offset) || 0;
+
+  // Query para obtener los últimos N pagos del usuario desde incomes
+  fsms_pool.query(
+    `SELECT 
+      i.id,
+      i.description,
+      i.amount,
+      i.currency,
+      i.income_date,
+      i.income_method,
+      i.reference,
+      i.status,
+      it.name as income_type_name
+    FROM incomes i
+    LEFT JOIN income_types it ON i.income_type = it.id
+    WHERE i.user_id = ?
+    ORDER BY i.income_date DESC
+    LIMIT ? OFFSET ?`,
+    [userId, limit, offset],
+    (err, payments) => {
+      if (err) {
+        console.error('Error fetching payment history:', err);
+        return res.status(500).json({ 
+          status: 'error', 
+          message: 'Error al obtener historial de pagos' 
+        });
+      }
+
+      // Query para obtener el total de pagos (para paginación)
+      fsms_pool.query(
+        'SELECT COUNT(*) as total FROM incomes WHERE user_id = ?',
+        [userId],
+        (countErr, countResult) => {
+          if (countErr) {
+            console.error('Error counting payments:', countErr);
+            return res.status(500).json({ 
+              status: 'error', 
+              message: 'Error al contar pagos' 
+            });
+          }
+
+          const total = countResult[0].total;
+
+          res.json({
+            status: 'success',
+            data: {
+              payments,
+              pagination: {
+                total,
+                limit,
+                offset,
+                hasMore: (offset + limit) < total
+              }
+            }
+          });
+        }
+      );
+    }
+  );
+});
+
+/**
+ * GET /api/payments/my-stats
+ * Obtener estadísticas de pagos del usuario
+ */
+router.get('/my-stats', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  fsms_pool.query(
+    `SELECT 
+      COUNT(*) as total_payments,
+      SUM(amount) as total_paid,
+      MAX(income_date) as last_payment_date,
+      MIN(income_date) as first_payment_date,
+      currency
+    FROM incomes
+    WHERE user_id = ?
+    GROUP BY currency`,
+    [userId],
+    (err, stats) => {
+      if (err) {
+        console.error('Error fetching payment stats:', err);
+        return res.status(500).json({ 
+          status: 'error', 
+          message: 'Error al obtener estadísticas' 
+        });
+      }
+
+      res.json({
+        status: 'success',
+        data: stats.length > 0 ? stats[0] : {
+          total_payments: 0,
+          total_paid: 0,
+          last_payment_date: null,
+          first_payment_date: null,
+          currency: 'MXN'
+        }
+      });
+    }
+  );
+});
+
+/**
+ * GET /api/payments/my-history/:id
+ * Obtener detalle de un pago específico del usuario
+ */
+router.get('/my-history/:id', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+  const paymentId = req.params.id;
+
+  fsms_pool.query(
+    `SELECT 
+      i.*,
+      it.name as income_type_name,
+      u.name as user_name,
+      u.lastname as user_lastname,
+      u.email as user_email,
+      creator.name as created_by_name,
+      creator.lastname as created_by_lastname
+    FROM incomes i
+    LEFT JOIN income_types it ON i.income_type = it.id
+    LEFT JOIN users u ON i.user_id = u.id
+    LEFT JOIN users creator ON i.created_by = creator.id
+    WHERE i.id = ? AND i.user_id = ?
+    LIMIT 1`,
+    [paymentId, userId],
+    (err, payments) => {
+      if (err) {
+        console.error('Error fetching payment detail:', err);
+        return res.status(500).json({ 
+          status: 'error', 
+          message: 'Error al obtener detalle del pago' 
+        });
+      }
+
+      if (payments.length === 0) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Pago no encontrado' 
+        });
+      }
+
+      res.json({
+        status: 'success',
+        data: payments[0]
+      });
+    }
+  );
+});
+
+// =====================================================
+// RUTAS PARA ADMIN (gestión completa de incomes)
+// =====================================================
+
+/**
+ * GET /api/payments
+ * Admin: obtener todos los incomes
  */
 router.get('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
@@ -21,13 +189,35 @@ router.get('/', requireAdmin, async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT id, membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by FROM payments ORDER BY payment_date DESC', (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        });
+        fsms_pool.query(
+          `SELECT 
+            i.id, 
+            i.description, 
+            i.membership_id, 
+            i.user_id, 
+            i.income_date, 
+            i.amount, 
+            i.currency, 
+            i.income_method, 
+            i.reference, 
+            i.status, 
+            i.income_type, 
+            i.created_by,
+            it.name as income_type_name,
+            u.name as user_name,
+            u.lastname as user_lastname
+          FROM incomes i
+          LEFT JOIN income_types it ON i.income_type = it.id
+          LEFT JOIN users u ON i.user_id = u.id
+          ORDER BY i.income_date DESC`, 
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+          }
+        );
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM payments', (err, rows) => {
+        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM incomes', (err, rows) => {
           if (err) reject(err);
           else resolve(rows[0].total_rows);
         });
@@ -47,13 +237,26 @@ router.get('/', requireAdmin, async (req, res) => {
 
 /**
  * GET /api/payments/:id
+ * Admin: obtener income por ID
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
   fsms_pool.query(
-    'SELECT id, membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by FROM payments WHERE id = ?',
+    `SELECT 
+      i.*,
+      it.name as income_type_name,
+      u.name as user_name,
+      u.lastname as user_lastname,
+      u.email as user_email,
+      creator.name as created_by_name,
+      creator.lastname as created_by_lastname
+    FROM incomes i
+    LEFT JOIN income_types it ON i.income_type = it.id
+    LEFT JOIN users u ON i.user_id = u.id
+    LEFT JOIN users creator ON i.created_by = creator.id
+    WHERE i.id = ?`,
     [id],
     (err, rows) => {
       if (err) return res.status(500).json({ status: 'error', message: 'DB error' });
@@ -65,79 +268,143 @@ router.get('/:id', (req, res) => {
 
 /**
  * POST /api/payments
+ * Admin: crear income
  */
 router.post('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by } = req.body;
+  const { 
+    description, 
+    membership_id, 
+    user_id, 
+    income_date, 
+    amount, 
+    currency, 
+    income_method, 
+    reference, 
+    status, 
+    income_type, 
+    created_by 
+  } = req.body;
 
-  if (!membership_id || !user_id || !payment_date || !amount || !currency) {
-    return res.status(400).json({ status: 'error', message: 'Some fields are required' });
+  // Validar campos requeridos
+  if (!user_id || !income_date || !amount || !currency || !income_type) {
+    return res.status(400).json({ 
+      status: 'error', 
+      message: 'user_id, income_date, amount, currency e income_type son requeridos' 
+    });
   }
 
   try {
-    const sql = 'INSERT INTO payments (membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by) VALUES (?,?,?,?,?,?,?,?,?,?)';
-    fsms_pool.query(sql, [membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by], (err, result) => {
-      if (err) {
-        // Si username es UNIQUE, aquí puedes mapear el error a 409
-        console.error(err);
-        return res.status(500).json({ status: 'error', message: 'Insert failed' });
+    const sql = `INSERT INTO incomes 
+      (description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by) 
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`;
+    
+    fsms_pool.query(
+      sql, 
+      [description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by], 
+      (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ status: 'error', message: 'Insert failed' });
+        }
+
+        const id = result.insertId;
+
+        res.status(201).json({
+          status: 'success',
+          data: { 
+            id, 
+            description, 
+            membership_id, 
+            user_id, 
+            income_date, 
+            amount, 
+            currency, 
+            income_method, 
+            reference, 
+            status, 
+            income_type, 
+            created_by 
+          }
+        });
       }
-
-      const id = result.insertId;
-
-      res.status(201).json({
-        status: 'success',
-        data: { id, membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by }
-      });
-    });
+    );
   } catch (e) {
     console.error(e);
-    res.status(500).json({ status: 'error', message: 'Hash failed' });
+    res.status(500).json({ status: 'error', message: 'Insert failed' });
   }
 });
 
 /**
  * PUT /api/payments/:id
+ * Admin: actualizar income
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  //const requesterId = Number(req.user.sub);
-  //const targetId = Number(id);
-
-  // Solo admin o dueño
-  //if (req.user.role !== 'admin' && requesterId !== targetId) {
-  //  return res.status(403).json({ status: 'error', message: 'Not allowed' });
-  // }
-
-  const { membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by } = req.body;
+  const { 
+    description, 
+    membership_id, 
+    user_id, 
+    income_date, 
+    amount, 
+    currency, 
+    income_method, 
+    reference, 
+    status, 
+    income_type, 
+    created_by 
+  } = req.body;
   
-  // Actualiza solo campos permitidos para no-admin
-  // (Si admin, puedes incluir role/active en otro SQL)
-  const sql = 'UPDATE payments SET membership_id = ?, user_id = ?, payment_date = ?, amount = ?, currency = ?, payment_method = ?, reference = ?, status = ?, type = ?, created_by = ? WHERE id = ?';
-  const params = [membership_id, user_id, payment_date, amount, currency, payment_method, reference, status, type, created_by, id];
+  const sql = `UPDATE incomes SET 
+    description = ?, 
+    membership_id = ?, 
+    user_id = ?, 
+    income_date = ?, 
+    amount = ?, 
+    currency = ?, 
+    income_method = ?, 
+    reference = ?, 
+    status = ?, 
+    income_type = ?, 
+    created_by = ? 
+    WHERE id = ?`;
+  
+  const params = [
+    description, 
+    membership_id, 
+    user_id, 
+    income_date, 
+    amount, 
+    currency, 
+    income_method, 
+    reference, 
+    status, 
+    income_type, 
+    created_by, 
+    id
+  ];
 
   fsms_pool.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
     if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
-    res.json({ status: 'success', message: 'User updated' });
+    res.json({ status: 'success', message: 'Income updated' });
   });
 });
 
 /**
  * DELETE /api/payments/:id
- * En muchos sistemas se recomienda "soft delete" (active=0) en vez de borrar.
+ * Admin: eliminar income
  */
 router.delete('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  // Soft delete recomendado:
-  fsms_pool.query('DELETE FROM payments WHERE id = ?', [id], (err, result) => {
+  fsms_pool.query('DELETE FROM incomes WHERE id = ?', [id], (err, result) => {
     if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
     if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
-    res.json({ status: 'success', message: 'User disabled' });
+    res.json({ status: 'success', message: 'Income deleted' });
   });
 });
 

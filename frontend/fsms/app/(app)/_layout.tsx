@@ -9,6 +9,7 @@ import { useLanguage } from "@/src/i18n/LanguageProvider";
 import { DrawerControlProvider, useDrawerControl } from "@/src/context/DrawerControlContext";
 import { UserProvider, useUser } from "@/src/context/UserContext";
 import ProfileMenu from "@/src/ui/ProfileMenu";
+import Footer from "@/src/components/footer";
 
 
 function AppShell() {
@@ -60,7 +61,7 @@ function AppShell() {
         const dojo = await api.getDojoSettings();
         const dojoSettings = dojo?.data ?? dojo;
         setDojoName(dojoSettings.dojo_name);
-        
+
         const meResp = await api.me();
         const me = meResp?.data ?? meResp;
 
@@ -167,7 +168,7 @@ function AppShell() {
           router.replace("/(auth)");
         }}
       />
-      
+      <Footer />
     </>
   );
 }

@@ -15,10 +15,13 @@ router.get('/', async (req, res) => {
   try {
     const [records, count] = await Promise.all([
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT * FROM ranks ORDER by name', (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows);
-        });
+        fsms_pool.query(
+          'SELECT * FROM ranks ORDER BY discipline, `order`',
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+          }
+        );
       }),
       new Promise((resolve, reject) => {
         fsms_pool.query('SELECT COUNT(*) AS total_rows FROM ranks', (err, rows) => {
@@ -42,13 +45,26 @@ router.get('/', async (req, res) => {
 router.get('/with_disciplines_names', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
 
-  fsms_pool.query('SELECT r.id, r.name, d.name as discipline FROM fsms.ranks as r, fsms.disciplines as d WHERE r.discipline=d.id', (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ status: 'error', message: 'DB error' });
+  fsms_pool.query(
+    `SELECT 
+      r.id, 
+      r.name, 
+      r.\`order\`,
+      r.color,
+      r.requirements_months,
+      r.requirements_classes,
+      d.name as discipline 
+    FROM ranks as r 
+    INNER JOIN disciplines as d ON r.discipline = d.id
+    ORDER BY r.discipline, r.\`order\``,
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: 'DB error' });
+      }
+      res.json({ status: 'success', data: result });
     }
-    res.json({ status: 'success', data: result });
-  });
+  );
 });
 
 // GET - obtener por id
@@ -72,41 +88,114 @@ router.get('/:id', (req, res) => {
 // POST - crear
 router.post('/', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { name, discipline } = req.body;
+  const { 
+    name, 
+    discipline, 
+    order, 
+    color, 
+    requirements_months, 
+    requirements_classes 
+  } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
+  if (!discipline) {
+    return res.status(400).json({ status: 'error', message: 'Discipline is required' });
+  }
+
+  if (order === undefined || order === null) {
+    return res.status(400).json({ status: 'error', message: 'Order is required' });
+  }
+
   fsms_pool.query(
-    'INSERT INTO ranks (name, discipline) VALUES (?, ?)',
-    [name, discipline ?? null],
+    `INSERT INTO ranks (
+      name, 
+      discipline, 
+      \`order\`, 
+      color, 
+      requirements_months, 
+      requirements_classes
+    ) VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      name, 
+      discipline, 
+      order, 
+      color || null, 
+      requirements_months || null, 
+      requirements_classes || null
+    ],
     (err, result) => {
-      if (err) return res.status(500).json({ status: 'error', message: 'Insert failed' });
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: 'Insert failed' });
+      }
 
       res.status(201).json({
         status: 'success',
-        data: { id: result.insertId, name, discipline: discipline ?? null }
+        data: { 
+          id: result.insertId, 
+          name, 
+          discipline,
+          order,
+          color: color || null,
+          requirements_months: requirements_months || null,
+          requirements_classes: requirements_classes || null
+        }
       });
     }
   );
 });
 
 // PUT - actualizar
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
-  const { name, discipline } = req.body;
+  const { 
+    name, 
+    discipline, 
+    order, 
+    color, 
+    requirements_months, 
+    requirements_classes 
+  } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: 'error', message: 'Name is required' });
   }
 
+  if (!discipline) {
+    return res.status(400).json({ status: 'error', message: 'Discipline is required' });
+  }
+
+  if (order === undefined || order === null) {
+    return res.status(400).json({ status: 'error', message: 'Order is required' });
+  }
+
   fsms_pool.query(
-    'UPDATE ranks SET name = ?, discipline = ? WHERE id = ?',
-    [name, discipline ?? null, id],
+    `UPDATE ranks SET 
+      name = ?, 
+      discipline = ?, 
+      \`order\` = ?, 
+      color = ?, 
+      requirements_months = ?, 
+      requirements_classes = ? 
+    WHERE id = ?`,
+    [
+      name, 
+      discipline, 
+      order, 
+      color || null, 
+      requirements_months || null, 
+      requirements_classes || null, 
+      id
+    ],
     (err, result) => {
-      if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: 'Update failed' });
+      }
       if (result.affectedRows === 0) {
         return res.status(404).json({ status: 'error', message: 'Not found' });
       }
@@ -116,7 +205,7 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE - eliminar
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
@@ -124,7 +213,10 @@ router.delete('/:id', (req, res) => {
     'DELETE FROM ranks WHERE id = ?',
     [id],
     (err, result) => {
-      if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: 'Delete failed' });
+      }
       if (result.affectedRows === 0) {
         return res.status(404).json({ status: 'error', message: 'Not found' });
       }

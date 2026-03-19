@@ -5,6 +5,7 @@ import { ScoreCard } from "@/src/screens/helpers/ScoreCard";
 import { api } from "@/src/api/client";
 import { HomeStyles, ScreenStyles } from '@/src/styles/appStyles';
 import { t } from "@/src/i18n";
+import RankProgressWidget from "@/src/components/RankProgressWidget";
 
 export default function Home({ onAuthExpired }) {
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,7 @@ export default function Home({ onAuthExpired }) {
   const [totalPayments, setTotalPayments] = useState(0);
   const [myEnrollments, setMyEnrollments] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState(null);
+  const [rankProgress, setRankProgress] = useState(null);
 
   function toYMD(value) {
     if (!value) return "";
@@ -117,14 +119,16 @@ export default function Home({ onAuthExpired }) {
         myProfile,
         classesData,
         enrollmentsData,
-        attendanceData
+        attendanceData,
+        rankData
       ] = await Promise.all([
         api.getMyMembership(),
         api.getMyPayments(),
         api.getMyProfile(),
         api.listScheduledClasses(),
         api.getMyEnrollments(),
-        api.getMyAttendanceStats()
+        api.getMyAttendanceStats(),
+        api.getRankProgress()
       ]);
 
       // Membresía activa
@@ -171,6 +175,9 @@ export default function Home({ onAuthExpired }) {
       // Estadísticas de asistencia
       const stats = attendanceData?.data || null;
       setAttendanceStats(stats);
+
+      setRankProgress(rankData?.data || null);
+      console.log(rankData);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -354,6 +361,9 @@ export default function Home({ onAuthExpired }) {
           </View>
         </View>
       )}
+
+      {/* Progreso de Cinturón */}
+      <RankProgressWidget rankData={rankProgress} />
 
       {/* Último pago */}
       <View style={HomeStyles.section}>

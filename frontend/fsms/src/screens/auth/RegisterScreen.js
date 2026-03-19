@@ -1,11 +1,26 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { appStyles } from "@/src/styles/appStyles";
+import { appStyles, ScreenStyles } from "@/src/styles/appStyles";
 import { notifyError, notifySuccess } from "@/src/ui/notify";
 import { i18n, t } from "@/src/i18n";
 import { setLang } from "@/src/i18n/lang";
 import { api } from "@/src/api/client";
+
+/**
+ * Funciones de validación de caracteres
+ */
+const validators = {
+  // Solo letras (con acentos y espacios)
+  nameChars: (text) => text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''),
+  
+  // Username: letras, números, puntos, guiones bajos, guiones, arroba
+  // (caracteres válidos en emails + alfanuméricos)
+  usernameChars: (text) => text.replace(/[^a-zA-Z0-9._@-]/g, ''),
+  
+  // Email: caracteres válidos en correos electrónicos
+  emailChars: (text) => text.replace(/[^a-zA-Z0-9._@+-]/g, ''),
+};
 
 /**
  * Validar fortaleza de contraseña
@@ -61,6 +76,27 @@ export default function RegisterScreen() {
     force((v) => v + 1);
     setLanguage(lang);
   }
+
+  // Handlers con validación
+  const handleNameChange = (text) => {
+    const cleaned = validators.nameChars(text);
+    setName(cleaned);
+  };
+
+  const handleLastnameChange = (text) => {
+    const cleaned = validators.nameChars(text);
+    setLastname(cleaned);
+  };
+
+  const handleUsernameChange = (text) => {
+    const cleaned = validators.usernameChars(text.toLowerCase());
+    setUsername(cleaned);
+  };
+
+  const handleEmailChange = (text) => {
+    const cleaned = validators.emailChars(text.toLowerCase());
+    setEmail(cleaned);
+  };
 
   // Calcular fortaleza de contraseña
   const passwordStrength = useMemo(() => {
@@ -152,43 +188,49 @@ export default function RegisterScreen() {
         <View style={[appStyles.card, { maxWidth: 500, width: '100%' }]}>
           <Text style={appStyles.title}>{t("register.create_account")}</Text>
           <Text style={appStyles.subtitle}>{t("register.to_begin")}</Text>
-
-          <Text style={appStyles.label}>{t("userprofiles.name")} *</Text>
-          <TextInput
-            style={appStyles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Juan"
-            autoCapitalize="words"
-            placeholderTextColor="#94a3b8"
-          />
-
-          <Text style={appStyles.label}>{t("userprofiles.lastname")} *</Text>
-          <TextInput
-            style={appStyles.input}
-            value={lastname}
-            onChangeText={setLastname}
-            placeholder="Pérez"
-            autoCapitalize="words"
-            placeholderTextColor="#94a3b8"
-          />
-
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
+            <View style={{ flex: 1 }}>
+                <Text style={appStyles.label}>{t("userprofiles.name")} *</Text>
+                <TextInput
+                    style={appStyles.input}
+                    value={name}
+                    onChangeText={handleNameChange}
+                    placeholder="Juan"
+                    autoCapitalize="words"
+                    placeholderTextColor="#94a3b8"
+                />
+            </View>
+            <View style={{ flex: 1 }}>
+                <Text style={appStyles.label}>{t("userprofiles.lastname")} *</Text>
+                <TextInput
+                    style={appStyles.input}
+                    value={lastname}
+                    onChangeText={handleLastnameChange}
+                    placeholder="Pérez"
+                    autoCapitalize="words"
+                    placeholderTextColor="#94a3b8"
+                />
+            </View>         
+        </View>
           <Text style={appStyles.label}>{t("users.username")} *</Text>
           <TextInput
             style={appStyles.input}
             value={username}
-            onChangeText={setUsername}
+            onChangeText={handleUsernameChange}
             placeholder="juanperez"
             autoCapitalize="none"
             autoCorrect={false}
             placeholderTextColor="#94a3b8"
           />
+          <Text style={{ fontSize: 10, color: '#64748b', marginTop: -7, marginBottom: 14 }}>
+            {t("register.username_hint") || "Letras, números, puntos, guiones y @"}
+          </Text>
 
           <Text style={appStyles.label}>{t("userprofiles.email")} *</Text>
           <TextInput
             style={appStyles.input}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             placeholder="juan@ejemplo.com"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -207,9 +249,10 @@ export default function RegisterScreen() {
               placeholder="••••••••"
               placeholderTextColor="#94a3b8"
             />
+            {/*
             <Pressable style={appStyles.toggleBtn} onPress={() => setShowPassword((v) => !v)}>
               <Text style={appStyles.toggleBtnText}>{showPassword ? t("common.hide") : t("common.show")}</Text>
-            </Pressable>
+            </Pressable> */}
           </View>
 
           {/* Indicador de fortaleza de contraseña */}
@@ -271,9 +314,10 @@ export default function RegisterScreen() {
               placeholder="••••••••"
               placeholderTextColor="#94a3b8"
             />
+            {/*
             <Pressable style={appStyles.toggleBtn} onPress={() => setShowConfirmPassword((v) => !v)}>
               <Text style={appStyles.toggleBtnText}>{showConfirmPassword ? t("common.hide") : t("common.show")}</Text>
-            </Pressable>
+            </Pressable>*/}
           </View>
 
           {password !== confirmPassword && confirmPassword.length > 0 && (
@@ -294,10 +338,12 @@ export default function RegisterScreen() {
             )}
           </Pressable>
 
-          <View style={{ marginTop: 20, flexDirection: "row", justifyContent: "center", gap: 4 }}>
-            <Text style={{ color: "#64748b" }}>{t("messages.questions.do_you_have_an_account")}</Text>
-            <Pressable onPress={() => router.replace("/(auth)")}>
-              <Text style={{ color: "#3b82f6", fontWeight: "600" }}>{t("login.title")}</Text>
+          <View style={{ marginTop: 20, justifyContent: "center", gap: 4 }}>
+            <Text style={[appStyles.label, { fontSize: 14, textAlign: "center"}]}>{t("messages.questions.do_you_have_an_account")}</Text>
+            <Pressable 
+                style={[ScreenStyles.btnSecondary, { opacity: canSubmit ? 1 : 0.6, marginBottom: 2} ]}
+                onPress={() => router.replace("/(auth)")}>
+              <Text style={ ScreenStyles.btnPrimaryText }>{t("login.title")}</Text>
             </Pressable>
           </View>
         </View>

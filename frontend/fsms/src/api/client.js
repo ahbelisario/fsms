@@ -135,6 +135,22 @@ export const api = {
   markAttendance: (payload) => request("/api/class-enrollments/mark-attendance", { method: "POST", body: payload }),
   getAttendanceStats: (userId) => request(`/api/class-enrollments/attendance-stats/${userId}`),
   getMyAttendanceStats: () => request("/api/class-enrollments/my-attendance-stats"),
+  
+  getRankProgress: () => request('/api/rank-progress'),
+  getRankHistory: () => request('/api/rank-progress/history'),
+
+  getRankProgress: () => request('/api/rank-progress'),
+  getRankHistory: () => request('/api/rank-progress/history'),
+  promoteStudent: (payload) => request('/api/rank-progress/promote', { method: 'POST', body: payload }),
+  getPendingExams: () => request('/api/rank-progress/pending-exams'),
+
+  getPaymentHistory: (params = {}) => {
+    const { limit = 10, offset = 0 } = params;
+    return request(`/api/payments/my-history?limit=${limit}&offset=${offset}`);
+  },
+ 
+  getPaymentStats: () => request('/api/payments/my-stats'),
+  getPaymentDetail: (paymentId) => request(`/api/payments/my-history/${paymentId}`),
 
   // Dojo Settings
   getDojoSettings: () => request("/api/dojo-settings"),
