@@ -1,20 +1,24 @@
 import React from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, Platform, useWindowDimensions } from "react-native";
 
 export default function Footer() {
+  const { width } = useWindowDimensions();
+
+  // Ocultar en móvil nativo o web con ancho < 768
+  const isNativeMobile = Platform.OS === "ios" || Platform.OS === "android";
+  const isNarrowWeb    = Platform.OS === "web" && width < 768;
+
+  if (isNativeMobile || isNarrowWeb) return null;
+
   const currentYear = new Date().getFullYear();
 
   return (
     <View style={styles.footer}>
-      {/* Contenedor con texto izquierda y logo derecha */}
       <View style={styles.content}>
-        {/* Texto a la izquierda */}
         <Text style={styles.text}>
           © {currentYear} BudoDesk. Todos los derechos reservados.
         </Text>
-        
-        {/* Logo a la derecha */}
-        <Image 
+        <Image
           source={require('@/assets/images/budodesk-logo.png')}
           style={styles.logo}
           resizeMode="contain"
@@ -34,8 +38,8 @@ const styles = {
   },
   content: {
     flexDirection: "row",
-    alignItems: 'center',        // ← Centra verticalmente
-    justifyContent: 'space-between',  // ← Texto izquierda, logo derecha
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   logo: {
     width: 150,
@@ -44,6 +48,5 @@ const styles = {
   text: {
     fontSize: 11,
     color: '#64748b',
-    // textAlign: 'left' es el default
   },
 };
