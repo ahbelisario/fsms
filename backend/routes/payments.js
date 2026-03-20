@@ -21,10 +21,9 @@ router.get('/my-history', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const userId = req.user.id;
 
-  const limit = parseInt(req.query.limit) || 10;
+  const limit  = parseInt(req.query.limit)  || 10;
   const offset = parseInt(req.query.offset) || 0;
 
-  // Query para obtener los últimos N pagos del usuario desde incomes
   fsms_pool.query(
     `SELECT 
       i.id,
@@ -45,22 +44,21 @@ router.get('/my-history', (req, res) => {
     (err, payments) => {
       if (err) {
         console.error('Error fetching payment history:', err);
-        return res.status(500).json({ 
-          status: 'error', 
-          message: 'Error al obtener historial de pagos' 
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error al obtener historial de pagos'
         });
       }
 
-      // Query para obtener el total de pagos (para paginación)
       fsms_pool.query(
         'SELECT COUNT(*) as total FROM incomes WHERE user_id = ?',
         [userId],
         (countErr, countResult) => {
           if (countErr) {
             console.error('Error counting payments:', countErr);
-            return res.status(500).json({ 
-              status: 'error', 
-              message: 'Error al contar pagos' 
+            return res.status(500).json({
+              status: 'error',
+              message: 'Error al contar pagos'
             });
           }
 
@@ -106,22 +104,61 @@ router.get('/my-stats', (req, res) => {
     (err, stats) => {
       if (err) {
         console.error('Error fetching payment stats:', err);
-        return res.status(500).json({ 
-          status: 'error', 
-          message: 'Error al obtener estadísticas' 
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error al obtener estadísticas'
         });
       }
 
       res.json({
         status: 'success',
         data: stats.length > 0 ? stats[0] : {
-          total_payments: 0,
-          total_paid: 0,
+          total_payments:    0,
+          total_paid:        0,
           last_payment_date: null,
           first_payment_date: null,
-          currency: 'MXN'
+          currency:          'MXN'
         }
       });
+    }
+  );
+});
+
+/**
+ * GET /api/payments/my-monthly-status
+ * Devuelve pagos agrupados por mes de los últimos 4 meses (mes actual + 3 anteriores).
+ * Solo considera pagos con status = 'applied'.
+ * Usado por el score card de PaymentHistoryScreen.
+ */
+router.get('/my-monthly-status', (req, res) => {
+  const fsms_pool = req.app.locals.fsms_pool;
+  const userId = req.user.id;
+
+  fsms_pool.query(
+    `SELECT 
+      DATE_FORMAT(income_date, '%Y-%m') as month,
+      COUNT(*)                          as payment_count,
+      SUM(amount)                       as total_amount,
+      currency,
+      MAX(income_date)                  as last_payment_date
+    FROM incomes
+    WHERE 
+      user_id = ?
+      AND status = 'applied'
+      AND income_date >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 3 MONTH), '%Y-%m-01')
+    GROUP BY DATE_FORMAT(income_date, '%Y-%m'), currency
+    ORDER BY month DESC`,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching monthly payment status:', err);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error al obtener estado mensual de pagos'
+        });
+      }
+
+      res.json({ status: 'success', data: rows });
     }
   );
 });
@@ -132,7 +169,7 @@ router.get('/my-stats', (req, res) => {
  */
 router.get('/my-history/:id', (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const userId = req.user.id;
+  const userId    = req.user.id;
   const paymentId = req.params.id;
 
   fsms_pool.query(
@@ -154,23 +191,20 @@ router.get('/my-history/:id', (req, res) => {
     (err, payments) => {
       if (err) {
         console.error('Error fetching payment detail:', err);
-        return res.status(500).json({ 
-          status: 'error', 
-          message: 'Error al obtener detalle del pago' 
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error al obtener detalle del pago'
         });
       }
 
       if (payments.length === 0) {
-        return res.status(404).json({ 
-          status: 'error', 
-          message: 'Pago no encontrado' 
+        return res.status(404).json({
+          status: 'error',
+          message: 'Pago no encontrado'
         });
       }
 
-      res.json({
-        status: 'success',
-        data: payments[0]
-      });
+      res.json({ status: 'success', data: payments[0] });
     }
   );
 });
@@ -209,7 +243,7 @@ router.get('/', requireAdmin, async (req, res) => {
           FROM incomes i
           LEFT JOIN income_types it ON i.income_type = it.id
           LEFT JOIN users u ON i.user_id = u.id
-          ORDER BY i.income_date DESC`, 
+          ORDER BY i.income_date DESC`,
           (err, rows) => {
             if (err) reject(err);
             else resolve(rows);
@@ -217,18 +251,17 @@ router.get('/', requireAdmin, async (req, res) => {
         );
       }),
       new Promise((resolve, reject) => {
-        fsms_pool.query('SELECT COUNT(*) AS total_rows FROM incomes', (err, rows) => {
-          if (err) reject(err);
-          else resolve(rows[0].total_rows);
-        });
+        fsms_pool.query(
+          'SELECT COUNT(*) AS total_rows FROM incomes',
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows[0].total_rows);
+          }
+        );
       })
     ]);
 
-    res.json({
-      status: 'success',
-      total_rows: count,
-      data: records
-    });
+    res.json({ status: 'success', total_rows: count, data: records });
   } catch (err) {
     console.error(err);
     res.status(500).json({ status: 'error', message: 'DB error' });
@@ -272,25 +305,24 @@ router.get('/:id', requireAdmin, (req, res) => {
  */
 router.post('/', requireAdmin, async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
-  const { 
-    description, 
-    membership_id, 
-    user_id, 
-    income_date, 
-    amount, 
-    currency, 
-    income_method, 
-    reference, 
-    status, 
-    income_type, 
-    created_by 
+  const {
+    description,
+    membership_id,
+    user_id,
+    income_date,
+    amount,
+    currency,
+    income_method,
+    reference,
+    status,
+    income_type,
+    created_by
   } = req.body;
 
-  // Validar campos requeridos
   if (!user_id || !income_date || !amount || !currency || !income_type) {
-    return res.status(400).json({ 
-      status: 'error', 
-      message: 'user_id, income_date, amount, currency e income_type son requeridos' 
+    return res.status(400).json({
+      status: 'error',
+      message: 'user_id, income_date, amount, currency e income_type son requeridos'
     });
   }
 
@@ -298,33 +330,31 @@ router.post('/', requireAdmin, async (req, res) => {
     const sql = `INSERT INTO incomes 
       (description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by) 
       VALUES (?,?,?,?,?,?,?,?,?,?,?)`;
-    
+
     fsms_pool.query(
-      sql, 
-      [description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by], 
+      sql,
+      [description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by],
       (err, result) => {
         if (err) {
           console.error(err);
           return res.status(500).json({ status: 'error', message: 'Insert failed' });
         }
 
-        const id = result.insertId;
-
         res.status(201).json({
           status: 'success',
-          data: { 
-            id, 
-            description, 
-            membership_id, 
-            user_id, 
-            income_date, 
-            amount, 
-            currency, 
-            income_method, 
-            reference, 
-            status, 
-            income_type, 
-            created_by 
+          data: {
+            id: result.insertId,
+            description,
+            membership_id,
+            user_id,
+            income_date,
+            amount,
+            currency,
+            income_method,
+            reference,
+            status,
+            income_type,
+            created_by
           }
         });
       }
@@ -343,54 +373,43 @@ router.put('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  const { 
-    description, 
-    membership_id, 
-    user_id, 
-    income_date, 
-    amount, 
-    currency, 
-    income_method, 
-    reference, 
-    status, 
-    income_type, 
-    created_by 
+  const {
+    description,
+    membership_id,
+    user_id,
+    income_date,
+    amount,
+    currency,
+    income_method,
+    reference,
+    status,
+    income_type,
+    created_by
   } = req.body;
-  
-  const sql = `UPDATE incomes SET 
-    description = ?, 
-    membership_id = ?, 
-    user_id = ?, 
-    income_date = ?, 
-    amount = ?, 
-    currency = ?, 
-    income_method = ?, 
-    reference = ?, 
-    status = ?, 
-    income_type = ?, 
-    created_by = ? 
-    WHERE id = ?`;
-  
-  const params = [
-    description, 
-    membership_id, 
-    user_id, 
-    income_date, 
-    amount, 
-    currency, 
-    income_method, 
-    reference, 
-    status, 
-    income_type, 
-    created_by, 
-    id
-  ];
 
-  fsms_pool.query(sql, params, (err, result) => {
-    if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
-    if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
-    res.json({ status: 'success', message: 'Income updated' });
-  });
+  const sql = `UPDATE incomes SET 
+    description   = ?, 
+    membership_id = ?, 
+    user_id       = ?, 
+    income_date   = ?, 
+    amount        = ?, 
+    currency      = ?, 
+    income_method = ?, 
+    reference     = ?, 
+    status        = ?, 
+    income_type   = ?, 
+    created_by    = ? 
+    WHERE id = ?`;
+
+  fsms_pool.query(
+    sql,
+    [description, membership_id, user_id, income_date, amount, currency, income_method, reference, status, income_type, created_by, id],
+    (err, result) => {
+      if (err) return res.status(500).json({ status: 'error', message: 'Update failed' });
+      if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
+      res.json({ status: 'success', message: 'Income updated' });
+    }
+  );
 });
 
 /**
@@ -401,11 +420,15 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   const { id } = req.params;
 
-  fsms_pool.query('DELETE FROM incomes WHERE id = ?', [id], (err, result) => {
-    if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
-    if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
-    res.json({ status: 'success', message: 'Income deleted' });
-  });
+  fsms_pool.query(
+    'DELETE FROM incomes WHERE id = ?',
+    [id],
+    (err, result) => {
+      if (err) return res.status(500).json({ status: 'error', message: 'Delete failed' });
+      if (result.affectedRows === 0) return res.status(404).json({ status: 'error', message: 'Not found' });
+      res.json({ status: 'success', message: 'Income deleted' });
+    }
+  );
 });
 
 module.exports = { router, requireAdmin };

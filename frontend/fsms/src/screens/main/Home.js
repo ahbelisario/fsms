@@ -177,7 +177,6 @@ export default function Home({ onAuthExpired }) {
       setAttendanceStats(stats);
 
       setRankProgress(rankData?.data || null);
-      console.log(rankData);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -229,9 +228,9 @@ export default function Home({ onAuthExpired }) {
 
       {/* Estado de membresía */}
       <View style={HomeStyles.section}>
-        <Text style={HomeStyles.sectionTitle}>📋 {t("dashboards.my_membership")}</Text>
+       {/* <Text style={HomeStyles.sectionTitle}>📋 {t("dashboards.my_membership")}</Text>*/}
         
-        {activeMembership ? (
+        {/*activeMembership ? (
           <>
             <View style={HomeStyles.grid}>
               <View style={HomeStyles.cell}>
@@ -287,7 +286,7 @@ export default function Home({ onAuthExpired }) {
               {t("dashboards.no_membership")}. {t("memberships.contact")}.
             </Text>
           </View>
-        )}
+        )*/}
       </View>
 
       {/* Estadísticas de Asistencia */}

@@ -70,7 +70,8 @@ export const es = {
       preview: "Vista previa",
       months: "Meses",
       classes: "Clases",
-      my_progress: "Mi Progreso"
+      my_progress: "Mi Progreso",
+      pending_payments: "Pagos pendientes"
     },
     messages: {
       password_dont_match: "Las contraseñas no coinciden",
@@ -114,6 +115,7 @@ export const es = {
       success: {
         password_reset_sent: "Email enviado. Revisa tu bandeja de entrada.",
         password_changed: "✅ Contraseña actualizada exitosamente. Ya puedes iniciar sesión.",
+        no_debts_in_last_4months: "Al corriente en los últimos 4 meses"
       },
     },
     dialogs: {

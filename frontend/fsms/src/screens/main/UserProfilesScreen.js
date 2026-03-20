@@ -66,7 +66,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [country, setCountry] = useState("");
   const [postal_code, setPostalCode] = useState("");
   const [discipline_id, setDisciplineId] = useState(null);
-  const [rank_id, setRankId] = useState(null);
+  const [rank_id, setRankId] = useState("");
   const [start_date, setStartDate] = useState(null);
   const [current_rank_start_date, setCurrentRankStartDate] = useState(null);
   const [next_exam_date, setNextExamDate] = useState(null);
@@ -83,7 +83,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const filteredRanks = useMemo(() => {
     if (!discipline_id) return [];
     return ranks
-      .filter(r => r.discipline === discipline_id)
+      .filter(r => Number(r.discipline) === Number(discipline_id))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [ranks, discipline_id]);
 
@@ -647,7 +647,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 >
                   <Picker.Item 
                     label={discipline_id ? t("userprofiles.rank") : "Selecciona disciplina primero"} 
-                    value={null} 
+                    value=""
                   />
                   {filteredRanks.map((r) => (
                     <Picker.Item key={r.id} label={r.name} value={r.id} />

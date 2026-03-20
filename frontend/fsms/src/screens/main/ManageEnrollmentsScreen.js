@@ -153,7 +153,6 @@ export default function ManageEnrollmentsScreen({ onAuthExpired }) {
   }
 
   function selectClass(classId) {
-    console.log('Selected class ID:', classId);
     // Convertir a número si viene como string
     const numericId = classId ? Number(classId) : null;
     setSelectedClass(numericId);

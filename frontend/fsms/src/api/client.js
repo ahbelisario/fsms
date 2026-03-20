@@ -148,6 +148,8 @@ export const api = {
     const { limit = 10, offset = 0 } = params;
     return request(`/api/payments/my-history?limit=${limit}&offset=${offset}`);
   },
+
+  getMonthlyPaymentStatus: () => request('/api/payments/my-monthly-status'),
  
   getPaymentStats: () => request('/api/payments/my-stats'),
   getPaymentDetail: (paymentId) => request(`/api/payments/my-history/${paymentId}`),
