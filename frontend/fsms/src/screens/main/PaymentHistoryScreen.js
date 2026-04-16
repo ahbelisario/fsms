@@ -50,7 +50,7 @@ function getLastMonths(n = 4) {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     months.push({ key, date: d });
   }
-  return months; // [mes actual, mes-1, mes-2, mes-3]
+  return months;
 }
 
 function monthLabel(date) {
@@ -60,19 +60,15 @@ function monthLabel(date) {
 // ── Componente: Score Card Mensual ────────────────────────────────────────────
 
 function MonthlyStatusCard({ monthlyData }) {
-  const months = getLastMonths(4); // [actual, -1, -2, -3]
+  const months = getLastMonths(4);
   const paidSet = new Set((monthlyData || []).map(r => r.month));
 
   const currentMonthKey = months[0].key;
   const currentPaid     = paidSet.has(currentMonthKey);
 
-  // Meses anteriores sin pago (excluye el actual)
   const unpaidPast = months.slice(1).filter(m => !paidSet.has(m.key));
 
-  // Color del card principal
-  const cardBg      = currentPaid ? '#10b981' : '#ef4444';
-  const cardBgLight = currentPaid ? '#d1fae5' : '#fee2e2';
-  const cardText    = currentPaid ? '#065f46' : '#991b1b';
+  const cardBg = currentPaid ? '#10b981' : '#ef4444';
 
   return (
     <View style={{ marginTop: 16 }}>
@@ -97,8 +93,9 @@ function MonthlyStatusCard({ monthlyData }) {
             {currentPaid ? '✅' : '⚠️'}
           </Text>
           <View style={{ flex: 1 }}>
+            {/* ✅ Fix: quitados espacios sobrantes al final */}
             <Text style={{ fontSize: 18, fontWeight: '700', color: '#fff' }}>
-              {currentPaid ? t("payments.applied") : t("payments.pending")}  
+              {currentPaid ? t("payments.applied") : t("payments.pending")}
             </Text>
             <Text style={{ fontSize: 12, color: '#fff', opacity: 0.85, marginTop: 2 }}>
               {currentPaid
@@ -109,17 +106,17 @@ function MonthlyStatusCard({ monthlyData }) {
         </View>
 
         {/* Última fecha de pago del mes si existe */}
-        {currentPaid && monthlyData?.find(r => r.month === currentMonthKey)?.last_payment_date && (
+        {currentPaid && monthlyData?.find(r => r.month === currentMonthKey)?.last_payment_date ? (
           <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.3)' }}>
             <Text style={{ fontSize: 11, color: '#fff', opacity: 0.85 }}>
               {t("payments.last_payment")}: {formatDate(monthlyData.find(r => r.month === currentMonthKey).last_payment_date)}
             </Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* Alertas de meses anteriores sin pago */}
-      {unpaidPast.length > 0 && (
+      {unpaidPast.length > 0 ? (
         <View style={{
           backgroundColor: '#fff7ed',
           borderRadius: 12,
@@ -134,7 +131,7 @@ function MonthlyStatusCard({ monthlyData }) {
           elevation: 2,
         }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: '#9a3412', marginBottom: 8 }}>
-            🔔 {unpaidPast.length === 1 ? t("labels.pending_payments") : t("labels.pending_payments") }
+            {`🔔 ${t("labels.pending_payments")}`}
           </Text>
           {unpaidPast.map(m => (
             <View key={m.key} style={{
@@ -150,7 +147,6 @@ function MonthlyStatusCard({ monthlyData }) {
                 backgroundColor: '#f97316',
               }} />
               <Text style={{ fontSize: 13, color: '#9a3412' }}>
-                {/* "Debes el pago de febrero" / "You owe the payment of february" */}
                 {monthLabel(m.date)}
               </Text>
             </View>
@@ -159,10 +155,10 @@ function MonthlyStatusCard({ monthlyData }) {
             {t("memberships.contact")}
           </Text>
         </View>
-      )}
+      ) : null}
 
       {/* Si todo está al corriente */}
-      {unpaidPast.length === 0 && currentPaid && (
+      {unpaidPast.length === 0 && currentPaid ? (
         <View style={{
           backgroundColor: '#f0fdf4',
           borderRadius: 12,
@@ -172,10 +168,10 @@ function MonthlyStatusCard({ monthlyData }) {
           borderLeftColor: '#10b981',
         }}>
           <Text style={{ fontSize: 13, color: '#065f46' }}>
-            ✅ {t("messages.success.no_debts_in_last_4months")}
+            {`✅ ${t("messages.success.no_debts_in_last_4months")}`}
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -197,7 +193,7 @@ export default function PaymentHistoryScreen() {
     try {
       const [historyResponse, monthlyResponse] = await Promise.all([
         api.getPaymentHistory({ limit: 10, offset: 0 }),
-        api.getMonthlyPaymentStatus(),          // ← nuevo endpoint
+        api.getMonthlyPaymentStatus(),
       ]);
 
       setPayments(historyResponse.data.payments);
@@ -273,7 +269,7 @@ export default function PaymentHistoryScreen() {
           {/* Lista de pagos */}
           <View style={{ marginTop: 24, width: '100%' }}>
             <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
-              {t("payments.last_pl")} {pagination.limit} {t("payments.title").toLowerCase()}
+              {`${t("payments.last_pl")} ${pagination.limit} ${t("payments.title").toLowerCase()}`}
             </Text>
 
             {payments.length === 0 ? (
@@ -317,7 +313,8 @@ export default function PaymentHistoryScreen() {
                           {formatDate(payment.income_date)}
                         </Text>
                       </View>
-                      {payment.status && (
+                      {/* ✅ Fix: && reemplazado por ternario */}
+                      {payment.status ? (
                         <View style={{
                           backgroundColor: getStatusColor(payment.status) + '20',
                           paddingHorizontal: 8,
@@ -328,7 +325,7 @@ export default function PaymentHistoryScreen() {
                             {t("payments." + payment.status.toLowerCase())}
                           </Text>
                         </View>
-                      )}
+                      ) : null}
                     </View>
 
                     {/* Monto */}
@@ -338,36 +335,37 @@ export default function PaymentHistoryScreen() {
 
                     {/* Detalles */}
                     <View style={{ gap: 4 }}>
-                      {payment.income_type_name && (
+                      {/* ✅ Fix: && reemplazados por ternarios */}
+                      {payment.income_type_name ? (
                         <View style={{ flexDirection: 'row' }}>
                           <Text style={{ fontSize: 12, color: '#64748b' }}>{t("payments.type")}: </Text>
                           <Text style={{ fontSize: 12, color: '#1e293b', fontWeight: '500' }}>
                             {t("payments." + payment.income_type_name.toLowerCase())}
                           </Text>
                         </View>
-                      )}
-                      {payment.income_method && (
+                      ) : null}
+                      {payment.income_method ? (
                         <View style={{ flexDirection: 'row' }}>
                           <Text style={{ fontSize: 12, color: '#64748b' }}>{t("payments.payment_method")}: </Text>
                           <Text style={{ fontSize: 12, color: '#1e293b', fontWeight: '500' }}>
                             {t("payments." + payment.income_method.toLowerCase())}
                           </Text>
                         </View>
-                      )}
-                      {payment.reference && (
+                      ) : null}
+                      {payment.reference ? (
                         <View style={{ flexDirection: 'row' }}>
                           <Text style={{ fontSize: 12, color: '#64748b' }}>{t("payments.reference")}: </Text>
                           <Text style={{ fontSize: 12, color: '#1e293b', fontWeight: '500' }}>
                             {payment.reference}
                           </Text>
                         </View>
-                      )}
+                      ) : null}
                     </View>
                   </View>
                 ))}
 
                 {/* Load More */}
-                {pagination.hasMore && (
+                {pagination.hasMore ? (
                   <Pressable
                     style={[appStyles.submitBtn, {
                       backgroundColor: '#f1f5f9',
@@ -384,7 +382,7 @@ export default function PaymentHistoryScreen() {
                         </Text>
                     }
                   </Pressable>
-                )}
+                ) : null}
               </>
             )}
           </View>

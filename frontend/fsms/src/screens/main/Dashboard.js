@@ -31,7 +31,14 @@ export default function Dashboard({ onAuthExpired }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const MONTHS_SHORT = [t("months_short.jan"), t("months_short.feb"),t("months_short.mar"),t("months_short.apr"),t("months_short.may"),t("months_short.jun"),t("months_short.jul"),t("months_short.ago"),t("months_short.sep"),t("months_short.oct"),t("months_short.nov"),t("months_short.dec")];
+  const MONTHS_SHORT = [
+    t("months_short.jan"), t("months_short.feb"), t("months_short.mar"),
+    t("months_short.apr"), t("months_short.may"), t("months_short.jun"),
+    t("months_short.jul"), t("months_short.ago"), t("months_short.sep"),
+    t("months_short.oct"), t("months_short.nov"), t("months_short.dec")
+  ];
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   function clearMsgs() {
     setError("");
@@ -66,30 +73,54 @@ export default function Dashboard({ onAuthExpired }) {
     return String(m);
   }
 
-  // Calcular ingresos del mes actual y anterior
+  /**
+   * ✅ Determina si una clase todavía no ha comenzado.
+   * Si es hoy, compara también la hora de inicio.
+   * Si es un día futuro, siempre retorna true.
+   */
+  function classIsUpcoming(scheduledDate, startTime) {
+    if (!scheduledDate) return false;
+    const now = new Date();
+    const dateStr = toYMD(scheduledDate);
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const classDate = new Date(year, month - 1, day);
+
+    // Día futuro → siempre visible
+    if (classDate.getTime() > today.getTime()) return true;
+
+    // Hoy → comparar hora
+    if (classDate.getTime() === today.getTime() && startTime) {
+      const [hh, mm] = startTime.split(':').map(Number);
+      const classDateTime = new Date(year, month - 1, day, hh, mm);
+      return classDateTime > now;
+    }
+
+    // Día pasado → no mostrar
+    return false;
+  }
+
   function calculateMonthlyIncomes(incomes) {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-11
+    const currentMonth = now.getMonth();
 
     let currentTotal = 0;
     let previousTotal = 0;
 
     incomes.forEach(income => {
       if (!income.income_date) return;
-      
       const dateStr = toYMD(income.income_date);
       const [year, month] = dateStr.split('-').map(Number);
-      
-      // Mes actual
+
       if (year === currentYear && month === currentMonth + 1) {
         currentTotal += Number(income.amount || 0);
       }
-      
-      // Mes anterior
+
       const prevMonth = currentMonth === 0 ? 12 : currentMonth;
       const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-      
+
       if (year === prevYear && month === prevMonth) {
         previousTotal += Number(income.amount || 0);
       }
@@ -98,28 +129,22 @@ export default function Dashboard({ onAuthExpired }) {
     return { currentTotal, previousTotal };
   }
 
-  // Procesar ingresos mensuales
   function processMonthlyIncomes(incomes) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const monthsMap = new Map();
 
-    // Inicializar últimos 6 meses
     for (let i = 5; i >= 0; i--) {
       const date = new Date(currentYear, now.getMonth() - i, 1);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       monthsMap.set(key, { month: key, total: 0, count: 0 });
     }
 
-    // Sumar ingresos
     incomes.forEach(income => {
       if (!income.income_date) return;
-      
-      // Extraer fecha sin conversión UTC
       const dateStr = toYMD(income.income_date);
       const [year, month] = dateStr.split('-').map(Number);
       const key = `${year}-${String(month).padStart(2, '0')}`;
-      
       if (monthsMap.has(key)) {
         const current = monthsMap.get(key);
         current.total += Number(income.amount || 0);
@@ -134,30 +159,24 @@ export default function Dashboard({ onAuthExpired }) {
     }));
   }
 
-  // Procesar membresías por paquete
   function processMembershipsByPackage(memberships, packages) {
     const packageMap = new Map();
-
     packages.forEach(pkg => {
       packageMap.set(pkg.id, { name: pkg.name, count: 0 });
     });
-
     memberships.forEach(membership => {
       if (membership.package_id && packageMap.has(membership.package_id)) {
         packageMap.get(membership.package_id).count++;
       }
     });
-
     return Array.from(packageMap.values())
       .filter(item => item.count > 0)
       .sort((a, b) => b.count - a.count);
   }
 
-  // Calcular membresías activas y por vencer
   function analyzeMemberships(memberships) {
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
     const thirtyDaysFromNow = new Date(todayDate);
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
@@ -166,46 +185,26 @@ export default function Dashboard({ onAuthExpired }) {
 
     memberships.forEach(m => {
       if (!m.finish_date) return;
-      
-      // Extraer fecha sin conversión UTC
       const dateStr = toYMD(m.finish_date);
       const [year, month, day] = dateStr.split('-').map(Number);
       const finishDate = new Date(year, month - 1, day);
-      
       if (finishDate >= todayDate) {
         active++;
-        if (finishDate <= thirtyDaysFromNow) {
-          expiring++;
-        }
+        if (finishDate <= thirtyDaysFromNow) expiring++;
       }
     });
 
     return { active, expiring };
   }
 
-  // Obtener próximas clases
+  // ✅ Ahora filtra por fecha Y hora
   function getUpcomingClasses(classes) {
-    const today = new Date();
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
     return classes
-      .filter(c => {
-        if (!c.scheduled_date) return false;
-        
-        // Extraer fecha sin conversión UTC
-        const dateStr = toYMD(c.scheduled_date);
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const classDate = new Date(year, month - 1, day);
-        
-        return classDate >= todayDate;
-      })
+      .filter(c => classIsUpcoming(c.scheduled_date, c.start_time))
       .sort((a, b) => {
         const dateStrA = toYMD(a.scheduled_date);
         const dateStrB = toYMD(b.scheduled_date);
-        
-        if (dateStrA !== dateStrB) {
-          return dateStrA.localeCompare(dateStrB);
-        }
+        if (dateStrA !== dateStrB) return dateStrA.localeCompare(dateStrB);
         return (a.start_time || "").localeCompare(b.start_time || "");
       })
       .slice(0, 5);
@@ -240,33 +239,26 @@ export default function Dashboard({ onAuthExpired }) {
       setTotalMemberships(Number(dataMemberships?.total_rows ?? 0));
       setTotalScheduledClasses(Number(dataScheduledClasses?.total_rows ?? 0));
 
-      // Calcular usuarios activos (is_online = true)
       const usersList = Array.isArray(dataUsers) ? dataUsers : dataUsers?.data || [];
       const activeCount = usersList.filter(u => u.is_online === true || u.is_online === 1).length;
       setActiveUsers(activeCount);
 
       const incomesList = Array.isArray(dataIncomes) ? dataIncomes : dataIncomes?.data || [];
-      
-      // Calcular ingresos del mes actual y anterior
       const { currentTotal, previousTotal } = calculateMonthlyIncomes(incomesList);
       setCurrentMonthIncome(currentTotal);
       setPreviousMonthIncome(previousTotal);
-      
-      const monthlyData = processMonthlyIncomes(incomesList);
-      setMonthlyIncomes(monthlyData);
+      setMonthlyIncomes(processMonthlyIncomes(incomesList));
 
       const membershipsList = Array.isArray(dataMemberships) ? dataMemberships : dataMemberships?.data || [];
       const packagesList = Array.isArray(dataPackages) ? dataPackages : dataPackages?.data || [];
-      const packageData = processMembershipsByPackage(membershipsList, packagesList);
-      setMembershipsByPackage(packageData);
+      setMembershipsByPackage(processMembershipsByPackage(membershipsList, packagesList));
 
       const { active, expiring } = analyzeMemberships(membershipsList);
       setActiveMemberships(active);
       setExpiringSoon(expiring);
 
       const classesList = Array.isArray(dataScheduledClasses) ? dataScheduledClasses : dataScheduledClasses?.data || [];
-      const upcoming = getUpcomingClasses(classesList);
-      setUpcomingClasses(upcoming);
+      setUpcomingClasses(getUpcomingClasses(classesList));
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -294,7 +286,6 @@ export default function Dashboard({ onAuthExpired }) {
     );
   }
 
-  // Obtener nombre del mes actual y anterior
   const now = new Date();
   const currentMonthName = MONTHS_SHORT[now.getMonth()];
   const previousMonthName = MONTHS_SHORT[now.getMonth() === 0 ? 11 : now.getMonth() - 1];
@@ -317,18 +308,17 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Sección: Ingresos mensuales */}
       <View style={DashboardStyles.section}>
-        <Text style={DashboardStyles.sectionTitle}>💰 {t("incomes.title")}</Text>
-        
+        <Text style={DashboardStyles.sectionTitle}>{`💰 ${t("incomes.title")}`}</Text>
         <View style={DashboardStyles.grid}>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
+            <ScoreCard
               title={`${currentMonthName} ${now.getFullYear()}`}
               value={`$${currentMonthIncome.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               subtitle={t("incomes.currentmonth")}
             />
           </View>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
+            <ScoreCard
               title={`${previousMonthName} ${now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()}`}
               value={`$${previousMonthIncome.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               subtitle={t("incomes.previousmonth")}
@@ -339,135 +329,104 @@ export default function Dashboard({ onAuthExpired }) {
 
       {/* Sección: Estadísticas principales */}
       <View style={DashboardStyles.section}>
-        <Text style={DashboardStyles.sectionTitle}>📊 {t("dashboards.statistics")}</Text>
-        
+        <Text style={DashboardStyles.sectionTitle}>{`📊 ${t("dashboards.statistics")}`}</Text>
+
         <View style={DashboardStyles.grid}>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("memberships.title")} 
-              value={totalMemberships} 
-              subtitle={t("common.total")} 
-            />
+            <ScoreCard title={t("memberships.title")} value={totalMemberships} subtitle={t("common.total")} />
           </View>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("memberships.actives")} 
-              value={activeMemberships} 
-              subtitle={t("memberships.current")}  
-            />
+            <ScoreCard title={t("memberships.actives")} value={activeMemberships} subtitle={t("memberships.current")} />
           </View>
         </View>
 
         <View style={DashboardStyles.grid}>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("users.title")} 
-              value={totalUsers} 
-              subtitle={t("common.total")} 
-            />
+            <ScoreCard title={t("users.title")} value={totalUsers} subtitle={t("common.total")} />
           </View>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("users.active_online")}  
-              value={activeUsers} 
-              subtitle={t("users.connected")}  
-            />
+            <ScoreCard title={t("users.active_online")} value={activeUsers} subtitle={t("users.connected")} />
           </View>
         </View>
 
         <View style={DashboardStyles.grid}>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("classes.title")}  
-              value={totalScheduledClasses} 
-              subtitle={t("classes.scheduled")}  
-            />
+            <ScoreCard title={t("classes.title")} value={totalScheduledClasses} subtitle={t("classes.scheduled")} />
           </View>
           <View style={DashboardStyles.cell}>
-            <ScoreCard 
-              title={t("memberships.expiringsoon")} 
-              value={expiringSoon} 
-              subtitle={t("memberships.next30days")}
-            />
+            <ScoreCard title={t("memberships.expiringsoon")} value={expiringSoon} subtitle={t("memberships.next30days")} />
           </View>
         </View>
-
       </View>
 
       {/* Sección: Ingresos mensuales gráfica */}
-      {monthlyIncomes.length > 0 && (
+      {monthlyIncomes.length > 0 ? (
         <View style={DashboardStyles.section}>
-          <Text style={DashboardStyles.sectionTitle}>💰 {t("incomes.incomeslast6months")}</Text>
+          <Text style={DashboardStyles.sectionTitle}>{`💰 ${t("incomes.incomeslast6months")}`}</Text>
           <View style={DashboardStyles.chartContainer}>
-            <VictoryChart 
-              theme={VictoryTheme.material} 
-              height={180} 
+            <VictoryChart
+              theme={VictoryTheme.material}
+              height={180}
               domainPadding={{ x: 25 }}
               padding={{ top: 20, bottom: 40, left: 50, right: 40 }}
             >
               <VictoryAxis
                 tickFormat={(t) => t}
-                style={{
-                  tickLabels: { fontSize: 7, angle: -45, textAnchor: 'end' }
-                }}
+                style={{ tickLabels: { fontSize: 7, angle: -45, textAnchor: 'end' } }}
               />
               <VictoryAxis
                 dependentAxis
-                tickFormat={(t) => `$${t >= 1000 ? (t/1000).toFixed(1) + 'k' : t}`}
-                style={{
-                  tickLabels: { fontSize: 7 }
-                }}
+                tickFormat={(t) => `$${t >= 1000 ? (t / 1000).toFixed(1) + 'k' : t}`}
+                style={{ tickLabels: { fontSize: 7 } }}
               />
               <VictoryBar
                 data={monthlyIncomes}
                 x="month"
                 y="total"
                 barWidth={10}
-                style={{
-                  data: { fill: "#3b82f6" }
-                }}
-                animate={{
-                  duration: 500,
-                  onLoad: { duration: 500 }
-                }}
+                style={{ data: { fill: "#3b82f6" } }}
+                animate={{ duration: 500, onLoad: { duration: 500 } }}
               />
             </VictoryChart>
           </View>
         </View>
-      )}
+      ) : null}
 
-      {/* Sección: Membresías por paquete (lista en lugar de pie chart) */}
-      {membershipsByPackage.length > 0 && (
+      {/* Sección: Membresías por paquete */}
+      {membershipsByPackage.length > 0 ? (
         <View style={DashboardStyles.section}>
-          <Text style={DashboardStyles.sectionTitle}>📦 {t("memberships.title")} {t("memberships.perpackage")}</Text>
+          <Text style={DashboardStyles.sectionTitle}>
+            {`📦 ${t("memberships.title")} ${t("memberships.perpackage")}`}
+          </Text>
           {membershipsByPackage.map((pkg, index) => (
             <View key={index} style={DashboardStyles.packageCard}>
               <View style={DashboardStyles.packageInfo}>
                 <Text style={DashboardStyles.packageName}>{pkg.name}</Text>
-                <Text style={DashboardStyles.packageCount}>{pkg.count} {pkg.count !== 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()}</Text>
+                <Text style={DashboardStyles.packageCount}>
+                  {`${pkg.count} ${pkg.count !== 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()}`}
+                </Text>
               </View>
               <View style={DashboardStyles.packageBar}>
-                <View 
+                <View
                   style={[
-                    DashboardStyles.packageBarFill, 
-                    { 
+                    DashboardStyles.packageBarFill,
+                    {
                       width: `${(pkg.count / totalMemberships) * 100}%`,
                       backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]
                     }
-                  ]} 
+                  ]}
                 />
               </View>
             </View>
           ))}
         </View>
-      )}
+      ) : null}
 
       {/* Sección: Próximas clases */}
-      {upcomingClasses.length > 0 && (
+      {upcomingClasses.length > 0 ? (
         <View style={DashboardStyles.section}>
-          <Text style={DashboardStyles.sectionTitle}>📅 {t("classes.nextclasses")}</Text>
+          <Text style={DashboardStyles.sectionTitle}>{`📅 ${t("classes.nextclasses")}`}</Text>
           {upcomingClasses.map((classItem, index) => {
-            // Extraer fecha correctamente sin desfase
             const dateStr = toYMD(classItem.scheduled_date);
             const [year, month, day] = dateStr.split('-').map(Number);
             const displayDate = new Date(year, month - 1, day);
@@ -486,32 +445,32 @@ export default function Dashboard({ onAuthExpired }) {
                 </View>
                 <View style={DashboardStyles.classDetails}>
                   <Text style={DashboardStyles.classDetail}>
-                    🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
+                    {`🕒 ${classItem.start_time?.slice(0,5)} - ${classItem.end_time?.slice(0,5)}`}
                   </Text>
                   <Text style={DashboardStyles.classDetail}>
-                    👤 {classItem.instructor_name} {classItem.instructor_lastname}
+                    {`👤 ${classItem.instructor_name} ${classItem.instructor_lastname}`}
                   </Text>
-                  {classItem.discipline_name && (
+                  {classItem.discipline_name ? (
                     <Text style={DashboardStyles.classDetail}>
-                      📚 {classItem.discipline_name}
+                      {`📚 ${classItem.discipline_name}`}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
               </View>
             );
           })}
         </View>
-      )}
+      ) : null}
 
       {/* Alertas importantes */}
-      {expiringSoon > 0 && (
+      {expiringSoon > 0 ? (
         <View style={DashboardStyles.alertCard}>
-          <Text style={DashboardStyles.alertTitle}>⚠️ {t("dashboards.attention")}</Text>
+          <Text style={DashboardStyles.alertTitle}>{`⚠️ ${t("dashboards.attention")}`}</Text>
           <Text style={DashboardStyles.alertText}>
-            {expiringSoon} {expiringSoon > 1 ? t("memberships.title".toLowerCase()) : t("memberships.title_single").toLowerCase()} {expiringSoon > 1 ? t("memberships.expiring").toLowerCase() : t("memberships.expiring_single").toLowerCase()} {t("dashboards.inthe")} {t("memberships.next30days").toLowerCase()}.
+            {`${expiringSoon} ${expiringSoon > 1 ? t("memberships.title").toLowerCase() : t("memberships.title_single").toLowerCase()} ${expiringSoon > 1 ? t("memberships.expiring").toLowerCase() : t("memberships.expiring_single").toLowerCase()} ${t("dashboards.inthe")} ${t("memberships.next30days").toLowerCase()}.`}
           </Text>
         </View>
-      )}
+      ) : null}
 
       <View style={{ height: 40 }} />
     </ScrollView>

@@ -23,6 +23,8 @@ export default function Home({ onAuthExpired }) {
   const [attendanceStats, setAttendanceStats] = useState(null);
   const [rankProgress, setRankProgress] = useState(null);
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   function toYMD(value) {
     if (!value) return "";
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -39,11 +41,9 @@ export default function Home({ onAuthExpired }) {
 
   function formatDate(dateStr) {
     if (!dateStr) return "";
-    // Extraer YYYY-MM-DD y crear fecha local
     const ymd = toYMD(dateStr);
     const [year, month, day] = ymd.split('-').map(Number);
     const date = new Date(year, month - 1, day);
-    
     return date.toLocaleDateString('es-MX', {
       day: 'numeric',
       month: 'long',
@@ -53,47 +53,63 @@ export default function Home({ onAuthExpired }) {
 
   function calculateDaysUntilExpiry(finishDate) {
     if (!finishDate) return null;
-    
-    // Crear fechas sin hora para comparación exacta
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
     const ymd = toYMD(finishDate);
     const [year, month, day] = ymd.split('-').map(Number);
     const expiryDate = new Date(year, month - 1, day);
-    
     const diffTime = expiryDate - todayDate;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * ✅ Helper: determina si una clase todavía no ha comenzado.
+   * Si es hoy, compara también la hora de inicio.
+   * Si es un día futuro, siempre retorna true.
+   */
+  function classIsUpcoming(scheduledDate, startTime) {
+    if (!scheduledDate) return false;
+    const now = new Date();
+    const dateStr = toYMD(scheduledDate);
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const classDate = new Date(year, month - 1, day);
+
+    // Día futuro → siempre visible
+    if (classDate.getTime() > today.getTime()) return true;
+
+    // Hoy → comparar hora
+    if (classDate.getTime() === today.getTime() && startTime) {
+      const [hh, mm] = startTime.split(':').map(Number);
+      const classDateTime = new Date(year, month - 1, day, hh, mm);
+      return classDateTime > now;
+    }
+
+    // Día pasado → no mostrar
+    return false;
   }
 
   function getUpcomingClassesThisWeek(classes) {
-    const today = new Date();
-    // Crear fecha sin hora para comparación exacta
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
-    const weekFromNow = new Date(todayDate);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekFromNow = new Date(today);
     weekFromNow.setDate(weekFromNow.getDate() + 7);
-    
+
     return classes
       .filter(c => {
         if (!c.scheduled_date) return false;
-        
-        // Extraer solo YYYY-MM-DD y crear fecha local
         const dateStr = toYMD(c.scheduled_date);
         const [year, month, day] = dateStr.split('-').map(Number);
         const classDate = new Date(year, month - 1, day);
-        
-        return classDate >= todayDate && classDate <= weekFromNow;
+
+        // ✅ Usar classIsUpcoming para filtrar por hora si es hoy
+        return classIsUpcoming(c.scheduled_date, c.start_time) && classDate <= weekFromNow;
       })
       .sort((a, b) => {
         const dateStrA = toYMD(a.scheduled_date);
         const dateStrB = toYMD(b.scheduled_date);
-        
-        // Comparar strings directamente (YYYY-MM-DD se compara bien como string)
-        if (dateStrA !== dateStrB) {
-          return dateStrA.localeCompare(dateStrB);
-        }
+        if (dateStrA !== dateStrB) return dateStrA.localeCompare(dateStrB);
         return (a.start_time || "").localeCompare(b.start_time || "");
       })
       .slice(0, 5);
@@ -107,12 +123,10 @@ export default function Home({ onAuthExpired }) {
     clearMsgs();
     setLoading(true);
     try {
-      // Obtener datos del usuario actual
       const meData = await api.me();
       const currentUser = meData.data || meData;
       setUser(currentUser);
 
-      // Cargar datos en paralelo
       const [
         myMembership,
         myPayments,
@@ -134,48 +148,32 @@ export default function Home({ onAuthExpired }) {
       // Membresía activa
       const membership = myMembership.data;
       setActiveMembership(membership);
-
       if (membership?.finish_date) {
-        const days = calculateDaysUntilExpiry(membership.finish_date);
-        setDaysUntilExpiry(days);
+        setDaysUntilExpiry(calculateDaysUntilExpiry(membership.finish_date));
       }
 
       // Pagos
       const paymentsList = Array.isArray(myPayments.data) ? myPayments.data : [];
       setLastPayment(paymentsList[0] || null);
-      const total = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      setTotalPayments(total);
+      setTotalPayments(paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
 
       // Perfil
       setUserProfile(myProfile.data);
 
-      // Clases programadas de esta semana
+      // Clases próximas esta semana (con filtro de hora)
       const classesList = Array.isArray(classesData) ? classesData : classesData?.data || [];
-      const upcoming = getUpcomingClassesThisWeek(classesList);
-      setUpcomingClasses(upcoming);
+      setUpcomingClasses(getUpcomingClassesThisWeek(classesList));
 
-      // Enrollments - Filtrar solo inscripciones futuras y activas
+      // Enrollments activos — ✅ filtrar por hora si la clase es hoy
       const enrollmentsList = Array.isArray(enrollmentsData) ? enrollmentsData : enrollmentsData?.data || [];
-      
-      const today = new Date();
-      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      
       const activeEnrollments = enrollmentsList.filter(e => {
         if (!e.scheduled_date || e.status !== 'enrolled') return false;
-        
-        const dateStr = toYMD(e.scheduled_date);
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const classDate = new Date(year, month - 1, day);
-        
-        return classDate >= todayDate;
+        return classIsUpcoming(e.scheduled_date, e.start_time);
       });
-
       setMyEnrollments(activeEnrollments);
 
-      // Estadísticas de asistencia
-      const stats = attendanceData?.data || null;
-      setAttendanceStats(stats);
-
+      // Asistencia y progreso
+      setAttendanceStats(attendanceData?.data || null);
       setRankProgress(rankData?.data || null);
 
     } catch (e) {
@@ -213,7 +211,7 @@ export default function Home({ onAuthExpired }) {
       {/* Saludo personalizado */}
       <View style={HomeStyles.welcomeCard}>
         <Text style={HomeStyles.welcomeGreeting}>
-          ¡{t("labels.hi")}, {user?.name || t("dashboards.unknown")}! 👋
+          {`¡${t("labels.hi")}, ${user?.name || t("dashboards.unknown")}! 👋`}
         </Text>
         <Text style={HomeStyles.welcomeSubtext}>
           {t("dashboards.welcome_back")}
@@ -290,9 +288,9 @@ export default function Home({ onAuthExpired }) {
       </View>
 
       {/* Estadísticas de Asistencia */}
-      {attendanceStats && attendanceStats.total_enrollments > 0 && (
+      {attendanceStats && attendanceStats.total_enrollments > 0 ? (
         <View style={HomeStyles.section}>
-          <Text style={HomeStyles.sectionTitle}>📊 {t("dashboards.my_attendance")}</Text>
+          <Text style={HomeStyles.sectionTitle}>{`📊 ${t("dashboards.my_attendance")}`}</Text>
           
           <View style={HomeStyles.grid}>
             <View style={HomeStyles.cell}>
@@ -334,7 +332,7 @@ export default function Home({ onAuthExpired }) {
             </View>
 
             {/* Barra de progreso visual */}
-            {attendanceStats.attendance_rate !== null && (
+            {attendanceStats.attendance_rate !== null ? (
               <View style={HomeStyles.progressSection}>
                 <View style={HomeStyles.progressBar}>
                   <View 
@@ -351,22 +349,24 @@ export default function Home({ onAuthExpired }) {
                   />
                 </View>
                 <Text style={HomeStyles.progressText}>
-                  {attendanceStats.attendance_rate >= 80 ? '¡'+t("messages.assistance.excellent_assistance")+'! 🎉' :
-                   attendanceStats.attendance_rate >= 60 ? t("messages.assistance.good_assistance")+' 👍' :
-                   t("messages.assistance.try_come_more")+' 💪'}
+                  {attendanceStats.attendance_rate >= 80
+                    ? `¡${t("messages.assistance.excellent_assistance")}! 🎉`
+                    : attendanceStats.attendance_rate >= 60
+                    ? `${t("messages.assistance.good_assistance")} 👍`
+                    : `${t("messages.assistance.try_come_more")} 💪`}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
         </View>
-      )}
+      ) : null}
 
       {/* Progreso de Cinturón */}
       <RankProgressWidget rankData={rankProgress} />
 
       {/* Último pago */}
       <View style={HomeStyles.section}>
-        <Text style={HomeStyles.sectionTitle}>💳 {t("dashboards.payment_history")}</Text>
+        <Text style={HomeStyles.sectionTitle}>{`💳 ${t("dashboards.payment_history")}`}</Text>
         
         <View style={HomeStyles.grid}>
           <View style={HomeStyles.cell}>
@@ -376,21 +376,13 @@ export default function Home({ onAuthExpired }) {
               subtitle={lastPayment ? formatDate(lastPayment.income_date) : t("dashboards.no_payments")}
             />
           </View>
-          {/*
-          <View style={HomeStyles.cell}>
-            <ScoreCard 
-              title="Total Pagado" 
-              value={`$${totalPayments}`}
-              subtitle="Histórico"
-            />
-          </View> */}
         </View>
       </View>
 
       {/* Mis Clases Inscritas */}
-      {myEnrollments.length > 0 && (
+      {myEnrollments.length > 0 ? (
         <View style={HomeStyles.section}>
-          <Text style={HomeStyles.sectionTitle}>📚 {t("dashboards.my_enrolled_classes")}</Text>
+          <Text style={HomeStyles.sectionTitle}>{`📚 ${t("dashboards.my_enrolled_classes")}`}</Text>
           {myEnrollments.map((enrollment, index) => {
             const dateStr = toYMD(enrollment.scheduled_date);
             const [year, month, day] = dateStr.split('-').map(Number);
@@ -401,42 +393,41 @@ export default function Home({ onAuthExpired }) {
                 <View style={HomeStyles.myClassHeader}>
                   <Text style={HomeStyles.myClassTitle}>{enrollment.class_title}</Text>
                   <View style={HomeStyles.enrolledBadge}>
-                    <Text style={HomeStyles.enrolledBadgeText}>✓ {t("enrollments.enrolled")}</Text>
+                    <Text style={HomeStyles.enrolledBadgeText}>{`✓ ${t("enrollments.enrolled")}`}</Text>
                   </View>
                 </View>
                 
                 <View style={HomeStyles.myClassDetails}>
                   <Text style={HomeStyles.myClassDetail}>
-                    📅 {displayDate.toLocaleDateString('es-MX', {
+                    {`📅 ${displayDate.toLocaleDateString('es-MX', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'long'
-                    })}
+                    })}`}
                   </Text>
                   <Text style={HomeStyles.myClassDetail}>
-                    🕒 {enrollment.start_time?.slice(0,5)} - {enrollment.end_time?.slice(0,5)}
+                    {`🕒 ${enrollment.start_time?.slice(0,5)} - ${enrollment.end_time?.slice(0,5)}`}
                   </Text>
                   <Text style={HomeStyles.myClassDetail}>
-                    👤 {enrollment.instructor_name} {enrollment.instructor_lastname}
+                    {`👤 ${enrollment.instructor_name} ${enrollment.instructor_lastname}`}
                   </Text>
-                  {enrollment.discipline_name && (
+                  {enrollment.discipline_name ? (
                     <Text style={HomeStyles.myClassDetail}>
-                      📚 {enrollment.discipline_name}
+                      {`📚 ${enrollment.discipline_name}`}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
               </View>
             );
           })}
         </View>
-      )}
+      ) : null}
 
       {/* Próximas clases */}
-      {upcomingClasses.length > 0 && (
+      {upcomingClasses.length > 0 ? (
         <View style={HomeStyles.section}>
-          <Text style={HomeStyles.sectionTitle}>📅 {t("dashboards.next_classes")}</Text>
+          <Text style={HomeStyles.sectionTitle}>{`📅 ${t("dashboards.next_classes")}`}</Text>
           {upcomingClasses.map((classItem, index) => {
-            // Extraer fecha correctamente sin desfase
             const dateStr = toYMD(classItem.scheduled_date);
             const [year, month, day] = dateStr.split('-').map(Number);
             const displayDate = new Date(year, month - 1, day);
@@ -455,25 +446,24 @@ export default function Home({ onAuthExpired }) {
                 </View>
                 <View style={HomeStyles.classDetails}>
                   <Text style={HomeStyles.classDetail}>
-                    🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
+                    {`🕒 ${classItem.start_time?.slice(0,5)} - ${classItem.end_time?.slice(0,5)}`}
                   </Text>
                   <Text style={HomeStyles.classDetail}>
-                    👤 {classItem.instructor_name} {classItem.instructor_lastname}
+                    {`👤 ${classItem.instructor_name} ${classItem.instructor_lastname}`}
                   </Text>
-                  {classItem.discipline_name && (
+                  {classItem.discipline_name ? (
                     <Text style={HomeStyles.classDetail}>
-                      📚 {classItem.discipline_name}
+                      {`📚 ${classItem.discipline_name}`}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
               </View>
             );
           })}
         </View>
-      )}
+      ) : null}
 
       <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
-

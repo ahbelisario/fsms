@@ -5,3 +5,4 @@ ENV MYSQL_DATABASE=fsms
 
 # Copy the SQL setup file into the initialization directory
 COPY schema/fsms.sql /docker-entrypoint-initdb.d/setup.sql
+RUN chmod 644 /docker-entrypoint-initdb.d/setup.sql

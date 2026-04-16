@@ -9,7 +9,7 @@ import { t } from "@/src/i18n";
 
 export default function AvailableClassesScreen({ onAuthExpired }) {
 
-  const s = ScreenStyles; // Al inicio del componente
+  const s = ScreenStyles;
 
   let hasmembership = false;
 
@@ -24,6 +24,8 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
   const [selectedClass, setSelectedClass] = useState(null);
   const [actionType, setActionType] = useState(null); // 'enroll' or 'cancel'
 
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
   function toYMD(value) {
     if (!value) return "";
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -36,6 +38,34 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
+  }
+
+  /**
+   * ✅ Determina si una clase todavía no ha comenzado.
+   * Si es hoy, compara también la hora de inicio.
+   * Si es un día futuro, siempre retorna true.
+   */
+  function classIsUpcoming(scheduledDate, startTime) {
+    if (!scheduledDate) return false;
+    const now = new Date();
+    const dateStr = toYMD(scheduledDate);
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const classDate = new Date(year, month - 1, day);
+
+    // Día futuro → siempre visible
+    if (classDate.getTime() > today.getTime()) return true;
+
+    // Hoy → comparar hora
+    if (classDate.getTime() === today.getTime() && startTime) {
+      const [hh, mm] = startTime.split(':').map(Number);
+      const classDateTime = new Date(year, month - 1, day, hh, mm);
+      return classDateTime > now;
+    }
+
+    // Día pasado → no mostrar
+    return false;
   }
 
   function clearMsgs() {
@@ -66,22 +96,15 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
       ]);
 
       const membership = membershipData.data;
-      hasmembership = membership!== null ? true : false;
+      hasmembership = membership !== null ? true : false;
       setActiveMembership(hasmembership);
 
       const classList = Array.isArray(classesData) ? classesData : classesData?.data || [];
-      
-      // Filtrar solo clases futuras
-      const today = new Date();
-      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      
-      const futureClasses = classList.filter(c => {
-        if (!c.scheduled_date) return false;
-        const dateStr = toYMD(c.scheduled_date);
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const classDate = new Date(year, month - 1, day);
-        return classDate >= todayDate;
-      });
+
+      // ✅ Filtrar clases que aún no han comenzado (considera fecha Y hora)
+      const futureClasses = classList.filter(c =>
+        classIsUpcoming(c.scheduled_date, c.start_time)
+      );
 
       setClasses(futureClasses);
 
@@ -120,13 +143,11 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
 
   async function confirmAction() {
     setConfirmVisible(false);
-    
     if (actionType === 'enroll') {
       await enrollInClass(selectedClass.id);
     } else if (actionType === 'cancel') {
       await cancelEnrollment(selectedClass.id);
     }
-    
     setSelectedClass(null);
     setActionType(null);
   }
@@ -192,17 +213,13 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
         </Pressable>
       </View>
 
-      {activeMembership ? (
-        <></>
-        ) : (
-          <>
-            <View style={[HomeStyles.noMembershipCard, { marginBottom: 28 } ]}>
-              <Text style={HomeStyles.noMembershipText}>
-                {t("dashboards.no_membership")}. {t("memberships.contact")}.
-              </Text>
-            </View>
-          </>
-        )}
+      {activeMembership ? null : (
+        <View style={[HomeStyles.noMembershipCard, { marginBottom: 28 }]}>
+          <Text style={HomeStyles.noMembershipText}>
+            {`${t("dashboards.no_membership")}. ${t("memberships.contact")}.`}
+          </Text>
+        </View>
+      )}
 
       {error ? (
         <View style={ScreenStyles.alertError}>
@@ -247,69 +264,67 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
                     })}
                   </Text>
                 </View>
-                {enrolled && (
+                {enrolled ? (
                   <View style={AvailableClassesStyles.enrolledBadge}>
                     <Text style={AvailableClassesStyles.enrolledBadgeText}>{t("enrollments.enrolled")}</Text>
                   </View>
-                )}
-                {full && !enrolled && (
+                ) : null}
+                {full && !enrolled ? (
                   <View style={AvailableClassesStyles.fullBadge}>
                     <Text style={AvailableClassesStyles.fullBadgeText}>{t("enrollments.full")}</Text>
                   </View>
-                )}
-              </View>
-              
-              <View style={{ flex: 1 }}>
-              
-              <View style={AvailableClassesStyles.classDetails}>
-                <Text style={AvailableClassesStyles.classDetail}>
-                  🕒 {classItem.start_time?.slice(0,5)} - {classItem.end_time?.slice(0,5)}
-                </Text>
-                <Text style={AvailableClassesStyles.classDetail}>
-                  👤 {classItem.instructor_name} {classItem.instructor_lastname}
-                </Text>
-                {classItem.discipline_name && (
-                  <Text style={AvailableClassesStyles.classDetail}>
-                    📚 {classItem.discipline_name}
-                  </Text>
-                )}
-                <Text style={[
-                  s.classDetail,
-                  availableSpots <= 3 && availableSpots > 0 && s.lowSpotsText,
-                  availableSpots === 0 && s.fullText
-                ]}>
-                  👥 {availableSpots} lugar{availableSpots !== 1 ? 'es' : ''} disponible{availableSpots !== 1 ? 's' : ''}
-                </Text>
+                ) : null}
               </View>
 
-              <View style={AvailableClassesStyles.classActions}>
-                {enrolled ? (
-                  <Pressable 
-                    style={[ScreenStyles.btnSecondary, s.actionButton]}
-                    onPress={() => askCancel(classItem)}
-                  >
-                    <Text style={ScreenStyles.btnSecondaryText}>{t("enrollments.cancel_enrollment")}</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable 
-                    style={[
-                      ScreenStyles.btnPrimary, 
-                      s.actionButton,
-                      full && s.disabledButton
-                    ]}
-                    onPress={() => askEnroll(classItem)}
-                    disabled={full || !activeMembership}
-                  >
-                    <Text style={ScreenStyles.btnPrimaryText}>
-                      {full ? t("classes.full") : t("enrollments.enroll_me")}
+              <View style={{ flex: 1 }}>
+                <View style={AvailableClassesStyles.classDetails}>
+                  <Text style={AvailableClassesStyles.classDetail}>
+                    {`🕒 ${classItem.start_time?.slice(0,5)} - ${classItem.end_time?.slice(0,5)}`}
+                  </Text>
+                  <Text style={AvailableClassesStyles.classDetail}>
+                    {`👤 ${classItem.instructor_name} ${classItem.instructor_lastname}`}
+                  </Text>
+                  {classItem.discipline_name ? (
+                    <Text style={AvailableClassesStyles.classDetail}>
+                      {`📚 ${classItem.discipline_name}`}
                     </Text>
-                  </Pressable>
-                )}
-              </View>
+                  ) : null}
+                  <Text style={[
+                    s.classDetail,
+                    availableSpots <= 3 && availableSpots > 0 && s.lowSpotsText,
+                    availableSpots === 0 && s.fullText
+                  ]}>
+                    {`👥 ${availableSpots} lugar${availableSpots !== 1 ? 'es' : ''} disponible${availableSpots !== 1 ? 's' : ''}`}
+                  </Text>
+                </View>
+
+                <View style={AvailableClassesStyles.classActions}>
+                  {enrolled ? (
+                    <Pressable
+                      style={[ScreenStyles.btnSecondary, s.actionButton]}
+                      onPress={() => askCancel(classItem)}
+                    >
+                      <Text style={ScreenStyles.btnSecondaryText}>{t("enrollments.cancel_enrollment")}</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      style={[
+                        ScreenStyles.btnPrimary,
+                        s.actionButton,
+                        full && s.disabledButton
+                      ]}
+                      onPress={() => askEnroll(classItem)}
+                      disabled={full || !activeMembership}
+                    >
+                      <Text style={ScreenStyles.btnPrimaryText}>
+                        {full ? t("classes.full") : t("enrollments.enroll_me")}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
 
               <View style={ScreenStyles.divider} />
-
             </View>
           );
         })
@@ -321,7 +336,7 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
         visible={confirmVisible}
         title={actionType === 'enroll' ? t("enrollments.enroll_me") : t("enrollments.cancel_enrollment")}
         message={
-          actionType === 'enroll' 
+          actionType === 'enroll'
             ? `${t("messages.sure_to_enroll_to")} "${selectedClass?.title}"?`
             : `${t("messages.sure_to_cancel_enrollment_to")} "${selectedClass?.title}"?`
         }
@@ -334,4 +349,3 @@ export default function AvailableClassesScreen({ onAuthExpired }) {
     </ScrollView>
   );
 }
-
