@@ -42,7 +42,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
-  // Tab state
   const [activeTab, setActiveTab] = useState(0);
 
   const [username, setUsername] = useState("");
@@ -74,12 +73,20 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
   const [medical_notes, setMedicalNotes] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Guardian state
+  const [guardians, setGuardians] = useState([]);
+  const [minors, setMinors] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedGuardianId, setSelectedGuardianId] = useState(null);
+  const [selectedMinorId, setSelectedMinorId] = useState(null);
+  const [relationship, setRelationship] = useState("");
+  const [savingGuardian, setSavingGuardian] = useState(false);
+
   const isEditing = useMemo(() => editingId !== null, [editingId]);
   const disableSave = saving || (!isEditing && (!!password || !!confirmPassword) && password !== confirmPassword);
 
   const isMyProfile = userprofiles && user && Number(userprofiles.user_id) === Number(user.id);
   
-  // Filtrar ranks por disciplina seleccionada
   const filteredRanks = useMemo(() => {
     if (!discipline_id) return [];
     return ranks
@@ -96,13 +103,13 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     action: null,
   });
 
-  // Definir tabs
   const tabs = [
     { id: 0, label: "Login"},
     { id: 1, label: t("userprofiles.personal") },
     { id: 2, label: t("userprofiles.contacto") },
     { id: 3, label: t("userprofiles.marcial") },
     { id: 4, label: t("userprofiles.medical") },
+    { id: 6, label: t("guardian.title") },
     { id: 5, label: t("common.settings") },
   ];
 
@@ -133,14 +140,10 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setConfirm({
       visible: true,
       title: isEditing ? t("common.confirmchanges") : "Confirmar creación",
-      message: isEditing
-        ? t("common.wishchanges")
-        : "¿Deseas crear este registro?",
+      message: isEditing ? t("common.wishchanges") : "¿Deseas crear este registro?",
       confirmText: t("common.save"),
       danger: false,
-      action: async () => {
-        await save();
-      },
+      action: async () => { await save(); },
     });
   }
 
@@ -151,9 +154,18 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       message: t("messages.sure_delete_user"),
       confirmText: t("common.delete"),
       danger: true,
-      action: async () => {
-        await deleteUser();
-      },
+      action: async () => { await deleteUser(); },
+    });
+  }
+
+  function askDeleteGuardian(id) {
+    setConfirm({
+      visible: true,
+      title: "Eliminar relación",
+      message: "¿Deseas eliminar esta relación tutor-menor?",
+      confirmText: t("common.delete"),
+      danger: true,
+      action: async () => { await deleteGuardian(id); },
     });
   }
 
@@ -203,15 +215,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
   function loadAllFormData(userData, profileData) {
     clearMsgs();
-    
-    // Siempre cargar datos de usuario si existen
     if (userData) {
       setUsername(userData.username ?? "");
       setRole(userData.role ?? "user");
       setActive(userData.active ?? true);
     }
-    
-    // Cargar datos de perfil si existen
     if (profileData) {
       setEditingId(profileData.id);
       setName(profileData.name ?? "");
@@ -237,30 +245,37 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       setMedicalNotes(profileData.medical_notes ?? "");
       setNotes(profileData.notes ?? "");
     } else {
-      // Si no hay profile, resetear solo los campos de perfil
       setEditingId(null);
-      setName("");
-      setLastName("");
-      setGender("");
-      setDateofBirth(null);
-      setEmail("");
-      setPhone("");
-      setEmergencyContantName("");
-      setEmergencyContantPhone("");
-      setAddressLine1("");
-      setAddressLine2("");
-      setCity("");
-      setState("");
-      setCountry("");
-      setPostalCode("");
-      setDisciplineId(null);
-      setRankId(null);
-      setStartDate(null);
-      setCurrentRankStartDate(null);
-      setNextExamDate(null);
-      setBloodType("");
-      setMedicalNotes("");
-      setNotes("");
+      setName(""); setLastName(""); setGender(""); setDateofBirth(null);
+      setEmail(""); setPhone(""); setEmergencyContantName(""); setEmergencyContantPhone("");
+      setAddressLine1(""); setAddressLine2(""); setCity(""); setState("");
+      setCountry(""); setPostalCode(""); setDisciplineId(null); setRankId(null);
+      setStartDate(null); setCurrentRankStartDate(null); setNextExamDate(null);
+      setBloodType(""); setMedicalNotes(""); setNotes("");
+    }
+  }
+
+  async function loadGuardianData(idToUse, userRole) {
+    try {
+      const promises = [
+        api.getUserGuardiansByMinor(idToUse),
+        api.getUserGuardiansByGuardian(idToUse),
+      ];
+
+      if (userRole === 'admin') {
+        promises.push(api.listUsers());
+      }
+
+      const results = await Promise.all(promises);
+      setGuardians(results[0]?.data ?? []);
+      setMinors(results[1]?.data ?? []);
+
+      if (userRole === 'admin') {
+        const usersList = Array.isArray(results[2]) ? results[2] : results[2]?.data ?? [];
+        setAllUsers(usersList);
+      }
+    } catch (e) {
+      console.error('Error loading guardian data:', e);
     }
   }
 
@@ -271,7 +286,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     setUser(me.data);
     const idToUse = targetUserId ?? me.data.id;
     setMyRole(me.data.role);
-    setMyId(me.data.id)
+    setMyId(me.data.id);
     setIdtoUse(idToUse);
 
     clearMsgs();
@@ -301,8 +316,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       const profile = Array.isArray(list) ? list[0] : list;
       setProfile(profile ?? null);
 
-      // Cargar todos los datos del formulario en una sola llamada
       loadAllFormData(userdatalist, profile);
+      await loadGuardianData(idToUse, me.data.role);
 
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -339,39 +354,22 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
 
     try {
       const payload = {
-        name: name.trim(),
-        lastname: lastname.trim(),
-        gender: gender.trim(),
-        date_of_birth: date_of_birth || null,
-        email: email.trim(),
-        phone: phone.trim(),
+        name: name.trim(), lastname: lastname.trim(), gender: gender.trim(),
+        date_of_birth: date_of_birth || null, email: email.trim(), phone: phone.trim(),
         emergency_contact_name: emergency_contact_name.trim(),
         emergency_contact_phone: emergency_contact_phone.trim(),
-        address_line1: address_line1.trim(),
-        address_line2: address_line2.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        country: country.trim(),
-        postal_code: postal_code.trim(),
-        discipline_id: discipline_id,
-        rank_id: rank_id,
+        address_line1: address_line1.trim(), address_line2: address_line2.trim(),
+        city: city.trim(), state: state.trim(), country: country.trim(),
+        postal_code: postal_code.trim(), discipline_id, rank_id,
         start_date: start_date || null,
         current_rank_start_date: current_rank_start_date || null,
         next_exam_date: next_exam_date || null,
-        blood_type: blood_type.trim(),
-        medical_notes: medical_notes.trim(),
-        notes: notes.trim(),
+        blood_type: blood_type.trim(), medical_notes: medical_notes.trim(), notes: notes.trim(),
       }; 
 
       const user_payload = {
-        username: username.trim(),
-        name: name.trim(),
-        lastname: lastname.trim(),
-        email: email.trim(),
-        ...(iAmAdmin && {
-          role: role.trim(),
-          active: active
-        })
+        username: username.trim(), name: name.trim(), lastname: lastname.trim(), email: email.trim(),
+        ...(iAmAdmin && { role: role.trim(), active }),
       };
 
       const user_settings = { lang: language };
@@ -403,7 +401,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     try {
       await api.deleteUser(idtouse);
       setSuccess("Usuario eliminado.");
-      // Redirigir a la lista de estudiantes después de eliminar
       router.push("/(app)/(main)/users");
     } catch (e) {
       if (e.code === "AUTH_EXPIRED") {
@@ -416,7 +413,42 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
     }
   }
 
-  // Renderizar contenido de cada tab
+  async function addGuardian() {
+    if (!selectedGuardianId || !selectedMinorId) {
+      setError("Selecciona tutor y menor.");
+      return;
+    }
+    setSavingGuardian(true);
+    clearMsgs();
+    try {
+      await api.createUserGuardian({
+        guardian_user_id: selectedGuardianId,
+        minor_user_id: selectedMinorId,
+        relationship: relationship.trim() || null,
+      });
+      setSuccess("Relación agregada.");
+      setSelectedGuardianId(null);
+      setSelectedMinorId(null);
+      setRelationship("");
+      await loadGuardianData(idtouse);
+    } catch (e) {
+      setError(e.message || "No se pudo agregar.");
+    } finally {
+      setSavingGuardian(false);
+    }
+  }
+
+  async function deleteGuardian(id) {
+    clearMsgs();
+    try {
+      await api.deleteUserGuardian(id);
+      setSuccess("Relación eliminada.");
+      await loadGuardianData(idtouse);
+    } catch (e) {
+      setError(e.message || "No se pudo eliminar.");
+    }
+  }
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 0: // Login
@@ -458,9 +490,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
               <View style={{ maxWidth: 150, alignItems: 'flex-end' }}>
                 <Pressable style={ScreenStyles.btnPrimary} onPress={() => setChangePwdVisible(true)}>
-                  <Text style={ScreenStyles.btnPrimaryText}>
-                    {t("common.buttons.change")}
-                  </Text>
+                  <Text style={ScreenStyles.btnPrimaryText}>{t("common.buttons.change")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -477,8 +507,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                 </View>
               </View>
             </View>
-
-            
           </View>
         );
 
@@ -508,13 +536,8 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
                   </Picker>
                 </View>
               </View>
-
               <View style={{ flex: 1 }}>
-                <DatePickerField
-                  label={t("userprofiles.date_of_birth")}
-                  value={date_of_birth}
-                  onChange={setDateofBirth}
-                />
+                <DatePickerField label={t("userprofiles.date_of_birth")} value={date_of_birth} onChange={setDateofBirth} />
               </View>
             </View>
 
@@ -522,10 +545,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <Text style={ScreenStyles.label}>{t("common.notes")}</Text>
               <TextInput
                 style={[ScreenStyles.input, { height: 100, textAlignVertical: "top" }]}
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={4}
+                value={notes} onChangeText={setNotes} multiline numberOfLines={4}
               />
             </View>
           </View>
@@ -541,12 +561,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.phone")}</Text>
-                <TextInput
-                  style={ScreenStyles.input}
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                />
+                <TextInput style={ScreenStyles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
               </View>
             </View>
 
@@ -554,7 +569,6 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <Text style={ScreenStyles.label}>{t("userprofiles.address_line1")}</Text>
               <TextInput style={ScreenStyles.input} value={address_line1} onChangeText={setAddressLine1} />
             </View>
-
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.address_line2")}</Text>
               <TextInput style={ScreenStyles.input} value={address_line2} onChangeText={setAddressLine2} />
@@ -578,12 +592,7 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.postal_code")}</Text>
-                <TextInput
-                  style={ScreenStyles.input}
-                  value={postal_code}
-                  onChangeText={setPostalCode}
-                  keyboardType="numeric"
-                />
+                <TextInput style={ScreenStyles.input} value={postal_code} onChangeText={setPostalCode} keyboardType="numeric" />
               </View>
             </View>
 
@@ -594,20 +603,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_name")}</Text>
-                <TextInput
-                  style={ScreenStyles.input}
-                  value={emergency_contact_name}
-                  onChangeText={setEmergencyContantName}
-                />
+                <TextInput style={ScreenStyles.input} value={emergency_contact_name} onChangeText={setEmergencyContantName} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={ScreenStyles.label}>{t("userprofiles.emergency_contact_phone")}</Text>
-                <TextInput
-                  style={ScreenStyles.input}
-                  value={emergency_contact_phone}
-                  onChangeText={setEmergencyContantPhone}
-                  keyboardType="phone-pad"
-                />
+                <TextInput style={ScreenStyles.input} value={emergency_contact_phone} onChangeText={setEmergencyContantPhone} keyboardType="phone-pad" />
               </View>
             </View>
           </View>
@@ -619,20 +619,9 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.discipline")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
-                <Picker
-                  selectedValue={discipline_id}
-                  onValueChange={(v) => {
-                    setDisciplineId(v);
-                    // Resetear rank si cambió la disciplina
-                    if (v !== discipline_id) {
-                      setRankId(null);
-                    }
-                  }}
-                >
+                <Picker selectedValue={discipline_id} onValueChange={(v) => { setDisciplineId(v); if (v !== discipline_id) setRankId(null); }}>
                   <Picker.Item label={t("userprofiles.discipline")} value={null} />
-                  {disciplines.map((d) => (
-                    <Picker.Item key={d.id} label={d.name} value={d.id} />
-                  ))}
+                  {disciplines.map((d) => (<Picker.Item key={d.id} label={d.name} value={d.id} />))}
                 </Picker>
               </View>
             </View>
@@ -640,86 +629,35 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.rank")}</Text>
               <View style={ScreenStyles.pickerWrapper}>
-                <Picker 
-                  selectedValue={rank_id} 
-                  onValueChange={(v) => setRankId(v)}
-                  enabled={discipline_id !== null}
-                >
-                  <Picker.Item 
-                    label={discipline_id ? t("userprofiles.rank") : "Selecciona disciplina primero"} 
-                    value=""
-                  />
-                  {filteredRanks.map((r) => (
-                    <Picker.Item key={r.id} label={r.name} value={r.id} />
-                  ))}
+                <Picker selectedValue={rank_id} onValueChange={(v) => setRankId(v)} enabled={discipline_id !== null}>
+                  <Picker.Item label={discipline_id ? t("userprofiles.rank") : "Selecciona disciplina primero"} value="" />
+                  {filteredRanks.map((r) => (<Picker.Item key={r.id} label={r.name} value={r.id} />))}
                 </Picker>
               </View>
               {filteredRanks.length === 0 && discipline_id && (
-                <Text style={{ fontSize: 12, color: '#f59e0b', marginTop: 4 }}>
-                  ⚠️ No hay grados configurados para esta disciplina
-                </Text>
+                <Text style={{ fontSize: 12, color: '#f59e0b', marginTop: 4 }}>⚠️ No hay grados configurados para esta disciplina</Text>
               )}
             </View>
 
             <View>
-              <DatePickerField
-                label={t("userprofiles.start_date")}
-                value={start_date}
-                onChange={setStartDate}
-              />
+              <DatePickerField label={t("userprofiles.start_date")} value={start_date} onChange={setStartDate} />
             </View>
 
-            {/* Sección de Progreso de Grado */}
-            <View style={{ 
-              marginTop: 16, 
-              paddingTop: 16, 
-              borderTopWidth: 1, 
-              borderTopColor: '#e2e8f0' 
-            }}>
-              <Text style={[ScreenStyles.label, { fontSize: 16, fontWeight: '600', marginBottom: 12 }]}>
-                📊 Progreso de Grado
-              </Text>
-
+            <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
+              <Text style={[ScreenStyles.label, { fontSize: 16, fontWeight: '600', marginBottom: 12 }]}>📊 Progreso de Grado</Text>
               <View>
-                <DatePickerField
-                  label="Fecha de obtención del grado actual"
-                  value={current_rank_start_date}
-                  onChange={setCurrentRankStartDate}
-                />
-                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                  Fecha en que obtuvo el grado seleccionado arriba
-                </Text>
+                <DatePickerField label="Fecha de obtención del grado actual" value={current_rank_start_date} onChange={setCurrentRankStartDate} />
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>Fecha en que obtuvo el grado seleccionado arriba</Text>
               </View>
-
               <View style={{ marginTop: 12 }}>
-                <DatePickerField
-                  label="Fecha del próximo examen"
-                  value={next_exam_date}
-                  onChange={setNextExamDate}
-                />
-                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                  Fecha programada para el próximo examen de grado
-                </Text>
+                <DatePickerField label="Fecha del próximo examen" value={next_exam_date} onChange={setNextExamDate} />
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>Fecha programada para el próximo examen de grado</Text>
               </View>
-
               {rank_id && current_rank_start_date && (
-                <View style={{
-                  backgroundColor: '#dbeafe',
-                  borderRadius: 8,
-                  padding: 12,
-                  marginTop: 12,
-                  borderLeftWidth: 4,
-                  borderLeftColor: '#3b82f6'
-                }}>
-                  <Text style={{ fontSize: 12, color: '#1e40af' }}>
-                    ℹ️ El progreso del estudiante se calculará automáticamente basado en:
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#1e40af', marginTop: 4 }}>
-                    • Tiempo desde la fecha de obtención del grado actual
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#1e40af' }}>
-                    • Asistencias registradas desde esa fecha
-                  </Text>
+                <View style={{ backgroundColor: '#dbeafe', borderRadius: 8, padding: 12, marginTop: 12, borderLeftWidth: 4, borderLeftColor: '#3b82f6' }}>
+                  <Text style={{ fontSize: 12, color: '#1e40af' }}>ℹ️ El progreso del estudiante se calculará automáticamente basado en:</Text>
+                  <Text style={{ fontSize: 11, color: '#1e40af', marginTop: 4 }}>• Tiempo desde la fecha de obtención del grado actual</Text>
+                  <Text style={{ fontSize: 11, color: '#1e40af' }}>• Asistencias registradas desde esa fecha</Text>
                 </View>
               )}
             </View>
@@ -734,27 +672,15 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
               <View style={ScreenStyles.pickerWrapper}>
                 <Picker selectedValue={blood_type} onValueChange={setBloodType}>
                   <Picker.Item label="Selecciona tipo" value="" />
-                  <Picker.Item label="O+" value="O+" />
-                  <Picker.Item label="O-" value="O-" />
-                  <Picker.Item label="A+" value="A+" />
-                  <Picker.Item label="A-" value="A-" />
-                  <Picker.Item label="B+" value="B+" />
-                  <Picker.Item label="B-" value="B-" />
-                  <Picker.Item label="AB+" value="AB+" />
-                  <Picker.Item label="AB-" value="AB-" />
+                  {["O+","O-","A+","A-","B+","B-","AB+","AB-"].map(bt => (
+                    <Picker.Item key={bt} label={bt} value={bt} />
+                  ))}
                 </Picker>
               </View>
             </View>
-
             <View>
               <Text style={ScreenStyles.label}>{t("userprofiles.medical_notes")}</Text>
-              <TextInput
-                style={[ScreenStyles.input, { height: 120, textAlignVertical: "top" }]}
-                value={medical_notes}
-                onChangeText={setMedicalNotes}
-                multiline
-                numberOfLines={6}
-              />
+              <TextInput style={[ScreenStyles.input, { height: 120, textAlignVertical: "top" }]} value={medical_notes} onChangeText={setMedicalNotes} multiline numberOfLines={6} />
             </View>
           </View>
         );
@@ -774,6 +700,118 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
           </View>
         );
 
+      case 6: // Representante Legal
+        return (
+          <View style={{ gap: 16 }}>
+
+            {/* Tutores de este usuario */}
+            <View>
+              <Text style={[ScreenStyles.label, { fontSize: 15, fontWeight: '700', marginBottom: 8 }]}>
+                👤 {t("guardian.guardians")}
+              </Text>
+              {guardians.length === 0 ? (
+                <View style={{ backgroundColor: '#f1f5f9', borderRadius: 8, padding: 12 }}>
+                  <Text style={{ color: '#64748b', fontSize: 13 }}>{t("guardian.no_guardian")}</Text>
+                </View>
+              ) : (
+                guardians.map((g) => (
+                  <View key={g.id} style={[ScreenStyles.row, { marginBottom: 8 }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowTitle}>{g.guardian_name} {g.guardian_lastname}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{g.guardian_email}</Text>
+                      {g.guardian_phone && <Text style={ScreenStyles.rowMeta}>📞 {g.guardian_phone}</Text>}
+                      {g.relationship && <Text style={ScreenStyles.rowMeta}>🔗 {g.relationship}</Text>}
+                    </View>
+                    {myrole === 'admin' && (
+                      <Pressable onPress={() => askDeleteGuardian(g.id)}>
+                        <Ionicons name="trash-outline" size={18} color="#d60000" />
+                      </Pressable>
+                    )}
+                  </View>
+                ))
+              )}
+            </View>
+
+            {/* Menores a cargo de este usuario */}
+            <View>
+              <Text style={[ScreenStyles.label, { fontSize: 15, fontWeight: '700', marginBottom: 8 }]}>
+                👧 {t("guardian.minors")}
+              </Text>
+              {minors.length === 0 ? (
+                <View style={{ backgroundColor: '#f1f5f9', borderRadius: 8, padding: 12 }}>
+                  <Text style={{ color: '#64748b', fontSize: 13 }}>{t("guardian.no_minors")}</Text>
+                </View>
+              ) : (
+                minors.map((m) => (
+                  <View key={m.id} style={[ScreenStyles.row, { marginBottom: 8 }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={ScreenStyles.rowTitle}>{m.minor_name} {m.minor_lastname}</Text>
+                      <Text style={ScreenStyles.rowMeta}>{m.minor_email}</Text>
+                      {m.minor_date_of_birth && <Text style={ScreenStyles.rowMeta}>🎂 {toYMD(m.minor_date_of_birth)}</Text>}
+                      {m.relationship && <Text style={ScreenStyles.rowMeta}>🔗 {m.relationship}</Text>}
+                    </View>
+                    {myrole === 'admin' && (
+                      <Pressable onPress={() => askDeleteGuardian(m.id)}>
+                        <Ionicons name="trash-outline" size={18} color="#d60000" />
+                      </Pressable>
+                    )}
+                  </View>
+                ))
+              )}
+            </View>
+
+            {/* Formulario para agregar relación - solo admin */}
+            {myrole === 'admin' && (
+              <View style={{ borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 16 }}>
+                <Text style={[ScreenStyles.label, { fontSize: 15, fontWeight: '700', marginBottom: 8 }]}>
+                  ➕ {t("guardian.add")}
+                </Text>
+
+                <Text style={ScreenStyles.label}>{t("guardian.guardian")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={selectedGuardianId} onValueChange={setSelectedGuardianId}>
+                    <Picker.Item label={t("guardian.select_guardian")}  value={null} />
+                    {allUsers.map((u) => (
+                      <Picker.Item key={u.id} label={`${u.name} ${u.lastname}`} value={u.id} />
+                    ))}
+                  </Picker>
+                </View>
+
+                <Text style={ScreenStyles.label}>{t("guardian.minor")}</Text>
+                <View style={ScreenStyles.pickerWrapper}>
+                  <Picker selectedValue={selectedMinorId} onValueChange={setSelectedMinorId}>
+                    <Picker.Item label={t("guardian.select_minor")} value={null} />
+                    {allUsers.map((u) => (
+                      <Picker.Item key={u.id} label={`${u.name} ${u.lastname}`} value={u.id} />
+                    ))}
+                  </Picker>
+                </View>
+                
+                <View style={[{ marginBottom: 16 }]}>
+                  <Text style={ScreenStyles.label}>{t("guardian.relationship")}</Text>
+                  <TextInput
+                    style={ScreenStyles.input}
+                    value={relationship}
+                    onChangeText={setRelationship}
+                    placeholder={t("guardian.relationship_placeholder")}
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+
+                <Pressable
+                  style={[ScreenStyles.btnPrimary, { opacity: (selectedGuardianId && selectedMinorId) ? 1 : 0.6 }]}
+                  disabled={!selectedGuardianId || !selectedMinorId || savingGuardian}
+                  onPress={addGuardian}
+                >
+                  <Text style={ScreenStyles.btnPrimaryText}>
+                    {savingGuardian ? t("common.saving") : t("guardian.add")}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        );
+
       default:
         return null;
     }
@@ -788,12 +826,11 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
             : `${userprofiles?.name ?? ""} ${userprofiles?.lastname ?? ""}`.trim()
           }
         </Text>
-        {/* Botón de eliminar - solo si no es mi perfil, soy admin, y no es el usuario admin */}
         {!isMyProfile && myrole === "admin" && username !== "admin" && (
-        <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={askDelete}>
-          <Ionicons name="trash-outline" size={18} color="#d60000" />
-          <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
-        </Pressable>
+          <Pressable style={{minWidth: 0, alignItems: 'center'}} onPress={askDelete}>
+            <Ionicons name="trash-outline" size={18} color="#d60000" />
+            <Text style={[ScreenStyles.rowMeta, { fontSize: 10 }]}>{t("common.delete")}</Text>
+          </Pressable>
         )}
       </View>
 
@@ -801,43 +838,51 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
       {success ? <View style={ScreenStyles.alertOk}><Text style={ScreenStyles.alertOkText}>{success}</Text></View> : null}
 
       {/* Tab Navigation */}
-      <View style={{
-        flexDirection: 'row',
-        backgroundColor: '#f5f5f5',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-        paddingHorizontal: 8,
-      }}>
-        {tabs.map((tab) => (
-          <Pressable
-            key={tab.id}
-            onPress={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1,
-              paddingVertical: 12,
-              alignItems: 'center',
-              borderBottomWidth: 2,
-              borderBottomColor: activeTab === tab.id ? '#007AFF' : 'transparent',
-            }}
-          >
-            <Text style={{
-              fontSize: 14,
-              fontWeight: activeTab === tab.id ? '600' : '400',
-              color: activeTab === tab.id ? '#007AFF' : '#666',
-            }}>
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ minWidth: '100%' }}
+      >
+        <View style={{
+          flexDirection: 'row',
+          backgroundColor: '#f5f5f5',
+          borderBottomWidth: 1,
+          borderBottomColor: '#ddd',
+          paddingHorizontal: 8,
+          flex: 1,
+        }}>
+          {tabs.map((tab) => (
+            <Pressable
+              key={tab.id}
+              onPress={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                paddingHorizontal: 4,
+                alignItems: 'center',
+                borderBottomWidth: 2,
+                borderBottomColor: activeTab === tab.id ? '#007AFF' : 'transparent',
+              }}
+            >
+              <Text style={{
+                fontSize: 11,
+                fontWeight: activeTab === tab.id ? '600' : '400',
+                color: activeTab === tab.id ? '#007AFF' : '#666',
+                textAlign: 'center',
+              }}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingBottom: 120 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {loading ? (
           <View style={ScreenStyles.center}><ActivityIndicator /></View>
@@ -845,28 +890,31 @@ export default function UserProfilesScreen({ onAuthExpired, targetUserId }) {
           <View style={{ padding: 16 }}>
             {renderTabContent()}
 
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
-              <View style={{ flex: 1 }}>
-                <Pressable
-                  style={ScreenStyles.btnSecondary}
-                  onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)}
-                  disabled={!isEditing}
-                >
-                  <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
-                </Pressable>
+            {/* Botones solo en tabs que no son el de representante */}
+            {activeTab !== 6 && (
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
+                <View style={{ flex: 1 }}>
+                  <Pressable
+                    style={ScreenStyles.btnSecondary}
+                    onPress={!isMyProfile ? () => router.push(`/(app)/(main)/users`) : () => router.push(`/(app)/(main)/home`)}
+                    disabled={!isEditing}
+                  >
+                    <Text style={ScreenStyles.btnSecondaryText}>{t("common.back")}</Text>
+                  </Pressable>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Pressable
+                    style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]}
+                    onPress={askSave}
+                    disabled={saving}
+                  >
+                    <Text style={ScreenStyles.btnPrimaryText}>
+                      {saving ? t("common.saving") : t("common.save")}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Pressable
-                  style={[ScreenStyles.btnPrimary, { opacity: saving ? 0.7 : 1 }]}
-                  onPress={askSave}
-                  disabled={saving}
-                >
-                  <Text style={ScreenStyles.btnPrimaryText}>
-                    {saving ? t("common.saving") : t("common.save")}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
+            )}
           </View>
         )}
       </ScrollView>

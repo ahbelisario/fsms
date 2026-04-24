@@ -121,6 +121,10 @@ app.get('/api/privacy/version', (req, res) => {
 const privacyRoutes = require('./routes/privacy');
 app.use('/api/privacy', requireAuth, privacyRoutes);
 
+// User Guardians
+const userGuardiansRoutes = require('./routes/user-guardians');
+app.use('/api/user-guardians', requireAuth, userGuardiansRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

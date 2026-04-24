@@ -144,6 +144,12 @@ export const api = {
   promoteStudent: (payload) => request('/api/rank-progress/promote', { method: 'POST', body: payload }),
   getPendingExams: () => request('/api/rank-progress/pending-exams'),
 
+  // User Guardians
+  getUserGuardiansByMinor: (minorId) => request(`/api/user-guardians/minor/${minorId}`),
+  getUserGuardiansByGuardian: (guardianId) => request(`/api/user-guardians/guardian/${guardianId}`),
+  createUserGuardian: (payload) => request('/api/user-guardians', { method: 'POST', body: payload }),
+  deleteUserGuardian: (id) => request(`/api/user-guardians/${id}`, { method: 'DELETE' }),
+
   getPaymentHistory: (params = {}) => {
     const { limit = 10, offset = 0 } = params;
     return request(`/api/payments/my-history?limit=${limit}&offset=${offset}`);
