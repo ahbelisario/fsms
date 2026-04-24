@@ -545,4 +545,12 @@ export const en = {
       new_password: "New password",
       reset_button: "Reset Password",
     },
+    privacy: {
+      title: "Privacy Notice",
+      subtitle: "Last updated: April 2026",
+      accept: "I have read and accept the Privacy Notice",
+      view_privacy: "Privacy Notice",
+      close: "Close",
+      version: "Version",
+    },
 };

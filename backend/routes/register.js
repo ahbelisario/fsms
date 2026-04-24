@@ -11,7 +11,7 @@ const { sendVerificationEmail, sendWelcomeEmail } = require('./config/email');
 router.post('/', async (req, res) => {
   const fsms_pool = req.app.locals.fsms_pool;
   
-  const { name, lastname, username, email, password, language } = req.body;
+  const { name, lastname, username, email, password, language, privacy_accepted, privacy_version } = req.body;
 
   // Validaciones básicas
   if (!name || !lastname || !username || !email || !password) {
@@ -75,15 +75,15 @@ router.post('/', async (req, res) => {
             // Hashear contraseña
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            // Generar token de verificación (aleatorio, seguro)
+            // Generar token de verificación
             const verificationToken = crypto.randomBytes(32).toString('hex');
             const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
 
             // Insertar usuario
             fsms_pool.query(
               `INSERT INTO users 
-               (name, lastname, username, email, password, role, active, email_verified, verification_token, verification_token_expires) 
-               VALUES (?, ?, ?, ?, ?, 'student', 0, 0, ?, ?)`,
+               (name, lastname, username, email, password, role, active, email_verified, verification_token, verification_token_expires, privacy_accepted, privacy_accepted_at, privacy_version) 
+               VALUES (?, ?, ?, ?, ?, 'student', 0, 0, ?, ?, ?, ?, ?)`,
               [
                 name.trim(),
                 lastname.trim(),
@@ -91,7 +91,10 @@ router.post('/', async (req, res) => {
                 email.trim().toLowerCase(),
                 hashedPassword,
                 verificationToken,
-                tokenExpires
+                tokenExpires,
+                privacy_accepted ? 1 : 0,
+                privacy_accepted ? new Date() : null,
+                privacy_accepted ? (privacy_version || '1.0') : null
               ],
               (insertErr, result) => {
                 if (insertErr) {
@@ -108,17 +111,15 @@ router.post('/', async (req, res) => {
                   (profileErr) => {
                     if (profileErr) {
                       console.error('Error creating user_profiles:', profileErr);
-                      // No fallar el registro por esto
                     }
 
-                    // 2. Crear user_settings con idioma seleccionado por el usuario
+                    // 2. Crear user_settings con idioma seleccionado
                     fsms_pool.query(
                       `INSERT INTO user_settings (user_id, language) VALUES (?, ?)`,
                       [userId, language || 'es'],
                       (settingsErr) => {
                         if (settingsErr) {
                           console.error('Error creating user_settings:', settingsErr);
-                          // No fallar el registro por esto
                         }
 
                         // 3. Insertar token en tabla de verificación
@@ -128,16 +129,15 @@ router.post('/', async (req, res) => {
                           (tokenErr) => {
                             if (tokenErr) {
                               console.error('Error inserting verification token:', tokenErr);
-                              // No fallar el registro por esto
                             }
 
-                            // 4. Enviar email de verificación EN EL IDIOMA SELECCIONADO
+                            // 4. Enviar email de verificación
                             sendVerificationEmail(
                               email.trim().toLowerCase(),
                               `${name} ${lastname}`,
                               verificationToken,
                               fsms_pool,
-                              language || 'es'  // ✅ Pasar language del payload directamente
+                              language || 'es'
                             ).then((emailResult) => {
                               if (emailResult.success) {
                                 res.json({ 
@@ -151,7 +151,6 @@ router.post('/', async (req, res) => {
                                   }
                                 });
                               } else {
-                                // Usuario creado pero email falló
                                 res.json({ 
                                   status: 'success', 
                                   message: 'Registro exitoso, pero hubo un error al enviar el email de verificación. Contacta al administrador.',
@@ -192,7 +191,6 @@ router.get('/verify-email', (req, res) => {
     });
   }
 
-  // Buscar token válido
   fsms_pool.query(
     `SELECT u.id, u.name, u.lastname, u.email 
      FROM users u
@@ -216,7 +214,6 @@ router.get('/verify-email', (req, res) => {
 
       const user = users[0];
 
-      // Activar usuario y marcar email como verificado
       fsms_pool.query(
         `UPDATE users 
          SET email_verified = 1, active = 1, verification_token = NULL, verification_token_expires = NULL 
@@ -228,7 +225,6 @@ router.get('/verify-email', (req, res) => {
             return res.status(500).json({ status: 'error', message: 'Verification failed' });
           }
 
-          // Marcar token como usado
           fsms_pool.query(
             'UPDATE email_verification_tokens SET used = 1 WHERE token = ?',
             [token],
@@ -237,19 +233,17 @@ router.get('/verify-email', (req, res) => {
             }
           );
 
-          // ✅ Obtener idioma de user_settings para el email de bienvenida
           fsms_pool.query(
             'SELECT language FROM user_settings WHERE user_id = ? LIMIT 1',
             [user.id],
             (langErr, langRows) => {
               const userLanguage = langRows && langRows[0] ? langRows[0].language : 'es';
               
-              // Enviar email de bienvenida EN EL IDIOMA DEL USUARIO
               sendWelcomeEmail(
                 user.email, 
                 `${user.name} ${user.lastname}`, 
                 fsms_pool,
-                userLanguage  // ✅ Pasar idioma de user_settings
+                userLanguage
               );
 
               res.json({ 
@@ -284,7 +278,6 @@ router.post('/resend-verification', (req, res) => {
     });
   }
 
-  // Buscar usuario
   fsms_pool.query(
     `SELECT id, name, lastname, email, email_verified 
      FROM users 
@@ -306,11 +299,9 @@ router.post('/resend-verification', (req, res) => {
 
       const user = users[0];
 
-      // Generar nuevo token
       const verificationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      // Actualizar token
       fsms_pool.query(
         `UPDATE users 
          SET verification_token = ?, verification_token_expires = ? 
@@ -322,20 +313,18 @@ router.post('/resend-verification', (req, res) => {
             return res.status(500).json({ status: 'error', message: 'Update failed' });
           }
 
-          // ✅ Obtener idioma de user_settings para reenviar email
           fsms_pool.query(
             'SELECT language FROM user_settings WHERE user_id = ? LIMIT 1',
             [user.id],
             (langErr, langRows) => {
               const userLanguage = langRows && langRows[0] ? langRows[0].language : 'es';
 
-              // Enviar nuevo email EN EL IDIOMA DEL USUARIO
               sendVerificationEmail(
                 user.email,
                 `${user.name} ${user.lastname}`,
                 verificationToken,
                 fsms_pool,
-                userLanguage  // ✅ Pasar idioma de user_settings
+                userLanguage
               ).then((emailResult) => {
                 if (emailResult.success) {
                   res.json({ 

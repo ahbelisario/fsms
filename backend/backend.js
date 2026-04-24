@@ -112,6 +112,15 @@ app.use('/api/password-reset', require('./routes/password-reset'));  // ← NUEV
 const rankProgressRoutes = require('./routes/rank-progress');
 app.use('/api/rank-progress', requireAuth, rankProgressRoutes);
 
+// Privacy - versión pública
+app.get('/api/privacy/version', (req, res) => {
+  res.json({ status: 'success', data: { version: '1.0' } });
+});
+
+// Privacy - rutas protegidas
+const privacyRoutes = require('./routes/privacy');
+app.use('/api/privacy', requireAuth, privacyRoutes);
+
 // Servidor
 
 app.set('port', process.env.PORT || 3000);

@@ -1409,3 +1409,82 @@ export const ScheduleStyles = StyleSheet.create({
     marginTop: 8 * scale,
   },
 });
+
+// ============================================
+// PRIVACY NOTICE STYLES
+// ============================================
+export const PrivacyStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  header: {
+    paddingTop: 16 * scale,
+    paddingBottom: 16 * scale,
+    paddingHorizontal: 20 * scale,
+    borderBottomWidth: 1,
+    borderBottomColor: "#cbd5e1",
+    backgroundColor: "#ffffff",
+  },
+  backBtn: {
+    marginBottom: 8 * scale,
+  },
+  backText: {
+    color: "#5ea4c5ff",
+    fontSize: 14 * scale,
+    fontWeight: "600",
+  },
+  title: {
+    color: "#0f172a",
+    fontSize: 20 * scale,
+    fontWeight: "700",
+    marginBottom: 4 * scale,
+  },
+  subtitle: {
+    color: "#475569",
+    fontSize: 13 * scale,
+  },
+  version: {
+    color: "#94a3b8",
+    fontSize: 12 * scale,
+    marginTop: 4 * scale,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20 * scale,
+    paddingBottom: 40 * scale,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    marginVertical: 16 * scale,
+  },
+  section: {
+    marginBottom: 4 * scale,
+  },
+  sectionTitle: {
+    fontSize: 14 * scale,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 8 * scale,
+  },
+  sectionBody: {
+    fontSize: 13 * scale,
+    color: "#475569",
+    lineHeight: 22,
+  },
+  footer: {
+    marginTop: 24 * scale,
+    paddingTop: 16 * scale,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    alignItems: "center",
+    gap: 4 * scale,
+  },
+  footerText: {
+    fontSize: 12 * scale,
+    color: "#94a3b8",
+  },
+});

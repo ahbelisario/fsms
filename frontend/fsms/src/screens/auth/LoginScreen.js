@@ -186,12 +186,20 @@ export default function LoginScreen({ onLoginSuccess }) {
 
           {/* Link de registro */}
           <View style={{ marginTop: 20, justifyContent: "center"}}>
-          {/*<View style={{ marginTop: 20, flexDirection: "row", justifyContent: "center", gap: 4 }}> */}  
             <Text style={[appStyles.label, { fontSize: 14, textAlign: "center"}]}>{t("messages.dont_have_an_account")}</Text>
             <Pressable 
-            style={[ScreenStyles.btnSecondary, { opacity: canSubmit ? 1 : 0.6, marginBottom: 2} ]}
-            onPress={() => router.push("/(auth)/register")}>
-              <Text style={ ScreenStyles.btnPrimaryText }>{t("common.register")}</Text>
+              style={[ScreenStyles.btnSecondary, { opacity: canSubmit ? 1 : 0.6, marginBottom: 2}]}
+              onPress={() => router.push("/(auth)/register")}>
+              <Text style={ScreenStyles.btnPrimaryText}>{t("common.register")}</Text>
+            </Pressable>
+          </View>
+
+          {/* Link de aviso de privacidad */}
+          <View style={{ marginTop: 12, alignItems: "center" }}>
+            <Pressable onPress={() => router.push("/(auth)/privacy-notice")}>
+              <Text style={[appStyles.hint, { textAlign: "center", textDecorationLine: "underline" }]}>
+                {t("privacy.view_privacy")}
+              </Text>
             </Pressable>
           </View>
         </View>
