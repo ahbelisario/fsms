@@ -60,8 +60,6 @@ router.get('/minor/:minorId', (req, res) => {
   const requesterId = Number(req.user.id);
   const targetId = Number(minorId);
 
-  console.log('minor - requesterId:', requesterId, 'targetId:', targetId, 'role:', req.user.role);
-
   if (req.user.role !== 'admin' && requesterId !== targetId) {
     return res.status(403).json({ status: 'error', message: 'Not allowed' });
   }
@@ -102,8 +100,6 @@ router.get('/guardian/:guardianId', (req, res) => {
 
   const requesterId = Number(req.user.id);
   const targetId = Number(guardianId);
-
-  console.log('guardian - requesterId:', requesterId, 'targetId:', targetId, 'role:', req.user.role);
 
   if (req.user.role !== 'admin' && requesterId !== targetId) {
     return res.status(403).json({ status: 'error', message: 'Not allowed' });

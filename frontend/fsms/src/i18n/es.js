@@ -307,7 +307,7 @@ export const es = {
       payment: "Pago",
       adjustment: "Ajuste",
       surcharge: "Recargo" ,
-      payments_history: "Historial de Pagos",
+      payments_history: "Pagos",
       last_payments_registered: "Últimos pagos registrados",
       total_paid: "Total Pagado",
       payments_made: "Pagos Realizados",

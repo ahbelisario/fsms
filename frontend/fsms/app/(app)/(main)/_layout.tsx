@@ -242,7 +242,7 @@ export default function MainLayout() {
   const isDesktop = width >= 1024;
   const isMobile = width < 768;
 
-  const drawerWidth = isMobile ? width * 0.75 : 240;
+  const drawerWidth = isMobile ? width * 0.65 : 250;
   const isPermanent = isWeb && isDesktop;
 
   return (
